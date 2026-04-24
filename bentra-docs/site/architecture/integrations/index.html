@@ -1,0 +1,2080 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Process, architecture, and roadmap for Bentra.">
+      
+      
+      
+      
+        <link rel="prev" href="../data-model/">
+      
+      
+        <link rel="next" href="../runners/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Integrations - Bentra Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#integrations" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Bentra Docs" class="md-header__button md-logo" aria-label="Bentra Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Bentra Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Integrations
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../overview/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../development/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../features/forms/" class="md-tabs__link">
+          
+  
+  
+  Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../subprojects/" class="md-tabs__link">
+          
+  
+  
+  Subprojects
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../journal/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Bentra Docs" class="md-nav__button md-logo" aria-label="Bentra Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Bentra Docs
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../apps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Django Apps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#github" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GitHub
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GitHub">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-workflowform-yaml-lives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where Workflow/Form YAML Lives
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auth-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auth Modes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#service-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Service Layer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runners-and-vcs-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runners and VCS Tokens
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#openbao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenBao
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="OpenBao">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#connection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#client-wrapper-variable_collectionsopen_baopy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Client Wrapper — variable_collections/open_bao.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#path-scheme-per-org-mount" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Path Scheme (per org mount)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#read-write-flow-for-a-secret-variable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read / Write Flow for a Secret Variable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runners-and-openbao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runners and OpenBao
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#script-executor-flask-microservice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Script Executor (Flask Microservice)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Script Executor (Flask Microservice)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-it-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Exists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boundaries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endpoints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-django-talks-to-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How Django Talks to It
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#script-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Script Contracts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary-who-holds-what" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary — Who Holds What
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runners/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runners
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../microservices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Microservices
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rbac/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RBAC & Tenancy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rest-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST APIs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hosting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/forms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subprojects
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subprojects
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/rabbitmq-rest-migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RabbitMQ → REST Migration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_3" id="__nav_6_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Azure Hosting Spike
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Azure Hosting Spike
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/azure-hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/azure-hosting/infra-networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Infra & Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/azure-hosting/terraform-cicd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terraform & CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/azure-hosting/logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/azure-hosting/monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/azure-hosting/production-state/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../journal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#github" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GitHub
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GitHub">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-workflowform-yaml-lives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where Workflow/Form YAML Lives
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auth-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auth Modes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#service-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Service Layer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runners-and-vcs-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runners and VCS Tokens
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#openbao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenBao
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="OpenBao">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#connection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#client-wrapper-variable_collectionsopen_baopy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Client Wrapper — variable_collections/open_bao.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#path-scheme-per-org-mount" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Path Scheme (per org mount)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#read-write-flow-for-a-secret-variable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read / Write Flow for a Secret Variable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runners-and-openbao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runners and OpenBao
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#script-executor-flask-microservice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Script Executor (Flask Microservice)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Script Executor (Flask Microservice)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-it-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Exists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boundaries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endpoints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-django-talks-to-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How Django Talks to It
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#script-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Script Contracts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary-who-holds-what" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary — Who Holds What
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="integrations">Integrations<a class="headerlink" href="#integrations" title="Permanent link">&para;</a></h1>
+<p>Bentra integrates with three external systems: <strong>GitHub</strong> (source of truth for workflow + form YAML), <strong>OpenBao</strong> (all plaintext secrets), and the <strong>Script Executor</strong> microservice (sandboxed code execution for form auto-populate).</p>
+<h2 id="github">GitHub<a class="headerlink" href="#github" title="Permanent link">&para;</a></h2>
+<p>All workflow/form definitions live in customer GitHub repos. Bentra reads them at the right moment and never writes secrets back.</p>
+<h3 id="where-workflowform-yaml-lives">Where Workflow/Form YAML Lives<a class="headerlink" href="#where-workflowform-yaml-lives" title="Permanent link">&para;</a></h3>
+<p>A Bentra workflow is bound to a <code>GithubRepository</code> with these relevant fields:</p>
+<ul>
+<li><code>repo_url</code>, <code>repo_branch</code>, <code>repo_working_directory</code></li>
+<li><code>form_file_path</code> (default: <code>.bento/form/form.yml</code>)</li>
+<li><code>workflow_file_path</code> (default: <code>.bento/workflow/workflow.yml</code>)</li>
+<li><code>deploy_directory</code> (default: <code>.</code>) — the subdirectory the runner <code>cd</code>s into to run Terraform.</li>
+</ul>
+<p>When a workflow is created, Bentra can call <code>bootstrap_bento_structure()</code> / <code>create_bento_structure_pr()</code> to seed those two YAML files.</p>
+<h3 id="auth-modes">Auth Modes<a class="headerlink" href="#auth-modes" title="Permanent link">&para;</a></h3>
+<p>Two auth modes are supported, captured in <code>settings.VCSConnector</code>:</p>
+<p><strong>Personal Access Token (<code>auth_type = 'pat'</code>)</strong></p>
+<ul>
+<li>Token stored in OpenBao at <code>VCSConnector.openbao_secret_path</code>, under a <code>{"token": "..."}</code> secret.</li>
+<li>Fetched by <code>get_github_token_for_connector()</code> via <code>read_kv_v2_secret()</code>.</li>
+<li>Validated on save via <code>validate_pat_credentials()</code> (hits <code>/user</code>).</li>
+</ul>
+<p><strong>GitHub App (<code>auth_type = 'github_app'</code>)</strong></p>
+<ul>
+<li>App ID stored in the connector (<code>client_id</code> field).</li>
+<li>Installation ID + PEM private key stored in OpenBao at <code>openbao_secret_path</code>.</li>
+<li>On every token fetch, Bentra mints a short-lived installation token via <code>_mint_github_app_installation_token()</code>:</li>
+<li>Signs an RS256 JWT with the PEM key (<code>_create_github_app_jwt()</code>).</li>
+<li>POSTs to <code>/app/installations/{installation_id}/access_tokens</code> with that JWT.</li>
+<li>Returns the installation token (expires in 1 hour).</li>
+<li>Validated on save via <code>validate_github_app_credentials()</code>.</li>
+</ul>
+<h3 id="service-layer">Service Layer<a class="headerlink" href="#service-layer" title="Permanent link">&para;</a></h3>
+<p>Two key files:</p>
+<ul>
+<li><strong><code>vcs_connectors/github_service.py</code></strong> — <code>GitHubService</code> class + module-level helpers. No Django models live in this app.</li>
+<li><strong><code>vcs_connectors/provider.py</code></strong> — starting point of a provider-abstraction layer. GitHub is the only implementation today.</li>
+</ul>
+<p>Key entry points used elsewhere in the codebase:</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Caller</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get_github_token_for_connector(connector)</code></td>
+<td>runner API (<code>ConnectorTokenView</code>), workflow views</td>
+<td>Return <code>(token, error)</code> for a specific connector. Handles PAT + App.</td>
+</tr>
+<tr>
+<td><code>get_github_token_from_connectors(org)</code></td>
+<td>various</td>
+<td>Fetch an org's default connector token.</td>
+</tr>
+<tr>
+<td><code>create_workflow_repository(...)</code></td>
+<td>workflow create view</td>
+<td>Create a repo for a new workflow (optionally from a template).</td>
+</tr>
+<tr>
+<td><code>bootstrap_bento_structure(...)</code> / <code>create_bento_structure_pr(...)</code></td>
+<td>workflow create flow</td>
+<td>Seed <code>.bento/form/form.yml</code> + <code>.bento/workflow/workflow.yml</code>.</td>
+</tr>
+<tr>
+<td><code>check_repository_exists(repo_name, connector)</code></td>
+<td>workflow create flow</td>
+<td>Distinguish new-repo vs. existing-repo path.</td>
+</tr>
+<tr>
+<td><code>list_user_repositories_helper(connector)</code></td>
+<td>workflow create flow</td>
+<td>Populate the repo picker.</td>
+</tr>
+<tr>
+<td><code>get_repository_content(workflow_id)</code></td>
+<td>workflow views</td>
+<td>Show files in the Bentra UI.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="runners-and-vcs-tokens">Runners and VCS Tokens<a class="headerlink" href="#runners-and-vcs-tokens" title="Permanent link">&para;</a></h3>
+<p>Runners never store GitHub credentials. Mid-execution, they call:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>GET /api/v1/runner/connectors/{connector_id}/token/
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Authorization: Bearer rnr_...
+</code></pre></div>
+<p>The <code>ConnectorTokenView</code>:</p>
+<ol>
+<li>Validates the connector belongs to the runner's authenticated organization.</li>
+<li>Calls <code>get_github_token_for_connector(connector)</code>.</li>
+<li>Returns <code>{"ok": true, "token": "...", "auth_type": "pat" | "github_app"}</code>.</li>
+</ol>
+<p>For GitHub App connectors, the returned token is short-lived (1 hour). Runners should call this endpoint fresh each run rather than cache tokens.</p>
+<hr />
+<h2 id="openbao">OpenBao<a class="headerlink" href="#openbao" title="Permanent link">&para;</a></h2>
+<p>OpenBao is a Vault-compatible KV store. Bentra uses it as the <strong>only</strong> home for plaintext secrets. The Django DB holds placeholders.</p>
+<h3 id="connection">Connection<a class="headerlink" href="#connection" title="Permanent link">&para;</a></h3>
+<p><code>bento/bento/settings.py</code> holds the HVAC client at module scope:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">OPENBAO_URL</span>   <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;OPENBAO_URL&quot;</span><span class="p">,</span>   <span class="s2">&quot;http://localhost:8200&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">OPENBAO_TOKEN</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;OPENBAO_TOKEN&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;dev-token&gt;&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">OPEN_BAO_CLIENT</span> <span class="o">=</span> <span class="n">hvac</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">OPENBAO_URL</span><span class="p">,</span> <span class="n">token</span><span class="o">=</span><span class="n">OPENBAO_TOKEN</span><span class="p">)</span>
+</code></pre></div>
+<p>An authentication check runs at settings import time unless <code>OPENBAO_SKIP_AUTH_CHECK=1</code> is set (used in tests / management commands).</p>
+<h3 id="client-wrapper-variable_collectionsopen_baopy">Client Wrapper — <code>variable_collections/open_bao.py</code><a class="headerlink" href="#client-wrapper-variable_collectionsopen_baopy" title="Permanent link">&para;</a></h3>
+<p>Provides a small API on top of HVAC:</p>
+<ul>
+<li><code>get_openbao_client()</code> — returns the authenticated client or raises <code>OpenBaoError</code>.</li>
+<li><code>get_mount_point(organization)</code> — returns the mount point: the org's UUID (so renames don't break paths). Falls back to <code>settings.ORG_ID</code> when no org is passed (legacy / test / global contexts).</li>
+<li><code>ensure_kv_v2_mount(mount_point)</code> — idempotently enables KV v2 at <code>mount_point</code>.</li>
+<li><code>write_kv_v2_secret(mount_point, path, secret)</code></li>
+<li><code>read_kv_v2_secret(mount_point, path)</code> → dict or None</li>
+<li><code>delete_kv_v2_secret(mount_point, path)</code> → bool</li>
+</ul>
+<p>Path builders:</p>
+<ul>
+<li><code>build_collection_openbao_path(collection_id)</code> → <code>variable_collections/{id}</code></li>
+<li><code>build_variable_openbao_path(collection_id, key)</code> → <code>variable_collections/{id}/{key}</code></li>
+</ul>
+<h3 id="path-scheme-per-org-mount">Path Scheme (per org mount)<a class="headerlink" href="#path-scheme-per-org-mount" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>{org_uuid}/
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>├── variable_collections/
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>│   └── {collection_uuid}/
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>│       └── {variable_key}    → secret variables in a collection
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>│
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>├── workflow_variables/
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>│   └── {workflow_id}/
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>│       └── {variable_key}    → secret variables attached directly to a workflow
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>│
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>└── &lt;connector-specific-path&gt; → VCS connector credentials
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>                                 (actual path stored in VCSConnector.openbao_secret_path)
+</code></pre></div>
+<h3 id="read-write-flow-for-a-secret-variable">Read / Write Flow for a Secret Variable<a class="headerlink" href="#read-write-flow-for-a-secret-variable" title="Permanent link">&para;</a></h3>
+<ol>
+<li>User sets a variable with <code>is_secret=True</code> in the UI.</li>
+<li><code>Variable.set_value(plaintext)</code> stashes the plaintext on the instance as <code>_pending_secret_value</code> and sets <code>self.value = SECRET_PLACEHOLDER</code>.</li>
+<li><code>Variable.save()</code> writes the DB row first, then calls <code>save_secret_to_openbao(plaintext)</code> which builds the path and invokes <code>write_kv_v2_secret()</code>.</li>
+<li><code>Variable.get_value()</code> — for secrets, reads back from OpenBao via <code>_fetch_secret_from_openbao()</code> (returns <code>""</code> on error, not a raise — graceful degradation).</li>
+<li><code>Variable.get_display_value()</code> — returns masked bullets for UI display.</li>
+</ol>
+<p>Deletion is best-effort (<code>delete_secret_from_openbao()</code> swallows errors) so that orphan DB rows can always be cleaned up even if OpenBao is down.</p>
+<h3 id="runners-and-openbao">Runners and OpenBao<a class="headerlink" href="#runners-and-openbao" title="Permanent link">&para;</a></h3>
+<p>Runners do <strong>not</strong> talk to OpenBao directly. The control plane serves them everything they need via the job payload and the connector-token endpoint:</p>
+<ul>
+<li>Non-secret variables come inline in the payload's <code>openbao.variables[].value</code> field.</li>
+<li>Secret variables come as <code>{"openbao_path": "workflow_variables/{workflow_id}/{key}", "value": null}</code>. Runners use this path to fetch the plaintext <strong>from Bentra</strong> in a way that's out of scope for these docs today (roadmap item: runner-side OpenBao proxy).</li>
+</ul>
+<hr />
+<h2 id="script-executor-flask-microservice">Script Executor (Flask Microservice)<a class="headerlink" href="#script-executor-flask-microservice" title="Permanent link">&para;</a></h2>
+<p>A separate Flask app at <code>executor/app.py</code>. Bentra proxies <code>auto_populate</code> form-script execution to it so that arbitrary user code never runs inside the Django process.</p>
+<h3 id="why-it-exists">Why It Exists<a class="headerlink" href="#why-it-exists" title="Permanent link">&para;</a></h3>
+<p>Forms can declare fields whose value is computed by a user-provided script. That script could be:</p>
+<ul>
+<li>A short Python function (<code>def calculate(form_data, params): ...</code>)</li>
+<li>A JavaScript function (same signature)</li>
+<li>A Bash script (form data + params injected as env vars)</li>
+</ul>
+<p>Running that code inside the Django process is a security and stability risk. The executor subprocess runs each script in isolation.</p>
+<h3 id="boundaries">Boundaries<a class="headerlink" href="#boundaries" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Limit</th>
+<th>Default</th>
+<th>Env var</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Execution timeout</td>
+<td>5 seconds</td>
+<td><code>EXECUTION_TIMEOUT</code></td>
+</tr>
+<tr>
+<td>Max output size</td>
+<td>10,000 chars</td>
+<td><code>MAX_OUTPUT_SIZE</code></td>
+</tr>
+<tr>
+<td>Allowed languages</td>
+<td><code>python</code>, <code>javascript</code>, <code>bash</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Network access</td>
+<td>none (relies on subprocess + caller not granting it)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Filesystem</td>
+<td>tmpfile created per execution, no persistent state</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="endpoints">Endpoints<a class="headerlink" href="#endpoints" title="Permanent link">&para;</a></h3>
+<p>The executor is intentionally simple. Typical surface:</p>
+<ul>
+<li><code>GET /health</code> — liveness check.</li>
+<li><code>POST /execute</code> — runs a script given <code>{language, script, form_data, params}</code>; returns stdout/stderr/duration.</li>
+</ul>
+<p>Scripts can optionally be fetched from GitHub at execution time via <code>fetch_script_from_github(repo_url, script_path, github_token)</code>, which uses a PAT to pull raw file contents through the GitHub Contents API.</p>
+<h3 id="how-django-talks-to-it">How Django Talks to It<a class="headerlink" href="#how-django-talks-to-it" title="Permanent link">&para;</a></h3>
+<p>Django proxies form submissions that need script execution through an internal HTTP call, routed via the <code>/forms/&lt;slug&gt;/execute-script/</code> endpoint in the <code>forms</code> app. Configured via <code>SCRIPT_EXECUTOR_URL</code> (defaults to <code>http://localhost:5001</code>).</p>
+<p>See <a href="../microservices/">Microservices</a> for how the executor runs alongside Django in development.</p>
+<h3 id="script-contracts">Script Contracts<a class="headerlink" href="#script-contracts" title="Permanent link">&para;</a></h3>
+<p><strong>Python</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">calculate</span><span class="p">(</span><span class="n">form_data</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="c1"># form_data: dict of all current field values</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="c1"># params:    dict of params declared in the YAML</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="k">return</span> <span class="s2">&quot;computed value&quot;</span>
+</code></pre></div>
+<p><strong>JavaScript</strong> (requires Node.js on the executor host):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">function</span><span class="w"> </span><span class="nx">calculate</span><span class="p">(</span><span class="nx">formData</span><span class="p">,</span><span class="w"> </span><span class="nx">params</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="s2">&quot;computed value&quot;</span><span class="p">;</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>Bash</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># form fields exposed as env vars (e.g. $FORM_FIELD_NAME)</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># params exposed as env vars (e.g. $PARAM_FOO)</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;computed value&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="summary-who-holds-what">Summary — Who Holds What<a class="headerlink" href="#summary-who-holds-what" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>What Bentra stores there</th>
+<th>What Bentra fetches at runtime</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PostgreSQL</strong></td>
+<td>All business-logic state (workflows, requests, deployments, runs, memberships, roles) + secret <em>placeholders</em> + <em>hashed</em> tokens.</td>
+<td>Everything on every page load.</td>
+</tr>
+<tr>
+<td><strong>OpenBao</strong></td>
+<td>Plaintext secrets only (VCS credentials, variable-collection secrets, per-workflow secret variables).</td>
+<td>On-demand during form execution / job payload building / runner connector-token fetches.</td>
+</tr>
+<tr>
+<td><strong>GitHub</strong></td>
+<td>Nothing (no writes).</td>
+<td>Workflow YAML, form YAML, IaC source code — read by runners; metadata read by Django for the UI.</td>
+</tr>
+<tr>
+<td><strong>Executor</strong></td>
+<td>Nothing (stateless).</td>
+<td>Per-submission script execution for form auto-populate fields.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "toc.follow", "content.code.copy", "search.highlight", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

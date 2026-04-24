@@ -1,0 +1,2075 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Process, architecture, and roadmap for Bentra.">
+      
+      
+      
+      
+        <link rel="prev" href="../microservices/">
+      
+      
+        <link rel="next" href="../rest-api/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>RBAC & Tenancy - Bentra Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#rbac-multi-tenancy" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Bentra Docs" class="md-header__button md-logo" aria-label="Bentra Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Bentra Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              RBAC & Tenancy
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../overview/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../development/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../features/forms/" class="md-tabs__link">
+          
+  
+  
+  Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../subprojects/" class="md-tabs__link">
+          
+  
+  
+  Subprojects
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../journal/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Bentra Docs" class="md-nav__button md-logo" aria-label="Bentra Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Bentra Docs
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../apps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Django Apps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runners/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runners
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../microservices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Microservices
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RBAC & Tenancy
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RBAC & Tenancy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#two-layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two Layers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tenancy-organizations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tenancy — organizations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tenancy — organizations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#url-resolution-organizationmiddleware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        URL Resolution — OrganizationMiddleware
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-scoping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Scoping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permissions-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions — permissions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Permissions — permissions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#seeded-roles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seeded Roles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#granularity-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Granularity Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enforcement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enforcement
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#groups-form-access-permissions-continued" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Groups &amp; Form Access — permissions (continued)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authentication-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication Tokens
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authentication Tokens">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#settingsapitoken-user-facing-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        settings.ApiToken — user-facing API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runnersrunnertoken-runner-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        runners.RunnerToken — runner API
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cross-cutting-why-two-token-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-Cutting: Why Two Token Types?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rest-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST APIs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hosting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/forms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subprojects
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subprojects
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/rabbitmq-rest-migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RabbitMQ → REST Migration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_3" id="__nav_6_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Azure Hosting Spike
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Azure Hosting Spike
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/azure-hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/azure-hosting/infra-networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Infra & Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/azure-hosting/terraform-cicd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terraform & CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/azure-hosting/logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/azure-hosting/monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../subprojects/azure-hosting/production-state/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../journal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#two-layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two Layers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tenancy-organizations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tenancy — organizations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tenancy — organizations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#url-resolution-organizationmiddleware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        URL Resolution — OrganizationMiddleware
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-scoping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Scoping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permissions-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions — permissions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Permissions — permissions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#seeded-roles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seeded Roles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#granularity-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Granularity Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enforcement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enforcement
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#groups-form-access-permissions-continued" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Groups &amp; Form Access — permissions (continued)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authentication-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication Tokens
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authentication Tokens">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#settingsapitoken-user-facing-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        settings.ApiToken — user-facing API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runnersrunnertoken-runner-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        runners.RunnerToken — runner API
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cross-cutting-why-two-token-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-Cutting: Why Two Token Types?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="rbac-multi-tenancy">RBAC &amp; Multi-Tenancy<a class="headerlink" href="#rbac-multi-tenancy" title="Permanent link">&para;</a></h1>
+<p>Bentra is multi-tenant by construction. Every resource is scoped to an <code>Organization</code>, and within an org, access is gated by a permission system in the <code>permissions</code> app.</p>
+<h2 id="two-layers">Two Layers<a class="headerlink" href="#two-layers" title="Permanent link">&para;</a></h2>
+<p>There are <strong>two orthogonal layers</strong> of access control:</p>
+<ol>
+<li><strong>Org membership</strong> (<code>organizations.OrganizationMembership</code>) — gatekeeps entry to the org at all. If you're not a member, URL resolution for <code>/orgs/{slug}/...</code> raises <code>PermissionDenied</code>.</li>
+<li><strong>Permissions</strong> (<code>permissions.RoleAssignment</code>) — fine-grained per-resource permissions inside an org. Enforced by <code>@require_permission</code> decorators on views and by <code>get_accessible_*</code> helpers on querysets.</li>
+</ol>
+<h2 id="tenancy-organizations">Tenancy — <code>organizations</code><a class="headerlink" href="#tenancy-organizations" title="Permanent link">&para;</a></h2>
+<h3 id="model">Model<a class="headerlink" href="#model" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Organization (id, name, slug)
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    ↕ FK on every domain model
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>OrganizationMembership (user, organization, role)
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    role ∈ {owner, admin, member}
+</code></pre></div>
+<p>The <code>role</code> field on <code>OrganizationMembership</code> is used only by org-admin flows (like kicking members) and is <strong>not</strong> the RBAC system. The RBAC system lives in the <code>permissions</code> app and assigns <em>Roles</em> that carry <em>permission strings</em>.</p>
+<h3 id="url-resolution-organizationmiddleware">URL Resolution — <code>OrganizationMiddleware</code><a class="headerlink" href="#url-resolution-organizationmiddleware" title="Permanent link">&para;</a></h3>
+<p>Installed in <code>MIDDLEWARE</code> after <code>AuthenticationMiddleware</code>. Runs on every request:</p>
+<ol>
+<li>Set <code>request.organization = None</code>.</li>
+<li>If path is <code>/orgs/</code> or <code>/orgs/</code> (trailing slash variants), bypass.</li>
+<li>If path starts with <code>/accounts/</code>, <code>/static/</code>, <code>/orgs/new</code>, or <code>/api/me/</code>, bypass.</li>
+<li>Match <code>/orgs/{slug}/</code>:</li>
+<li>Look up the org by slug. Missing → <code>Http404</code>.</li>
+<li>If user is authenticated and not a superuser, check membership. Non-member → <code>PermissionDenied</code>.</li>
+<li>Attach <code>request.organization</code>.</li>
+</ol>
+<p>The <strong>runner API</strong> (<code>/api/v1/runner/</code>) is mounted at root, outside <code>/orgs/{slug}/</code>, so it bypasses this middleware. Runner org resolution is done entirely from the bearer token in <code>RunnerTokenAuthentication</code>.</p>
+<h3 id="data-scoping">Data Scoping<a class="headerlink" href="#data-scoping" title="Permanent link">&para;</a></h3>
+<p>Every domain model carries an <code>organization</code> FK. Queries must filter on it, either directly or via the RBAC helpers. Examples of apps that do this correctly:</p>
+<ul>
+<li><code>permissions.services.get_accessible_workflows(user, org)</code> returns only workflows in <code>org</code> that <code>user</code> has <code>workflow.view</code> on.</li>
+<li><code>permissions.services.get_accessible_deployments(user, org)</code> is the equivalent for deployments.</li>
+<li><code>api.views.WorkflowViewSet.get_queryset</code> calls <code>get_accessible_workflows(self.request.user, self.request.organization)</code>.</li>
+</ul>
+<h2 id="permissions-permissions">Permissions — <code>permissions</code><a class="headerlink" href="#permissions-permissions" title="Permanent link">&para;</a></h2>
+<h3 id="constants">Constants<a class="headerlink" href="#constants" title="Permanent link">&para;</a></h3>
+<p>Lives in <code>permissions/constants.py</code>. Each permission is a dotted string like <code>workflow.view</code> or <code>org.manage_connectors</code>.</p>
+<p><strong>Organization scope</strong> (<code>ALL_ORG_PERMISSIONS</code>):</p>
+<ul>
+<li><code>org.manage_settings</code></li>
+<li><code>org.manage_members</code></li>
+<li><code>org.manage_groups</code></li>
+<li><code>org.view_members</code></li>
+<li><code>org.create_workflow</code></li>
+<li><code>org.view_connectors</code></li>
+<li><code>org.manage_connectors</code></li>
+<li><code>org.view_variable_collections</code></li>
+<li><code>org.manage_variable_collections</code></li>
+</ul>
+<p><strong>Workflow scope</strong> (<code>ALL_WORKFLOW_PERMISSIONS</code>):</p>
+<ul>
+<li><code>workflow.view</code></li>
+<li><code>workflow.edit</code></li>
+<li><code>workflow.delete</code></li>
+<li><code>workflow.manage_permissions</code></li>
+<li><code>workflow.execute</code></li>
+<li><code>workflow.manage_form_settings</code></li>
+<li><code>workflow.manage_variables</code></li>
+</ul>
+<p><strong>Deployment scope</strong> (<code>ALL_DEPLOYMENT_PERMISSIONS</code>):</p>
+<ul>
+<li><code>deployment.view</code></li>
+<li><code>deployment.manage</code></li>
+<li><code>deployment.manage_permissions</code></li>
+</ul>
+<h3 id="seeded-roles">Seeded Roles<a class="headerlink" href="#seeded-roles" title="Permanent link">&para;</a></h3>
+<p>Roles are seeded (<code>is_system=True</code>) from <code>SEEDED_ROLES</code> in <code>constants.py</code>. Each role is <code>(name, scope, permissions, description)</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Scope</th>
+<th>Name</th>
+<th>Permissions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>organization</td>
+<td><code>admin</code></td>
+<td>all org perms</td>
+</tr>
+<tr>
+<td>organization</td>
+<td><code>user</code></td>
+<td><code>create_workflow</code>, <code>view_connectors</code>, <code>view_variable_collections</code>, <code>view_members</code></td>
+</tr>
+<tr>
+<td>workflow</td>
+<td><code>admin</code></td>
+<td>all workflow perms</td>
+</tr>
+<tr>
+<td>workflow</td>
+<td><code>writer</code></td>
+<td><code>view</code>, <code>edit</code>, <code>execute</code>, <code>manage_form_settings</code>, <code>manage_variables</code></td>
+</tr>
+<tr>
+<td>workflow</td>
+<td><code>reader</code></td>
+<td><code>view</code></td>
+</tr>
+<tr>
+<td>deployment</td>
+<td><code>admin</code></td>
+<td>all deployment perms</td>
+</tr>
+<tr>
+<td>deployment</td>
+<td><code>writer</code></td>
+<td><code>view</code>, <code>manage</code></td>
+</tr>
+<tr>
+<td>deployment</td>
+<td><code>reader</code></td>
+<td><code>view</code></td>
+</tr>
+</tbody>
+</table>
+<p>User-defined roles can be added too (with <code>is_system=False</code>).</p>
+<h3 id="models">Models<a class="headerlink" href="#models" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Role (name, scope, permissions: JSON list, is_system)
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  (name, scope) unique
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>RoleAssignment (user, role, organization, workflow?, deployment?)
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  - organization always required
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>  - workflow required for workflow/deployment scopes
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>  - deployment required only for deployment scope
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>  - check constraint: deployment requires workflow
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>  - clean() validates scope matches which FKs are set
+</code></pre></div>
+<h3 id="granularity-example">Granularity Example<a class="headerlink" href="#granularity-example" title="Permanent link">&para;</a></h3>
+<p>User Alice is:</p>
+<ul>
+<li>An <strong>org admin</strong> at Acme Corp → one <code>RoleAssignment</code> with <code>role=(admin, organization)</code>, <code>organization=Acme</code>, <code>workflow=null</code>, <code>deployment=null</code>.</li>
+<li>A <strong>workflow writer</strong> on the "deploy-api" workflow → one <code>RoleAssignment</code> with <code>role=(writer, workflow)</code>, <code>organization=Acme</code>, <code>workflow=deploy-api</code>, <code>deployment=null</code>.</li>
+<li>A <strong>deployment reader</strong> on a specific deploy-api deployment → one <code>RoleAssignment</code> with <code>role=(reader, deployment)</code>, <code>organization=Acme</code>, <code>workflow=deploy-api</code>, <code>deployment=&lt;uuid&gt;</code>.</li>
+</ul>
+<p>She inherits every permission in the union of those roles.</p>
+<h3 id="enforcement">Enforcement<a class="headerlink" href="#enforcement" title="Permanent link">&para;</a></h3>
+<p><strong>View-level</strong> — <code>@require_permission</code> decorator:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">permissions.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">require_permission</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">permissions.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">DEPLOYMENT_VIEW</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nd">@login_required</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nd">@require_permission</span><span class="p">(</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">DEPLOYMENT_VIEW</span><span class="p">,</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">resource_kwarg</span><span class="o">=</span><span class="s2">&quot;deployment_id&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">resource_type</span><span class="o">=</span><span class="s2">&quot;deployment&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="p">)</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="k">def</span><span class="w"> </span><span class="nf">deployment_detail</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="o">...</span>
+</code></pre></div>
+<p>The decorator:</p>
+<ol>
+<li>Resolves the resource via <code>resource_kwarg</code> + <code>resource_type</code>.</li>
+<li>Calls <code>has_permission(user, organization, permission, resource)</code>.</li>
+<li>Raises <code>PermissionDenied</code> on failure.</li>
+</ol>
+<p><strong>Queryset-level</strong> — <code>get_accessible_*</code> helpers:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">permissions.services</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_accessible_workflows</span><span class="p">,</span> <span class="n">get_accessible_deployments</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">workflows</span>   <span class="o">=</span> <span class="n">get_accessible_workflows</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">organization</span><span class="p">)</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">deployments</span> <span class="o">=</span> <span class="n">get_accessible_deployments</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">organization</span><span class="p">)</span>
+</code></pre></div>
+<p>These return filtered querysets limited to resources the user has at least <code>view</code> permission on. Used by list views and the DRF viewsets.</p>
+<p><strong>Template-level</strong> — <code>has_permission()</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">permissions.services</span><span class="w"> </span><span class="kn">import</span> <span class="n">has_permission</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">permissions.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">WORKFLOW_EDIT</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="k">if</span> <span class="n">has_permission</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">organization</span><span class="p">,</span> <span class="n">WORKFLOW_EDIT</span><span class="p">,</span> <span class="n">workflow</span><span class="p">):</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">show_edit_button</span> <span class="o">=</span> <span class="kc">True</span>
+</code></pre></div>
+<h2 id="groups-form-access-permissions-continued">Groups &amp; Form Access — <code>permissions</code> (continued)<a class="headerlink" href="#groups-form-access-permissions-continued" title="Permanent link">&para;</a></h2>
+<p>Groups are a lighter-weight mechanism for gating <strong>form access</strong> specifically.</p>
+<ul>
+<li><strong><code>Group</code></strong> — org-scoped, <code>(organization, name)</code> unique.</li>
+<li><strong><code>GroupMember</code></strong> — users in a group. <code>(group, user)</code> unique.</li>
+<li><strong><code>GroupOwner</code></strong> — users who can manage the group.</li>
+<li><strong><code>FormAccessRestriction</code></strong> — <code>(form, group)</code> unique. <strong>If any rows exist for a form, only users in those groups can access it.</strong> No rows = all org members can access.</li>
+</ul>
+<p>Groups don't grant permissions per se — they only gate form visibility. RBAC roles control everything else.</p>
+<h2 id="authentication-tokens">Authentication Tokens<a class="headerlink" href="#authentication-tokens" title="Permanent link">&para;</a></h2>
+<p>Two separate bearer-token systems, each with its own auth class:</p>
+<h3 id="settingsapitoken-user-facing-api"><code>settings.ApiToken</code> — user-facing API<a class="headerlink" href="#settingsapitoken-user-facing-api" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Created by a user from the Settings UI, scoped to their org + a permission-scope list (<code>read:workflows</code>, <code>read:deployments</code>).</li>
+<li>SHA-256 hash stored; plaintext returned <strong>once</strong>.</li>
+<li><code>token_urlsafe(48)</code> raw form; first 12 chars stored as <code>token_prefix</code> for cheap lookups.</li>
+<li>Default 90-day expiry.</li>
+<li>Authenticated via <code>api/authentication.py::ApiTokenAuthentication</code> — also validates that the token's org matches <code>request.organization</code> (from the URL slug). Cross-org usage is rejected even if the token hash matches.</li>
+</ul>
+<h3 id="runnersrunnertoken-runner-api"><code>runners.RunnerToken</code> — runner API<a class="headerlink" href="#runnersrunnertoken-runner-api" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Created by an org admin from the Runners Settings UI, bound to a specific <code>RunnerPool</code>.</li>
+<li>SHA-256 hash stored; plaintext <code>rnr_{prefix}_{hex}</code> returned once.</li>
+<li>Authenticated via <code>runners/authentication.py::RunnerTokenAuthentication</code> — returns a <code>RunnerUser</code> proxy (not a Django User) exposing <code>.organization</code> and <code>.pool</code>.</li>
+<li>No URL-based org check (runner API is not <code>/orgs/{slug}/</code>); org comes entirely from the token.</li>
+</ul>
+<h2 id="cross-cutting-why-two-token-types">Cross-Cutting: Why Two Token Types?<a class="headerlink" href="#cross-cutting-why-two-token-types" title="Permanent link">&para;</a></h2>
+<p>They serve different trust models:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><code>ApiToken</code></th>
+<th><code>RunnerToken</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Subject</td>
+<td>A user</td>
+<td>A machine</td>
+</tr>
+<tr>
+<td>Scoped to</td>
+<td>User + Org + permission list</td>
+<td>Org + Pool</td>
+</tr>
+<tr>
+<td>Lives where</td>
+<td>On developer laptop / CI</td>
+<td>In a Docker container / K8s secret</td>
+</tr>
+<tr>
+<td>Authorization</td>
+<td>DRF permissions + RBAC helpers</td>
+<td>Pool isolation in the query</td>
+</tr>
+<tr>
+<td>Expiry default</td>
+<td>90 days</td>
+<td>none by default</td>
+</tr>
+<tr>
+<td>Returned as</td>
+<td><code>rest_framework.User</code> (the owner)</td>
+<td><code>RunnerUser</code> proxy</td>
+</tr>
+</tbody>
+</table>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>┌─────────────────────────────────────────────────────────────┐
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>│ OrganizationMiddleware                                      │
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>│   /orgs/{slug}/ → resolves slug → request.organization      │
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>│   membership check → 404 or PermissionDenied on miss        │
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>└─────────────────────────────────────────────────────────────┘
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>                          │
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>           ┌──────────────┼──────────────┐
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>           │                             │
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    ┌──────▼──────┐                ┌─────▼──────┐
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>    │ Session auth│                │ApiToken    │
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    │ (web UI)    │                │(API tokens)│
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>    └──────┬──────┘                └─────┬──────┘
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>           │                             │
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>           └──────────────┬──────────────┘
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>                          │
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>                 ┌────────▼────────┐
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>                 │ @require_       │
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>                 │   permission    │  ← RBAC check
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>                 │ get_accessible_*│
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>                 └─────────────────┘
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>        ─────────────  (separate surface)  ─────────────
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>┌─────────────────────────────────────────────────────────────┐
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a>│ /api/v1/runner/...                                          │
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a>│   RunnerTokenAuthentication                                 │
+<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a>│     → token.organization, token.pool                        │
+<a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a>│     → queries filter by org + pool; no middleware           │
+<a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a>└─────────────────────────────────────────────────────────────┘
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "toc.follow", "content.code.copy", "search.highlight", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
