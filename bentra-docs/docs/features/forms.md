@@ -185,6 +185,34 @@ Group of radio buttons for single selection.
     required: false
 ```
 
+### Tags
+
+Editable set of unique key/value pairs, submitted as a JSON object (`{key: value, ...}`). Renders the same tagging widget used for workflow tags (Workflow Settings → General → Tags).
+
+```yaml
+- type: tags
+  id: resource_tags
+  attributes:
+    label: Resource Tags
+    description: Add labels for cost tracking
+    key_placeholder: key
+    value_placeholder: value
+    max_pairs: 10
+    default:
+      environment: dev
+      owner: platform-team
+  validations:
+    required: false
+    min_selections: 0    # minimum number of pairs
+    max_selections: 10   # maximum number of pairs
+    key_pattern: "^[a-z][a-z0-9_-]*$"   # regex each key must match
+    value_pattern: null                 # regex each value must match
+```
+
+The end user can freely add, edit, or remove pairs — including the ones the YAML author set as defaults; defaults are just a starting point, the same way `attributes.default` works for every other field type.
+
+See [Tags Field Cross-Reference](#option-7-tags-field-cross-reference) for how a tags field's entries can reference other fields, and vice versa.
+
 ---
 
 ## Common Properties
@@ -446,6 +474,39 @@ def calculate(form_data, params):
     total = (instance_cost + storage_cost) * (1 + params['tax_rate'])
     return f"{total:.2f} {params['currency']}"
 ```
+
+#### Option 7: Tags Field Cross-Reference
+
+Extends the template string syntax from [Option 2](#option-2-template-string-simple-concatenation) with a dotted path, `{tags_id.key}`, to reference a single entry of a [tags field's](#tags) value. This works in both directions: a tags field's own default entries can reference other fields, and other fields can pull a specific tag back out.
+
+**A tag's default value referencing another field:**
+
+```yaml
+- type: input
+  id: aws_region
+  attributes:
+    default: us-east-1
+- type: tags
+  id: env_tags
+  attributes:
+    default:
+      region: "{aws_region}"   # resolved from aws_region's value
+```
+
+**Another field reading a specific tag's value:**
+
+```yaml
+- type: textarea
+  id: summary
+  dynamic:
+    auto_populate: "Deploying to {env_tags.region}"
+    depends_on: ["env_tags"]
+```
+
+**Notes:**
+- If the referenced tag key doesn't exist, `{tags_id.key}` resolves to an empty string rather than erroring.
+- A tags field's own default entries can only reference non-tags fields — they cannot reference another tags field's resolved values.
+- `depends_on` must list the tags field's id for the dependent field to recalculate when tags are edited.
 
 ### Dynamic Options
 
@@ -780,6 +841,7 @@ body:
 8. **Use computed fields sparingly**: Only mark fields as computed when users should never edit them manually
 9. **Optimize API calls**: For options_loader with API type, consider caching strategies to avoid excessive API requests
 10. **Document custom scripts**: When using external validators or option loaders, document their expected behavior
+11. **Prefer tags over ad-hoc inputs**: Use a `tags` field instead of multiple `input` fields when collecting an open-ended set of labels; use `key_pattern` to keep keys machine-safe
 
 ---
 
@@ -804,6 +866,11 @@ body:
 - Check template strings use correct field IDs: `{field_id}`
 - Ensure `depends_on` includes all referenced fields
 - Verify referenced fields have values before auto-population
+
+### Tags Not Submitting Correctly
+- Duplicate keys are last-write-wins — the widget only keeps one entry per key
+- A dotted reference (`{tags_id.key}`) to a key that doesn't exist resolves to an empty string rather than erroring
+- `min_selections`/`max_selections` on a `tags` field count key/value pairs, not characters
 
 ---
 
