@@ -3,7 +3,6 @@
 How workflow jobs get from a `QUEUED` deployment to a completed run. This is the post-REST-migration model (2026-04-23).
 
 !!! note "Related"
-    - [RabbitMQ → REST Migration](../subprojects/rabbitmq-rest-migration.md) — the subproject that delivered this architecture.
     - [REST API](rest-api.md) — full endpoint reference.
 
 ## What a Runner Is
@@ -11,7 +10,7 @@ How workflow jobs get from a `QUEUED` deployment to a completed run. This is the
 A **runner** is a Docker container running outside Bentra's control plane, deployed in the customer's environment. It:
 
 - Has a **`RunnerToken`** (format: `rnr_{prefix}_{hex}`) that authenticates it to a specific `RunnerPool` in a specific org.
-- Makes **outbound HTTPS calls only** — port 443. No inbound ports, no AMQP, no special firewall rules.
+- Makes **outbound HTTPS calls only** — port 443. No inbound ports, no special firewall rules.
 - Is stateless — holds no state the control plane doesn't already have.
 - Runs one job at a time (typical), scaling horizontally to handle concurrent deployments.
 
@@ -272,7 +271,7 @@ The runner container is not part of this repo (lives in `bento-kubernetes-deploy
 
 ## Operational Notes
 
-**No heartbeat yet.** A stale-job reaper (to recover from crashed runners) is a roadmap item — see [RabbitMQ → REST Migration § Deferred](../subprojects/rabbitmq-rest-migration.md#deferred).
+**No heartbeat yet.** A stale-job reaper (to recover from crashed runners) is a roadmap item.
 
 **Polling cadence.** Configurable via Django settings:
 

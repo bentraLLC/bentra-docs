@@ -1,7 +1,7 @@
 # Azure Hosting Spike
 
 !!! info "Status — Active (unblocked 2026-04-23)"
-    Resumed 2026-04-15. The RabbitMQ dependency was removed via the [REST migration](../rabbitmq-rest-migration.md); architecture now assumes **port 443 only** for runner connectivity.
+    Resumed 2026-04-15. The architecture assumes **port 443 only** for runner connectivity.
 
 ## Description
 

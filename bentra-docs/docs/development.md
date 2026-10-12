@@ -174,5 +174,3 @@ kill -9 <PID>
 **OpenBao `Failed setup connection`** — either start OpenBao, or export `OPENBAO_SKIP_AUTH_CHECK=1` to bypass the startup check.
 
 **Migration conflicts** — `python bento/manage.py showmigrations` to see state; `--fake` individual migrations if needed.
-
-**`pika` import errors** — `pika` was removed when RabbitMQ went away. If something references it, the code hasn't caught up with the REST migration yet.

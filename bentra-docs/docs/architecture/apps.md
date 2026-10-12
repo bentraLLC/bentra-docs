@@ -283,7 +283,7 @@ New app (added with the REST migration). Owns runner pool management, runner aut
 | `RunCompleteView` | `POST /api/v1/runner/runs/{job_id}/complete/` | Finalizes run: updates `DeploymentRun`, `Deployment`, `WorkflowExecution`, and linked `Request`. |
 | `ConnectorTokenView` | `GET /api/v1/runner/connectors/{connector_id}/token/` | Mid-run: mints/fetches a VCS token (PAT from OpenBao, or a short-lived GitHub App installation token). |
 
-**Claim query** (important detail) — uses `select_for_update(skip_locked=True, of=("self",))` scoped to deployments in the runner's org, where either `runner_pool = runner.pool` OR (`runner_pool IS NULL` AND the runner's pool is the org default). The `of=("self",)` was required because `select_for_update` across nullable joins is broken on PostgreSQL (see [Journal](../journal.md#2026-04-23-rabbitmq-rest-migration-completed)).
+**Claim query** (important detail) — uses `select_for_update(skip_locked=True, of=("self",))` scoped to deployments in the runner's org, where either `runner_pool = runner.pool` OR (`runner_pool IS NULL` AND the runner's pool is the org default). The `of=("self",)` was required because `select_for_update` across nullable joins is broken on PostgreSQL (see [Journal](../journal.md#2026-04-23-rest-runner-api-completed)).
 
 **Services** (`runners/services.py`):
 

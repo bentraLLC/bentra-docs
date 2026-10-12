@@ -21,7 +21,7 @@ Django-based infrastructure workflow automation platform. Converts complex infra
 - Multi-tenant RBAC architecture
 
 !!! info "Current Status"
-    Active development. The **RabbitMQ → REST API migration** was completed on **2026-04-23**, which unblocks the **Azure Hosting Spike** (runners now connect outbound on port 443 only).
+    Active development. Runners talk to the control plane over the REST runner API (outbound port 443 only), which unblocks the **Azure Hosting Spike**.
 
     Next up: resume the [Azure Hosting Spike](subprojects/azure-hosting/index.md).
 

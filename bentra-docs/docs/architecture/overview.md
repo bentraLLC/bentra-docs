@@ -1,6 +1,6 @@
 # System Overview
 
-Bentra is a Django control plane with a sidecar script executor and a fleet of external runners. This page describes how the pieces fit together after the [RabbitMQ → REST migration](../subprojects/rabbitmq-rest-migration.md) (2026-04-23).
+Bentra is a Django control plane with a sidecar script executor and a fleet of external runners. This page describes how the pieces fit together.
 
 ## High-Level Architecture
 
@@ -143,4 +143,4 @@ Every user-facing URL is scoped to an organization via slug:
 
 - **Not a runner** — Bentra does not execute Terraform/OpenTofu itself. Runners do, in the customer's environment.
 - **Not a secret store** — Bentra proxies to OpenBao; it never persists plaintext secrets in its own DB.
-- **Not a queue broker** — after the REST migration, there is no RabbitMQ. Jobs live in Postgres; runners poll.
+- **Not a queue broker** — jobs live in Postgres; runners poll.

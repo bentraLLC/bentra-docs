@@ -66,7 +66,6 @@ nav:
       - Forms: features/forms.md
   - Subprojects:
       - Overview: subprojects/index.md
-      - RabbitMQ → REST Migration: subprojects/rabbitmq-rest-migration.md
       - Azure Hosting Spike:
           - Overview: subprojects/azure-hosting/index.md
           - Infra & Networking: subprojects/azure-hosting/infra-networking.md

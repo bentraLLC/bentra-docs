@@ -43,7 +43,7 @@ See [area page](subprojects/azure-hosting/logging.md).
 - [ ] Decide log aggregation tool (Azure Log Analytics vs. third-party e.g. Grafana Loki)
 - [ ] Configure Container Apps to emit structured logs to chosen backend
 - [ ] Define log retention policy (cost vs. debuggability tradeoff)
-- [ ] Verify workflow execution logs flow correctly in new architecture (no RabbitMQ log consumer)
+- [ ] Verify workflow execution logs flow correctly through the REST runner API
 - [ ] Make logs queryable — define key queries for debugging common issues
 
 ## Monitoring

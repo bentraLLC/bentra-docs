@@ -26,12 +26,11 @@ Supporting services:
 - Runners connect **outbound only** to Bentra's REST API over HTTPS (port 443)
 - Per-org authentication / isolation enforced at the API layer
 
-!!! success "Unblocked after RabbitMQ removal"
-    The prior design required runners to connect outbound on AMQPS (port 5671), which created firewall friction for customers. The [RabbitMQ → REST migration](../subprojects/rabbitmq-rest-migration.md) replaced all four RabbitMQ patterns with REST, so runners now need port 443 only.
+!!! success "Runners need port 443 only"
+    Runners poll the control plane over HTTPS, so customers need no inbound ports or special firewall rules.
 
 ## What to Test
 
-- [ ] RabbitMQ persistence across container restarts with Azure Files mount — _(no longer applicable; RabbitMQ removed)_
 - [ ] Django Container App cold start time with gunicorn (min-replicas: 1 should avoid this)
 - [ ] Long-running consumer containers stay alive without health check issues
 - [ ] OpenBao token auth from runners over public HTTPS endpoint

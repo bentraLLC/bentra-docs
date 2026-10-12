@@ -4,7 +4,7 @@ Bentra's control plane is a Django web app, but it doesn't run alone. This page 
 
 ## Processes to Start (Local Dev)
 
-After the [RabbitMQ → REST migration](../subprojects/rabbitmq-rest-migration.md), the minimum set of processes for a functional dev environment is:
+The minimum set of processes for a functional dev environment is:
 
 | Process | Port | Required | What it is |
 |---|---|---|---|
@@ -13,9 +13,6 @@ After the [RabbitMQ → REST migration](../subprojects/rabbitmq-rest-migration.m
 | **OpenBao** | 8200 | yes* | Vault-compatible KV store for secrets. Can be skipped in tests with `OPENBAO_SKIP_AUTH_CHECK=1`. |
 | **Script Executor** (Flask) | 5001 | optional | Needed only if you're using form auto-populate scripts. |
 | **Runner(s)** | — | optional | External. Poll the Django API for jobs. Not required to browse the UI or make submissions. |
-
-!!! note "Historical note"
-    Before the REST migration, development also required RabbitMQ (ports 5672/15672) plus three long-running Django management commands (`consume_workflow_results`, `consume_workflow_logs`, `consume_vcs_credentials`). All of those are **gone**. Runners now speak REST directly; there are no Django-side consumer sidecars.
 
 ## Django Web App
 
@@ -159,18 +156,6 @@ cd ../bento-kubernetes-deployments/runners
 ```
 
 Runners authenticate using a `RunnerToken` issued from the Settings UI. You do not need runners running to submit forms and see them land in the Deployments UI — the deployment will just stay in `QUEUED`.
-
-## What You Do Not Need to Run
-
-These things were part of the system **pre-migration** but are no longer applicable:
-
-| Gone | Was | Replacement |
-|---|---|---|
-| RabbitMQ broker | Job queue, log transport, RPC | PostgreSQL + HTTPS long-poll |
-| `consume_workflow_results` management command | Drained `bento-results` queue | `POST /api/v1/runner/runs/{job_id}/complete/` handler |
-| `consume_workflow_logs` management command | Drained log exchange | `POST /api/v1/runner/runs/{job_id}/logs/` handler |
-| `consume_vcs_credentials` management command | RPC consumer for VCS tokens | `GET /api/v1/runner/connectors/{id}/token/` handler |
-| `pika` Python library | RabbitMQ client | Removed from `requirements.txt` |
 
 ## Typical Dev Shell Setup
 
