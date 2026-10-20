@@ -38,7 +38,11 @@ markdown_extensions:
   - toc:
       permalink: true
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.highlight:
@@ -61,6 +65,10 @@ nav:
       - RBAC & Tenancy: architecture/rbac.md
       - REST APIs: architecture/rest-api.md
       - Hosting: architecture/hosting.md
+  - Authentication:
+      - How sign-in works: authentication/index.md
+      - Set up SSO: authentication/setup-sso.md
+      - Internals: authentication/internals.md
   - Development: development.md
   - Features:
       - Forms: features/forms.md
