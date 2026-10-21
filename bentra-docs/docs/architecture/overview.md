@@ -110,7 +110,7 @@ Bentra exposes two separate REST surfaces, each with its own authentication sche
 
 ### User-facing API (`api` app)
 
-- **Mount**: `/orgs/{slug}/api/v1/`
+- **Mount**: `/orgs/{org_id}/api/v1/`
 - **Auth**: `Bearer <api-token>` (SHA-256 hashed `ApiToken`, scoped to permissions like `read:workflows`)
 - **Purpose**: Read-only access for integrations (list workflows, list deployments)
 - **Scoped by**: the organization in the URL slug + the token's permissions
@@ -122,19 +122,19 @@ Bentra exposes two separate REST surfaces, each with its own authentication sche
 - **Purpose**: Machine-to-machine job dispatch, log streaming, result ingestion, VCS token fetching
 - **Scoped by**: `organization` + `pool` derived from the token
 
-The runner API intentionally sits **outside** the org-slug middleware — it does not have a `/orgs/{slug}/` prefix. Org resolution is done entirely from the bearer token.
+The runner API intentionally sits **outside** the org middleware — it does not have a `/orgs/{org_id}/` prefix. Org resolution is done entirely from the bearer token.
 
 ## Multi-Tenant Architecture
 
 Every user-facing URL is scoped to an organization via slug:
 
 ```
-/orgs/{slug}/workflows/
-/orgs/{slug}/forms/
-/orgs/{slug}/deployments/
-/orgs/{slug}/settings/
-/orgs/{slug}/variable-collections/
-/orgs/{slug}/api/v1/
+/orgs/{org_id}/workflows/
+/orgs/{org_id}/forms/
+/orgs/{org_id}/deployments/
+/orgs/{org_id}/settings/
+/orgs/{org_id}/variable-collections/
+/orgs/{org_id}/api/v1/
 ```
 
 `OrganizationMiddleware` resolves `{slug}` → `request.organization`, checks membership, and 404s on unknown slugs. All data models carry an `organization` FK, and queries must filter on it (directly or through RBAC helpers like `get_accessible_workflows`).

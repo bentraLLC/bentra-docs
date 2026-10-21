@@ -52,7 +52,7 @@ Foundation of Bentra's multi-tenancy.
 
 - **`Organization`** — UUID pk, `name`, `slug` (unique). All domain models have an `organization` FK.
 - **`OrganizationMembership`** — Links `User` ↔ `Organization` with a role: `owner`, `admin`, `member`.
-- **`OrganizationMiddleware`** — Matches `/orgs/{slug}/` in the URL, loads the org, checks membership, and attaches `request.organization`. Bypasses `/accounts/`, `/static/`, `/orgs/new`, `/api/me/`. Returns 404 for unknown slugs and raises `PermissionDenied` if the user isn't a member.
+- **`OrganizationMiddleware`** — Matches `/orgs/{org_id}/` in the URL, loads the org, checks membership, and attaches `request.organization`. Bypasses `/accounts/`, `/static/`, `/orgs/new`, `/api/me/`. Returns 404 for unknown slugs and raises `PermissionDenied` if the user isn't a member.
 
 URL structure exported via `organizations.urls.org_app_patterns` — this is what ``bento/urls.py`` mounts under `re_path(r"^orgs/(?:[\w-]+)/", ...)`.
 
@@ -226,7 +226,7 @@ Org-level configuration: VCS connectors and API tokens.
 - **`VCSConnector`** — one per VCS provider + auth combo. `vcs_type` (`github`), `auth_type` (`pat` or `github_app`), `client_id` (GitHub App ID), `owner`, `openbao_secret_path`. Plaintext tokens live in OpenBao.
 - **`ApiToken`** — user-facing API token. Hash stored as SHA-256; raw token returned once via `issue_token()`. Format: `secrets.token_urlsafe(48)`, prefix stored as `token[:12]` for lookup. Scopes stored as a JSONField list (`read:workflows`, `read:deployments`). Default expiry 90 days.
 
-Settings UI at `/orgs/{slug}/settings/` exposes both. Connector auth via OpenBao means the Django DB never holds a GitHub PAT or App key.
+Settings UI at `/orgs/{org_id}/settings/` exposes both. Connector auth via OpenBao means the Django DB never holds a GitHub PAT or App key.
 
 ---
 
@@ -302,7 +302,7 @@ See [Runners](runners.md) for the runner execution model, and [REST API](rest-ap
 
 User-facing DRF API. Minimal today — two read-only list endpoints.
 
-- **Mount**: `/orgs/{slug}/api/v1/` (inside org middleware).
+- **Mount**: `/orgs/{org_id}/api/v1/` (inside org middleware).
 - **Auth**: `ApiTokenAuthentication` → resolves `Bearer <api-token>` → `settings.ApiToken` (hash match). Rejects if token's org doesn't match the URL's org.
 - **Permissions**: `HasTokenScopes` — checks `required_scopes` against `token.scopes`.
 - **Pagination**: `BentoPagination`, page size 25 (`api/pagination.py`).
@@ -316,4 +316,4 @@ User-facing DRF API. Minimal today — two read-only list endpoints.
 
 ## dashboard
 
-Landing page app. Minimal logic — aggregates per-org counts/recent activity for the org's dashboard page. Routed under `/orgs/{slug}/dashboard/`.
+Landing page app. Minimal logic — aggregates per-org counts/recent activity for the org's dashboard page. Routed under `/orgs/{org_id}/dashboard/`.

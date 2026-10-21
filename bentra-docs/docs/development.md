@@ -115,15 +115,15 @@ pre-commit install                          # install git hook
 | `/accounts/login/` | Auth |
 | `/accounts/post-login/` | Post-login redirect (to org selection or last org) |
 | `/orgs/` | Org picker / create |
-| `/orgs/{slug}/workflows/` | Workflow management |
-| `/orgs/{slug}/forms/` | Form definitions |
-| `/orgs/{slug}/requests/` | Request (submission) tracking |
-| `/orgs/{slug}/deployments/` | Deployment tracking + IAC workspace |
-| `/orgs/{slug}/variable-collections/` | Variable collections |
-| `/orgs/{slug}/members/` | Org membership management |
-| `/orgs/{slug}/settings/` | VCS connectors, API tokens, runner tokens |
-| `/orgs/{slug}/dashboard/` | Per-org dashboard |
-| `/orgs/{slug}/api/v1/` | User-facing REST API (API-token auth) |
+| `/orgs/{org_id}/workflows/` | Workflow management |
+| `/orgs/{org_id}/forms/` | Form definitions |
+| `/orgs/{org_id}/requests/` | Request (submission) tracking |
+| `/orgs/{org_id}/deployments/` | Deployment tracking + IAC workspace |
+| `/orgs/{org_id}/variable-collections/` | Variable collections |
+| `/orgs/{org_id}/members/` | Org membership management |
+| `/orgs/{org_id}/settings/` | VCS connectors, API tokens, runner tokens |
+| `/orgs/{org_id}/dashboard/` | Per-org dashboard |
+| `/orgs/{org_id}/api/v1/` | User-facing REST API (API-token auth) |
 | `/api/v1/runner/` | Runner REST API (runner-token auth) |
 | `/admin/` | Django admin |
 
@@ -155,7 +155,7 @@ From a fresh database:
 2. `createsuperuser` — you'll be a superuser, which bypasses org membership checks.
 3. Log in at `/accounts/login/`, create an org at `/orgs/new/`.
 4. Join the org (superusers are auto-granted access; regular users need an `OrganizationMembership`).
-5. Add a VCS connector at `/orgs/{slug}/settings/` — choose GitHub, paste a PAT or upload a GitHub App private key.
+5. Add a VCS connector at `/orgs/{org_id}/settings/` — choose GitHub, paste a PAT or upload a GitHub App private key.
 6. Create a workflow — Bentra will seed `.bento/form/form.yml` + `.bento/workflow/workflow.yml` in the target repo.
 7. Submit the form → a `Request` is created → if approvers aren't required, a `Deployment` is queued immediately.
 8. Issue a `RunnerToken` in the Settings UI, deploy a runner container with that token, and watch the deployment move through `QUEUED → RUNNING → SUCCESS`.

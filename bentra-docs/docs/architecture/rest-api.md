@@ -4,7 +4,7 @@ Bentra exposes two distinct REST surfaces. They have different mount points, dif
 
 | API | Mount | Auth class | Consumer |
 |---|---|---|---|
-| [User-facing API](#user-facing-api) | `/orgs/{slug}/api/v1/` | `ApiTokenAuthentication` | Developer tools / integrations |
+| [User-facing API](#user-facing-api) | `/orgs/{org_id}/api/v1/` | `ApiTokenAuthentication` | Developer tools / integrations |
 | [Runner API](#runner-api) | `/api/v1/runner/` | `RunnerTokenAuthentication` | Runner containers |
 
 Both are Django REST Framework.
@@ -41,7 +41,7 @@ Known scopes:
 
 ### Endpoints
 
-#### `GET /orgs/{slug}/api/v1/workflows/`
+#### `GET /orgs/{org_id}/api/v1/workflows/`
 
 Lists workflows accessible to the token's user, ordered by `-created_at`.
 
@@ -62,7 +62,7 @@ Response (paginated):
 }
 ```
 
-#### `GET /orgs/{slug}/api/v1/deployments/`
+#### `GET /orgs/{org_id}/api/v1/deployments/`
 
 Lists deployments accessible to the token's user, ordered by `-created_at`.
 
@@ -93,7 +93,7 @@ Authorization: Bearer rnr_{8-hex-prefix}_{32-hex-random}
 3. Updates `last_used_at`.
 4. Returns a `RunnerUser` proxy with `.organization`, `.pool`, `.runner_token`, `.is_authenticated = True`. **Not** a Django `User`.
 
-All runner endpoints use this auth class + `IsAuthenticated` permission. No org middleware involved — the URL pattern `/api/v1/runner/...` is rooted outside `/orgs/{slug}/`.
+All runner endpoints use this auth class + `IsAuthenticated` permission. No org middleware involved — the URL pattern `/api/v1/runner/...` is rooted outside `/orgs/{org_id}/`.
 
 ### Endpoints
 
@@ -261,14 +261,14 @@ org_app_patterns = [
 
 So:
 
-- `/orgs/{slug}/api/v1/workflows/` → user-facing API → requires `ApiToken` with `read:workflows`.
+- `/orgs/{org_id}/api/v1/workflows/` → user-facing API → requires `ApiToken` with `read:workflows`.
 - `/api/v1/runner/jobs/next/` → runner API → requires `RunnerToken`.
 
 ## Differences at a Glance
 
 | | User-facing API | Runner API |
 |---|---|---|
-| Mount | `/orgs/{slug}/api/v1/` | `/api/v1/runner/` |
+| Mount | `/orgs/{org_id}/api/v1/` | `/api/v1/runner/` |
 | Org context from | URL slug (+ middleware) | Bearer token |
 | Auth | `ApiToken` (user-owned) | `RunnerToken` (machine) |
 | Token format | `token_urlsafe(48)` | `rnr_{hex}_{hex}` |

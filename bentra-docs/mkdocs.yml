@@ -69,6 +69,7 @@ nav:
       - How sign-in works: authentication/index.md
       - Set up SSO: authentication/setup-sso.md
       - Internals: authentication/internals.md
+  - Plans and limits: plans.md
   - Development: development.md
   - Features:
       - Forms: features/forms.md

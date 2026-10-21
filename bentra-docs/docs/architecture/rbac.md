@@ -6,7 +6,7 @@ Bentra is multi-tenant by construction. Every resource is scoped to an `Organiza
 
 There are **two orthogonal layers** of access control:
 
-1. **Org membership** (`organizations.OrganizationMembership`) — gatekeeps entry to the org at all. If you're not a member, URL resolution for `/orgs/{slug}/...` raises `PermissionDenied`.
+1. **Org membership** (`organizations.OrganizationMembership`) — gatekeeps entry to the org at all. If you're not a member, URL resolution for `/orgs/{org_id}/...` raises `PermissionDenied`.
 2. **Permissions** (`permissions.RoleAssignment`) — fine-grained per-resource permissions inside an org. Enforced by `@require_permission` decorators on views and by `get_accessible_*` helpers on querysets.
 
 ## Tenancy — `organizations`
@@ -30,12 +30,12 @@ Installed in `MIDDLEWARE` after `AuthenticationMiddleware`. Runs on every reques
 1. Set `request.organization = None`.
 2. If path is `/orgs/` or `/orgs/` (trailing slash variants), bypass.
 3. If path starts with `/accounts/`, `/static/`, `/orgs/new`, or `/api/me/`, bypass.
-4. Match `/orgs/{slug}/`:
+4. Match `/orgs/{org_id}/`:
    - Look up the org by slug. Missing → `Http404`.
    - If user is authenticated and not a superuser, check membership. Non-member → `PermissionDenied`.
    - Attach `request.organization`.
 
-The **runner API** (`/api/v1/runner/`) is mounted at root, outside `/orgs/{slug}/`, so it bypasses this middleware. Runner org resolution is done entirely from the bearer token in `RunnerTokenAuthentication`.
+The **runner API** (`/api/v1/runner/`) is mounted at root, outside `/orgs/{org_id}/`, so it bypasses this middleware. Runner org resolution is done entirely from the bearer token in `RunnerTokenAuthentication`.
 
 ### Data Scoping
 
@@ -193,7 +193,7 @@ Two separate bearer-token systems, each with its own auth class:
 - Created by an org admin from the Runners Settings UI, bound to a specific `RunnerPool`.
 - SHA-256 hash stored; plaintext `rnr_{prefix}_{hex}` returned once.
 - Authenticated via `runners/authentication.py::RunnerTokenAuthentication` — returns a `RunnerUser` proxy (not a Django User) exposing `.organization` and `.pool`.
-- No URL-based org check (runner API is not `/orgs/{slug}/`); org comes entirely from the token.
+- No URL-based org check (runner API is not `/orgs/{org_id}/`); org comes entirely from the token.
 
 ## Cross-Cutting: Why Two Token Types?
 
@@ -213,7 +213,7 @@ They serve different trust models:
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ OrganizationMiddleware                                      │
-│   /orgs/{slug}/ → resolves slug → request.organization      │
+│   /orgs/{org_id}/ → resolves slug → request.organization      │
 │   membership check → 404 or PermissionDenied on miss        │
 └─────────────────────────────────────────────────────────────┘
                           │

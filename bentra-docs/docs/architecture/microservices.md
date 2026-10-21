@@ -23,7 +23,7 @@ python bento/manage.py runserver
 
 - Entry point: `bento/manage.py`; project settings at `bento/bento/settings.py`.
 - Renders the UI + serves two REST APIs:
-  - **User-facing**: `/orgs/{slug}/api/v1/` (DRF, `ApiTokenAuthentication`)
+  - **User-facing**: `/orgs/{org_id}/api/v1/` (DRF, `ApiTokenAuthentication`)
   - **Runner-facing**: `/api/v1/runner/` (DRF, `RunnerTokenAuthentication`)
 - Uses Django 6.0.1 + DRF 3.16.0.
 - Does **not** run any background threads — the REST migration eliminated the need for in-process consumers. All work is either synchronous request handling or runner-driven.
