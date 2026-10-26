@@ -72,6 +72,9 @@ nav:
       - Set up SSO: authentication/setup-sso.md
       - Internals: authentication/internals.md
   - Plans and limits: plans.md
+  - Runners:
+      - Install a runner: runners/install.md
+      - Network requirements: runners/network.md
   - Development: development.md
   - Reference:
       - Form syntax: reference/form-syntax.md
