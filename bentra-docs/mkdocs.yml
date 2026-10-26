@@ -1,5 +1,6 @@
 site_name: Bentra Docs
 site_description: Process, architecture, and roadmap for Bentra.
+dev_addr: 127.0.0.1:8002
 
 theme:
   name: material
@@ -37,6 +38,7 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
+      toc_depth: 3
   - pymdownx.details
   - pymdownx.superfences:
       custom_fences:
@@ -71,8 +73,23 @@ nav:
       - Internals: authentication/internals.md
   - Plans and limits: plans.md
   - Development: development.md
-  - Features:
-      - Forms: features/forms.md
+  - Reference:
+      - Form syntax: reference/form-syntax.md
+      - Workflow syntax: reference/workflow-syntax.md
+      - API:
+          - Overview: reference/api/index.md
+          - Organization: reference/api/organization.md
+          - Plan and account: reference/api/plan.md
+          - Administration: reference/api/administration.md
+          - Workflows: reference/api/workflows.md
+          - Workflow access: reference/api/workflow-access.md
+          - Files and versions: reference/api/files.md
+          - Variables: reference/api/variables.md
+          - Requests: reference/api/requests.md
+          - Runs: reference/api/runs.md
+          - Job datasets: reference/api/datasets.md
+          - Single sign-on: reference/api/sso.md
+  - MCP server: mcp/index.md
   - Subprojects:
       - Overview: subprojects/index.md
       - Azure Hosting Spike:

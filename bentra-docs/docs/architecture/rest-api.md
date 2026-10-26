@@ -9,6 +9,9 @@ Bentra exposes two distinct REST surfaces. They have different mount points, dif
 
 Both are Django REST Framework.
 
+!!! note "User-facing API reference"
+    The user-facing API is documented endpoint by endpoint in the [API reference](../reference/api/index.md). The section below is an architectural overview and may lag behind it.
+
 ---
 
 ## User-Facing API

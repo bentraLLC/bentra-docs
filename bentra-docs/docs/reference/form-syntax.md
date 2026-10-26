@@ -1,0 +1,587 @@
+# Form syntax for Bentra
+
+A form is a YAML file that defines the input a user fills in when they request a workflow. Bentra renders it as a web form, validates submissions against it (both in the browser and on the server), and passes the submitted values to the workflow's steps.
+
+## About YAML syntax for forms
+
+- Forms live at `.bento/form/form.yml` in the workflow's repository or file set. Only **request**-type workflows have a form.
+- The file is parsed with `yaml.safe_load` and validated against a JSON Schema (`bento/forms/static/forms/schema/form.schema.json`). The schema is the single source of truth for the editor's IntelliSense, server validation, and AI generation.
+- Every object in the schema disallows unknown keys. A typo such as `lable:` is reported as an error with its line number, rather than being silently ignored.
+- A form must be valid before a workflow version can be cut. In the editor you can save an invalid draft only after acknowledging the errors.
+
+!!! note "Removed features"
+    `options_loader`, `validations.validator`, and `auto_populate` with `type: inline` or `type: file` have been removed. Bentra never runs user-supplied scripts in a form. Using any of these produces a dedicated error message.
+
+### Example: a complete form
+
+```yaml
+name: Provision a storage bucket
+description: Creates a bucket in the selected cloud and region.
+body:
+  - type: dropdown
+    id: cloud_provider
+    section: Placement
+    attributes:
+      label: Cloud provider
+      options:
+        - { value: aws, label: AWS }
+        - { value: gcp, label: GCP }
+    validations:
+      required: true
+
+  - type: dropdown
+    id: region
+    section: Placement
+    attributes:
+      label: Region
+    dynamic:
+      depends_on_field: cloud_provider
+      options_map:
+        aws:
+          - { value: us-east-1, label: US East (N. Virginia) }
+          - { value: eu-west-1, label: EU (Ireland) }
+        gcp:
+          - { value: us-central1, label: US Central }
+    validations:
+      required: true
+
+  - type: input
+    id: bucket_name
+    section: Bucket
+    attributes:
+      label: Bucket name
+      placeholder: team-artifacts
+    validations:
+      required: true
+      pattern: "^[a-z0-9-]{3,63}$"
+
+  - type: input
+    id: full_name
+    section: Bucket
+    attributes:
+      label: Resolved name
+    dynamic:
+      auto_populate: "{cloud_provider}-{region}-{bucket_name}"
+      computed: true
+      depends_on: [cloud_provider, region, bucket_name]
+
+  - type: checkboxes
+    id: features
+    section: Options
+    attributes:
+      label: Features
+      options:
+        - { value: versioning, label: Versioning }
+        - { value: encryption, label: Encryption at rest, required: true }
+
+  - type: input
+    id: kms_key
+    section: Options
+    attributes:
+      label: KMS key ARN
+    visibility:
+      condition: "features.includes('encryption') && cloud_provider == 'aws'"
+
+  - type: tags
+    id: labels
+    section: Options
+    attributes:
+      label: Labels
+      default: { team: platform }
+    validations:
+      key_pattern: "^[a-z][a-z0-9_]*$"
+```
+
+---
+
+## `name`
+
+**Required.** The title displayed at the top of the form.
+
+## `description`
+
+**Optional.** An explanation shown under the title. If omitted, it defaults to an empty string. Supports [Markdown](#markdown-in-descriptions).
+
+```yaml
+description: |
+  Request access to engineering systems.
+
+  How this works:
+  1. Tell us who the access is for.
+  2. Pick an access level.
+
+  Read the policy at https://example.com/policies/access before you submit.
+```
+
+### Markdown in descriptions
+
+The form `description` and each field's `attributes.description` are rendered as Markdown:
+
+- Paragraphs: separate them with a blank line.
+- Lists: `-`, `*` or `1.` items. A list can start on the line right after a paragraph, as on GitHub.
+- Links: `[text](https://…)`, and bare `https://` URLs are linked automatically. Links open in a new tab.
+- `**bold**`, `*italic*`, `` `inline code` `` and fenced code blocks.
+- Headings (`#`, `##`, …) render as small subheadings under the form title.
+
+Raw HTML, images and tables are removed.
+
+## `body`
+
+**Required.** An ordered list of fields. Fields render in the order they are listed.
+
+```yaml
+body:
+  - type: input
+    id: service_name
+  - type: textarea
+    id: notes
+```
+
+---
+
+## `body[*].type`
+
+**Required.** The kind of field to render.
+
+| Type | Renders as | Uses `attributes.options` |
+|---|---|---|
+| `input` | A single-line input. See [`input_type`](#bodyattributesinput_type). | No |
+| `textarea` | A multi-line text box | No |
+| `dropdown` | A select, or a multi-select when `multiple: true` | Yes, or `options_from` |
+| `checkboxes` | A group of checkboxes | Yes |
+| `radio` | A group of radio buttons | Yes |
+| `tags` | An editable list of key/value pairs | No |
+
+## `body[*].id`
+
+**Required.** A unique identifier for the field. The id is used in several places:
+
+- **Conditions and dependencies.** It is referenced in `visibility.condition`, `dynamic.depends_on`, and templates such as `{field_id}`.
+- **Workflow inputs.** Workflow steps receive the value as an upper-cased environment variable (`service_name` becomes `$SERVICE_NAME`). See [Workflow syntax → Inputs](workflow-syntax.md#inputs-and-environment-variables).
+
+!!! tip
+    Use `snake_case` ids. Since they become environment variable names, keep them to letters, digits, and underscores.
+
+## `body[*].section`
+
+**Optional.** Groups fields under a header. A section header is shown whenever the `section` value changes between one field and the next, so list the fields of each section consecutively.
+
+```yaml
+- type: input
+  id: app_name
+  section: Application
+- type: input
+  id: owner
+  section: Application
+- type: dropdown
+  id: environment
+  section: Deployment
+```
+
+---
+
+## `body[*].attributes`
+
+**Optional.** Controls how the field looks and behaves. Every key is optional.
+
+### `body[*].attributes.label`
+
+The label displayed for the field. If omitted, a generic label for the field type is used (for example "Text Input" or "Choose an option").
+
+### `body[*].attributes.description`
+
+Help text displayed under the field's label. Supports [Markdown](#markdown-in-descriptions).
+
+### `body[*].attributes.placeholder`
+
+Placeholder text for `input` and `textarea` fields. For `input_type: email` it defaults to `you@example.com`.
+
+### `body[*].attributes.input_type`
+
+`input` fields only. Sets the HTML input type. If the value is missing or unrecognized, a text input is rendered.
+
+| Value | Behavior |
+|---|---|
+| `text` | Plain text (the default) |
+| `email` | Email input; the browser and the server check it looks like `name@domain.tld` |
+| `number` | Numeric input. Supports `validations.min`/`max`/`step` and `attributes.steppers_only`. |
+| `password` | Masked input with a reveal button |
+| `date` | Date picker. Supports `validations.min_date`/`max_date`. |
+
+### `body[*].attributes.default`
+
+The initial value of the field. The type can be string, number, boolean, list, object, or null, and must suit the field type:
+
+- `tags`: an object of key/value pairs, e.g. `{ team: platform }`
+- `dropdown` with `multiple: true`: a list of option values
+
+### `body[*].attributes.readonly`
+
+Boolean. Renders the field as read-only.
+
+### `body[*].attributes.steppers_only`
+
+Boolean. Applies to `input_type: number` fields only. When true, typing is blocked and the value can only be changed with the spinner arrows.
+
+### `body[*].attributes.rows`
+
+Integer. The number of visible rows in a `textarea`. Defaults to `4`.
+
+### `body[*].attributes.multiple`
+
+Boolean. `dropdown` only. When true, the field is a multi-select and it submits a list of values.
+
+### `body[*].attributes.size`
+
+Integer. `dropdown` only. The number of option rows visible in the panel before it scrolls.
+
+### `body[*].attributes.searchable`
+
+Boolean. `dropdown` only. Adds a search box that filters the options. Defaults to `false`.
+
+### `body[*].attributes.options`
+
+The choices for `dropdown`, `checkboxes`, and `radio` fields. Each option is an object with these keys:
+
+| Key | Required | Type | Description |
+|---|---|---|---|
+| `value` | Yes | string, number, or boolean | The value that is submitted |
+| `label` | No | string | The text displayed. Defaults to `value`. |
+| `required` | No | boolean | `checkboxes` only: this box must be checked |
+
+```yaml
+- type: radio
+  id: size
+  attributes:
+    label: Instance size
+    options:
+      - { value: small, label: "Small (2 vCPU)" }
+      - { value: large, label: "Large (8 vCPU)" }
+```
+
+On the server, a submitted value for `dropdown`, `radio`, or `checkboxes` must be one of the listed option values. For cascading dropdowns, the value must be one of the options listed under the parent field's submitted value in `options_map`.
+
+### `body[*].attributes.options_from`
+
+`dropdown`, `checkboxes` and `radio` only. Loads the choices from a dataset that a [job](workflow-syntax.md#outputs) publishes, instead of listing them in `options`.
+
+| Key | Required | Description |
+|---|---|---|
+| `job` | Yes | The slug of the job that publishes the dataset |
+| `dataset` | Yes | The dataset name from the job's `outputs.datasets` |
+| `value` | Yes | The column submitted as the option's value |
+| `label` | No | The column shown as the option's text. Defaults to `value`. |
+| `where` | No | `dropdown` only. A map from column to a literal (string, number or boolean) or to `"{field_id}"`, another field's current value. Only rows that match every entry are offered. |
+
+```yaml
+- type: dropdown
+  id: repository
+  attributes:
+    label: Repository
+    searchable: true
+    options_from:
+      job: org-repository-inventory
+      dataset: repos
+      value: full_name
+      label: name
+      where: {archived: false}
+
+- type: dropdown
+  id: branch
+  attributes:
+    label: Branch
+    options_from:
+      job: org-repository-inventory
+      dataset: branches
+      value: branch
+      where: {repo: "{repository}"}   # cascades from the field above
+```
+
+- The form's workflow needs a **read grant** on the job (the job's Data sharing settings). Without one, the version can't be published.
+- A job that hasn't published the dataset yet is only a warning; the field has no choices until it does.
+- `options_from` can't be combined with `options` or `dynamic.options_map` on the same field.
+- With a `"{field_id}"` filter, the browser re-filters whenever that field changes, the same way `options_map` cascades. The server checks that the submitted value is in a matching row of the current dataset version.
+
+### `body[*].attributes.key_placeholder`
+
+`tags` only. Placeholder text for the key input. Defaults to `key`.
+
+### `body[*].attributes.value_placeholder`
+
+`tags` only. Placeholder text for the value input. Defaults to `value`.
+
+### `body[*].attributes.max_pairs`
+
+`tags` only. An integer or `null`. The maximum number of key/value pairs the user can add in the UI.
+
+!!! warning "Accepted but no effect"
+    The schema accepts `cols` and `render` (`text` or `markdown`), but no template uses them yet.
+
+---
+
+## `body[*].validations`
+
+**Optional.** Rules the value must satisfy. Every key except `required` accepts `null`, which means "no limit". The server skips all validation for a field that is [hidden](#bodyvisibilitycondition).
+
+### `body[*].validations.required`
+
+Boolean. The field must have a value. Empty strings, empty lists, and empty objects count as missing.
+
+### `body[*].validations.min_length`
+
+Integer. The minimum length of the text.
+
+### `body[*].validations.max_length`
+
+Integer. The maximum length of the text.
+
+### `body[*].validations.pattern`
+
+A regex. The value must contain a match, so anchor the pattern with `^…$` if the whole value must match.
+
+```yaml
+validations:
+  pattern: "^[a-z][a-z0-9-]{2,30}$"
+```
+
+### `body[*].validations.min`
+
+Number. The minimum value for `input_type: number`.
+
+### `body[*].validations.max`
+
+Number. The maximum value for `input_type: number`.
+
+### `body[*].validations.step`
+
+Number. The allowed increment for `input_type: number`.
+
+### `body[*].validations.min_date`
+
+A date string (`YYYY-MM-DD`). The earliest date allowed for `input_type: date`.
+
+### `body[*].validations.max_date`
+
+A date string (`YYYY-MM-DD`). The latest date allowed for `input_type: date`.
+
+!!! warning
+    `min_date` and `max_date` are passed straight into the HTML `min` and `max` attributes. Relative values such as `today` or `today+30` don't work here. Use a literal `YYYY-MM-DD` date.
+
+### `body[*].validations.min_selections`
+
+Integer. The minimum number of checked boxes (`checkboxes`) or key/value pairs (`tags`).
+
+### `body[*].validations.max_selections`
+
+Integer. The maximum number of checked boxes (`checkboxes`) or key/value pairs (`tags`).
+
+### `body[*].validations.key_pattern`
+
+`tags` only. A regex that every key must match.
+
+### `body[*].validations.value_pattern`
+
+`tags` only. A regex that every value must match.
+
+### Where each validation is enforced
+
+| Validation | Browser | Server |
+|---|---|---|
+| `required` | Yes | Yes |
+| `min_length`, `max_length`, `pattern` | Yes | Yes |
+| `min`, `max` (number inputs) | Yes | Yes |
+| `step` | Yes | No |
+| `min_date`, `max_date` | Yes | No |
+| `min_selections`, `max_selections` on `checkboxes` / `tags` | Yes | Yes |
+| `min_selections`, `max_selections` on a multi-select `dropdown` | Yes | No |
+| `key_pattern`, `value_pattern` | Yes | Yes. Keys must also be non-empty. |
+| Value is one of `options` | Yes | Yes |
+
+API submissions bypass the browser, so only the checks marked in the Server column apply to them.
+
+---
+
+## `body[*].visibility`
+
+**Optional.** Shows the field only when a condition is true.
+
+### `body[*].visibility.condition`
+
+A [condition expression](#condition-syntax) evaluated against the current values of the other fields. It is re-evaluated whenever any field changes. When the condition is false:
+
+- the field is hidden and disabled in the browser
+- the server skips all of the field's validations, including `required`
+
+A condition that doesn't parse is a form error when the form is saved.
+
+```yaml
+- type: input
+  id: approval_ticket
+  attributes:
+    label: Change ticket
+  validations:
+    required: true
+  visibility:
+    condition: "environment == 'prod'"
+```
+
+!!! note
+    A condition that fails to parse is treated as **true**, so the field is shown. The warning is logged rather than raised.
+
+!!! info
+    `visibility.depends_on` is accepted for backward compatibility but has no effect, because conditions already re-evaluate on every change.
+
+---
+
+## `body[*].dynamic`
+
+**Optional.** Computes values or options from other fields. All dynamic behavior runs in the browser.
+
+### `body[*].dynamic.auto_populate`
+
+Fills the field automatically. It accepts either a string or a built-in function object.
+
+**String forms**
+
+| Value | Result |
+|---|---|
+| `"{field_id}"` or `"prefix-{a}-{b}"` | A template. Each `{id}` is replaced with that field's current value. Missing values become `""`. |
+| `"{tags_id.key}"` | A single entry from a `tags` field |
+| `today` | Today's date as `YYYY-MM-DD` |
+| `today+N` or `today-N` | Today's date offset by N days |
+| Any other string | Used as a literal value |
+
+```yaml
+- type: input
+  id: resource_name
+  dynamic:
+    auto_populate: "{team}-{environment}-svc"
+    depends_on: [team, environment]
+```
+
+**Built-in function object**
+
+| Key | Required | Description |
+|---|---|---|
+| `type` | Yes | Must be `builtin` |
+| `function` | Yes | One of `concat`, `uppercase`, `lowercase`, `sum`, `multiply` |
+| `params` | No | The function's arguments. See the table below. |
+
+| Function | `params` | Returns |
+|---|---|---|
+| `concat` | `values`: a list of literals or `{id}` templates | All items joined with no separator |
+| `uppercase` | `field`: a field id, or a template string | The value in upper case |
+| `lowercase` | `field`: a field id, or a template string | The value in lower case |
+| `sum` | `values`: a list of numbers or `{id}` templates | The sum. Non-numeric items count as `0`. |
+| `multiply` | `values`: a list of numbers or `{id}` templates | The product. Non-numeric items count as `1`. |
+
+```yaml
+- type: input
+  id: total_gb
+  attributes:
+    input_type: number
+  dynamic:
+    auto_populate:
+      type: builtin
+      function: multiply
+      params:
+        values: ["{instance_count}", "{disk_gb}"]
+    computed: true
+    depends_on: [instance_count, disk_gb]
+```
+
+!!! info
+    The schema also accepts a `values` key next to `params`, but it is ignored. Put the list under `params.values`.
+
+### `body[*].dynamic.computed`
+
+Boolean. Default `false`.
+
+- **`true`:** the field is read-only and is overwritten every time it is recalculated.
+- **`false`:** the auto-populated value is only a suggestion. It fills the field when the field is empty, or when the current value was itself auto-filled. It never overwrites a value the user typed.
+
+### `body[*].dynamic.depends_on`
+
+A list of field ids. A change to any of them recalculates `auto_populate`. Changes from text inputs are debounced by 500 ms. The value is also calculated once when the page loads.
+
+### `body[*].dynamic.options_map`
+
+`dropdown` only. Replaces the field's options based on the value of a parent field. This is how you build cascading dropdowns. It is a map from each parent value to a list of [options](#bodyattributesoptions).
+
+```yaml
+- type: dropdown
+  id: instance_type
+  dynamic:
+    depends_on_field: cloud_provider
+    options_map:
+      aws:
+        - { value: t3.micro }
+        - { value: m5.large }
+      gcp:
+        - { value: e2-micro }
+```
+
+The lookup is a flat `options_map[parent_value]` on a single parent. Nested maps and multi-parent lookups are not supported.
+
+### `body[*].dynamic.depends_on_field`
+
+The id of the parent field for `options_map`. If omitted, the first entry of `dynamic.depends_on` is used.
+
+!!! info
+    `depends_on_fields` and `lookup_path` are accepted by the schema but not implemented.
+
+---
+
+## Condition syntax
+
+Conditions are a small, fixed expression language. They cannot run arbitrary code. The browser and the server evaluate them identically.
+
+| Element | Syntax |
+|---|---|
+| Field reference | A bare field id: `environment` |
+| String | `'prod'` or `"prod"` |
+| Number | `3`, `-1`, `2.5` |
+| Literals | `null`, `true`, `false` |
+| Comparison | `==`, `!=` |
+| Logical | `&&`, `||`, `!` |
+| Grouping | `( … )` |
+| Membership | `field.includes('value')` |
+
+**Precedence**, from loosest to tightest: `||`, then `&&`, then `!`, then `==` and `!=`.
+
+**Value rules**
+
+- An empty value (`""`, `[]`, `{}`) is treated as `null`. For example, `region != null` means "the user picked a region".
+- A `checkboxes` field evaluates as the list of checked option values.
+- `includes` tests membership for lists and substring for strings. It is `false` for `null`.
+- `==` and `!=` compare values as strings, except that booleans compare directly.
+
+!!! warning
+    `<`, `>`, `<=`, and `>=` are **not** supported. A condition that uses them fails to parse, which means the field is always shown.
+
+```yaml
+visibility:
+  condition: "(environment == 'prod' || environment == 'staging') && !features.includes('skip_backup')"
+```
+
+---
+
+## Submitted values
+
+This is what each field type submits, as seen in `bento_inputs.json` and the environment variables your workflow receives.
+
+| Field | Value in `bento_inputs.json` | Environment variable |
+|---|---|---|
+| `input`, `textarea`, `radio`, single `dropdown` | string | the string |
+| `dropdown` with `multiple: true` | list of strings | comma-joined: `a,b` |
+| `checkboxes` | list of checked values | comma-joined |
+| `tags` | object `{key: value}` | empty. The runner treats objects as legacy checkbox maps, so tag values don't reach the variable. Parse `bento_inputs.json` instead. |
+
+See [Workflow syntax → Inputs and environment variables](workflow-syntax.md#inputs-and-environment-variables).
+
+## Reference files
+
+- Schema: `bento/forms/static/forms/schema/form.schema.json`
+- Parser and server validation: `bento/forms/form_config.py`
+- Condition evaluator: `bento/forms/condition_eval.py`, mirrored in `bento/forms/static/forms/form.js`
+- An example covering every field type except `tags`: `test/form.local.yml`

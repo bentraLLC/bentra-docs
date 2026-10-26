@@ -1,0 +1,145 @@
+# Workflow access
+
+Who approves a request workflow's submissions, who has which role on a workflow, and which workspaces can see its form.
+
+| Method | Path | Scope | MCP tool |
+|---|---|---|---|
+| `GET` | `workflows/{id}/approvers/` | `read:workflows` | `list_approvers` |
+| `POST` | `workflows/{id}/approvers/` | `manage:workflow_access` | `add_approver` |
+| `PATCH` | `workflows/{id}/approvers/{approver_id}/` | `manage:workflow_access` | `update_approver` |
+| `DELETE` | `workflows/{id}/approvers/{approver_id}/` | `manage:workflow_access` | `remove_approver` |
+| `GET` | `workflows/{id}/permissions/` | `read:workflows` | `list_workflow_permissions` |
+| `POST` | `workflows/{id}/permissions/` | `manage:workflow_access` | `grant_workflow_role` |
+| `PATCH` | `workflows/{id}/permissions/{permission_id}/` | `manage:workflow_access` | `change_workflow_role` |
+| `DELETE` | `workflows/{id}/permissions/{permission_id}/` | `manage:workflow_access` | `revoke_workflow_role` |
+| `GET` | `workflows/{id}/form-visibility/` | `read:workflows` | `get_form_visibility` |
+| `POST` | `workflows/{id}/form-visibility/` | `manage:workflow_access` | `share_form_with_workspace` |
+| `PATCH` | `workflows/{id}/form-visibility/{entry_id}/` | `manage:workflow_access` | — |
+| `DELETE` | `workflows/{id}/form-visibility/{entry_id}/` | `manage:workflow_access` | `unshare_form_with_workspace` |
+
+---
+
+## Approvers
+
+Designated approvers are users or groups. A group stays live: whoever is in it when a request is submitted can approve. Approvers only matter while `require_approvers` is on; `required_approvals` sets how many approvals a request needs (see [workflow settings](workflows.md#patch-workflowsidsettings)).
+
+**Permission to change:** `workflow.manage_form_settings`.
+
+### `GET workflows/{id}/approvers/`
+
+```json
+{
+  "success": true,
+  "approvers": [
+    {"type": "direct", "id": "…", "user_id": 7, "username": "alice", "email": "alice@acme.com",
+     "is_required": true, "added_by": "bob", "created_at": "2026-10-09T12:00:00+00:00"},
+    {"type": "group", "group_approver_id": "…", "group_name": "Platform", "user_id": 9,
+     "username": "carol", "email": "carol@acme.com", "is_required": true}
+  ],
+  "groups": [
+    {"id": "…", "group_id": "…", "group_name": "Platform", "member_count": 3,
+     "is_required": true, "added_by": "bob"}
+  ]
+}
+```
+
+`approvers` lists direct approvers first, then members of approver groups who aren't also direct approvers.
+
+### `POST workflows/{id}/approvers/`
+
+```json
+{"user": "alice@acme.com", "is_required": true}
+```
+
+or
+
+```json
+{"group": "Platform"}
+```
+
+`user` is a member's id, username or email; `group` is a group's id or name. `is_required` defaults to `true`.
+
+**Response** `201`: `{"success": true, "approver": {…}}` or `{"success": true, "group": {…}}`.
+
+**Errors:** `400` if already an approver, or the group has no active members; `404` for an unknown user or group.
+
+### `PATCH workflows/{id}/approvers/{approver_id}/`
+
+`{"is_required": false}`. `approver_id` is a direct approver's `id` or a group's `id` from `groups`.
+
+### `DELETE workflows/{id}/approvers/{approver_id}/`
+
+Removes a direct approver or an approver group. Returns `{"success": true, "message": "…"}`.
+
+---
+
+## Roles
+
+Workflow roles: `reader` (view), `writer` (view, edit, run, change settings and variables), `admin` (everything, including access). A role can go to a user or a group.
+
+**Permission:** `workflow.manage_permissions` (including to list).
+
+### `GET workflows/{id}/permissions/`
+
+```json
+{
+  "success": true,
+  "roles": ["admin", "writer", "reader"],
+  "permissions": [
+    {"id": "…", "type": "direct", "user": {"id": 7, "username": "alice", "email": "alice@acme.com"},
+     "role": "writer", "granted_by": "bob", "created_at": "2026-10-09T12:00:00+00:00"},
+    {"id": null, "type": "group", "user": {"id": 9, "username": "carol", "email": "carol@acme.com"},
+     "role": "reader", "group_name": "Platform", "group_permission_id": "…",
+     "granted_by": null, "created_at": null}
+  ],
+  "groups": [{"id": "…", "group_id": "…", "group_name": "Platform", "role": "reader", "member_count": 3}]
+}
+```
+
+### `POST workflows/{id}/permissions/`
+
+```json
+{"user": "alice", "role": "writer"}
+```
+
+or `{"group": "Platform", "role": "reader"}`.
+
+**Response:** `201` when granted, `200` when the user or group already had it.
+
+### `PATCH workflows/{id}/permissions/{permission_id}/`
+
+`{"role": "admin"}`. `permission_id` is a user assignment's `id` or a group's `id` from `groups`.
+
+### `DELETE workflows/{id}/permissions/{permission_id}/`
+
+Returns `204`.
+
+---
+
+## Form visibility
+
+A request workflow's form is visible in its own workspace, in all workspaces, or in a selected list. With `form_visibility` set to `selected_workspaces` (see [workflow settings](workflows.md#patch-workflowsidsettings)), these endpoints manage the list. The request portal is separate: see `portal_enabled`.
+
+**Permission to change:** `workflow.manage_form_settings`. Request workflows only.
+
+### `GET workflows/{id}/form-visibility/`
+
+```json
+{
+  "success": true,
+  "form_visibility": "selected_workspaces",
+  "workspaces": [{"id": "…", "workspace": "data", "workspace_name": "Data", "permission": "viewer"}]
+}
+```
+
+### `POST workflows/{id}/form-visibility/`
+
+`{"workspace": "data", "permission": "viewer"}`. `workspace` is a slug or id; `permission` is `viewer` (default) or `editor`.
+
+### `PATCH workflows/{id}/form-visibility/{entry_id}/`
+
+`{"permission": "editor"}`.
+
+### `DELETE workflows/{id}/form-visibility/{entry_id}/`
+
+Returns `204`.
