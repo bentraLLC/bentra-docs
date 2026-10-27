@@ -9,7 +9,7 @@ The agent acts **as you**: it can do exactly what you can do in Bentra, and your
 === "Hosted (recommended)"
 
     ```bash
-    claude mcp add --transport http bentra https://mcp.bentra.io/mcp
+    claude mcp add --transport http bentra https://mcp.bentralabs.com/mcp
     ```
 
     The first tool call opens your browser to sign in to Bentra and approve the agent. Each agent you approve is listed under **Settings → API Access → AI agent sessions**, where you can revoke it.
@@ -20,7 +20,7 @@ The agent acts **as you**: it can do exactly what you can do in Bentra, and your
 
     ```bash
     claude mcp add bentra \
-      -e BENTRA_URL=https://app.bentra.io -e BENTRA_ORG=acme -e BENTRA_API_TOKEN=... \
+      -e BENTRA_URL=https://app.bentralabs.com -e BENTRA_ORG=acme -e BENTRA_API_TOKEN=... \
       -- uvx --from git+https://github.com/bentrallc/bentra-mcp bentra-mcp
     ```
 

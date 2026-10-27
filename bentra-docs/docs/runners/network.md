@@ -4,7 +4,7 @@ Runners only make outbound connections.
 
 | From | To | Port | Why |
 |---|---|---|---|
-| Runner | your Bentra host (for example `app.bentra.io`) | 443 (HTTPS) | Poll for jobs, report steps and logs, fetch the job's secrets |
+| Runner | your Bentra host (for example `app.bentralabs.com`) | 443 (HTTPS) | Poll for jobs, report steps and logs, fetch the job's secrets |
 | Runner | your Git provider (GitHub, GitLab, ...) | 443 | Clone the workflow's repository with a short-lived token Bentra issues for that job |
 | Runner | whatever your workflow steps call | as needed | Your own cloud APIs, package registries and so on |
 
