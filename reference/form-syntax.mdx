@@ -2,7 +2,19 @@
 title: "Form syntax for Bentra"
 ---
 
+import { FormPreview } from "/snippets/form-preview.jsx";
+
+<Tip>
+**Let an AI agent write your form**
+
+Connect the [Bentra MCP server](/ai/mcp-server) to Claude, Cursor or another agent, and describe the form you want. The agent reads the exact form schema (`bentra://schemas/form`), drafts `form.yml`, validates it and saves it to the workflow. The `create_request_workflow` prompt walks it through each step.
+
+> Add a form to the "Create bucket" workflow: cloud provider (AWS or GCP), a region list that depends on the provider, bucket name (lowercase, 3-63 chars) and an optional retention in days.
+</Tip>
+
 A form is a YAML file that defines the input a user fills in when they request a workflow. Bentra renders it as a web form, validates submissions against it (both in the browser and on the server), and passes the submitted values to the workflow's steps.
+
+Most examples on this page have a **Preview** tab that shows roughly how the form renders.
 
 ## About YAML syntax for forms
 
@@ -17,7 +29,36 @@ A form is a YAML file that defines the input a user fills in when they request a
 `options_loader`, `validations.validator`, and `auto_populate` with `type: inline` or `type: file` have been removed. Bentra never runs user-supplied scripts in a form. Using any of these produces a dedicated error message.
 </Note>
 
+### Example: a minimal form
+
+The smallest useful form has a `name` and one field.
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Restart a service
+body:
+  - type: input
+    id: service_name
+    attributes:
+      label: Service name
+    validations:
+      required: true
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Restart a service\nbody:\n  - type: input\n    id: service_name\n    attributes:\n      label: Service name\n    validations:\n      required: true"} />
+
+</Tab>
+</Tabs>
+
 ### Example: a complete form
+
+<Tabs>
+<Tab title="YAML">
 
 ```yaml
 name: Provision a storage bucket
@@ -97,6 +138,14 @@ body:
       key_pattern: "^[a-z][a-z0-9_]*$"
 ```
 
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Provision a storage bucket\ndescription: Creates a bucket in the selected cloud and region.\nbody:\n  - type: dropdown\n    id: cloud_provider\n    section: Placement\n    attributes:\n      label: Cloud provider\n      options:\n        - { value: aws, label: AWS }\n        - { value: gcp, label: GCP }\n    validations:\n      required: true\n\n  - type: dropdown\n    id: region\n    section: Placement\n    attributes:\n      label: Region\n    dynamic:\n      depends_on_field: cloud_provider\n      options_map:\n        aws:\n          - { value: us-east-1, label: US East (N. Virginia) }\n          - { value: eu-west-1, label: EU (Ireland) }\n        gcp:\n          - { value: us-central1, label: US Central }\n    validations:\n      required: true\n\n  - type: input\n    id: bucket_name\n    section: Bucket\n    attributes:\n      label: Bucket name\n      placeholder: team-artifacts\n    validations:\n      required: true\n      pattern: \"^[a-z0-9-]{3,63}$\"\n\n  - type: input\n    id: full_name\n    section: Bucket\n    attributes:\n      label: Resolved name\n    dynamic:\n      auto_populate: \"{cloud_provider}-{region}-{bucket_name}\"\n      computed: true\n      depends_on: [cloud_provider, region, bucket_name]\n\n  - type: checkboxes\n    id: features\n    section: Options\n    attributes:\n      label: Features\n      options:\n        - { value: versioning, label: Versioning }\n        - { value: encryption, label: Encryption at rest, required: true }\n\n  - type: input\n    id: kms_key\n    section: Options\n    attributes:\n      label: KMS key ARN\n    visibility:\n      condition: \"features.includes('encryption') && cloud_provider == 'aws'\"\n\n  - type: tags\n    id: labels\n    section: Options\n    attributes:\n      label: Labels\n      default: { team: platform }\n    validations:\n      key_pattern: \"^[a-z][a-z0-9_]*$\""} />
+
+</Tab>
+</Tabs>
+
 ---
 
 ## `name`
@@ -130,6 +179,38 @@ The form `description` and each field's `attributes.description` are rendered as
 
 Raw HTML, images and tables are removed.
 
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Rotate a database password
+description: |
+  Generates a new password and stores it in the secrets manager.
+
+  **Before you start:**
+  - Tell the on-call engineer.
+  - Read the [rotation runbook](https://example.com/runbooks/rotation).
+body:
+  - type: dropdown
+    id: database
+    attributes:
+      label: Database
+      description: Only databases *you own* are listed. Ask in https://example.com/help if one is missing.
+      options:
+        - { value: orders-db, label: orders-db }
+        - { value: billing-db, label: billing-db }
+    validations:
+      required: true
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Rotate a database password\ndescription: |\n  Generates a new password and stores it in the secrets manager.\n\n  **Before you start:**\n  - Tell the on-call engineer.\n  - Read the [rotation runbook](https://example.com/runbooks/rotation).\nbody:\n  - type: dropdown\n    id: database\n    attributes:\n      label: Database\n      description: Only databases *you own* are listed. Ask in https://example.com/help if one is missing.\n      options:\n        - { value: orders-db, label: orders-db }\n        - { value: billing-db, label: billing-db }\n    validations:\n      required: true"} />
+
+</Tab>
+</Tabs>
+
 ## `body`
 
 **Required.** An ordered list of fields. Fields render in the order they are listed.
@@ -157,6 +238,57 @@ body:
 | `radio` | A group of radio buttons | Yes |
 | `tags` | An editable list of key/value pairs | No |
 
+This form uses every field type once.
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Every field type
+body:
+  - type: input
+    id: service_name
+    attributes:
+      label: Service name (input)
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes (textarea)
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment (dropdown)
+      options:
+        - { value: dev }
+        - { value: prod }
+  - type: checkboxes
+    id: features
+    attributes:
+      label: Features (checkboxes)
+      options:
+        - { value: logging, label: Logging }
+        - { value: metrics, label: Metrics }
+  - type: radio
+    id: size
+    attributes:
+      label: Size (radio)
+      options:
+        - { value: small, label: Small }
+        - { value: large, label: Large }
+  - type: tags
+    id: labels
+    attributes:
+      label: Labels (tags)
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Every field type\nbody:\n  - type: input\n    id: service_name\n    attributes:\n      label: Service name (input)\n  - type: textarea\n    id: notes\n    attributes:\n      label: Notes (textarea)\n  - type: dropdown\n    id: environment\n    attributes:\n      label: Environment (dropdown)\n      options:\n        - { value: dev }\n        - { value: prod }\n  - type: checkboxes\n    id: features\n    attributes:\n      label: Features (checkboxes)\n      options:\n        - { value: logging, label: Logging }\n        - { value: metrics, label: Metrics }\n  - type: radio\n    id: size\n    attributes:\n      label: Size (radio)\n      options:\n        - { value: small, label: Small }\n        - { value: large, label: Large }\n  - type: tags\n    id: labels\n    attributes:\n      label: Labels (tags)"} />
+
+</Tab>
+</Tabs>
+
 ## `body[*].id`
 
 **Required.** A unique identifier for the field. The id is used in several places:
@@ -172,17 +304,47 @@ Use `snake_case` ids. Since they become environment variable names, keep them to
 
 **Optional.** Groups fields under a header. A section header is shown whenever the `section` value changes between one field and the next, so list the fields of each section consecutively.
 
+<Tabs>
+<Tab title="YAML">
+
 ```yaml
-- type: input
-  id: app_name
-  section: Application
-- type: input
-  id: owner
-  section: Application
-- type: dropdown
-  id: environment
-  section: Deployment
+name: Register an application
+body:
+  - type: input
+    id: app_name
+    section: Application
+    attributes:
+      label: Application name
+  - type: input
+    id: owner
+    section: Application
+    attributes:
+      label: Owner email
+      input_type: email
+  - type: dropdown
+    id: environment
+    section: Deployment
+    attributes:
+      label: Environment
+      options:
+        - { value: staging, label: Staging }
+        - { value: prod, label: Production }
+  - type: input
+    id: replicas
+    section: Deployment
+    attributes:
+      label: Replicas
+      input_type: number
+      default: 2
 ```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Register an application\nbody:\n  - type: input\n    id: app_name\n    section: Application\n    attributes:\n      label: Application name\n  - type: input\n    id: owner\n    section: Application\n    attributes:\n      label: Owner email\n      input_type: email\n  - type: dropdown\n    id: environment\n    section: Deployment\n    attributes:\n      label: Environment\n      options:\n        - { value: staging, label: Staging }\n        - { value: prod, label: Production }\n  - type: input\n    id: replicas\n    section: Deployment\n    attributes:\n      label: Replicas\n      input_type: number\n      default: 2"} />
+
+</Tab>
+</Tabs>
 
 ---
 
@@ -202,6 +364,28 @@ Help text displayed under the field's label. Supports [Markdown](#markdown-in-de
 
 Placeholder text for `input` and `textarea` fields. For `input_type: email` it defaults to `you@example.com`.
 
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Label, description and placeholder
+body:
+  - type: input
+    id: hostname
+    attributes:
+      label: Hostname
+      description: The fully qualified name, without the protocol.
+      placeholder: api.internal.example.com
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Label, description and placeholder\nbody:\n  - type: input\n    id: hostname\n    attributes:\n      label: Hostname\n      description: The fully qualified name, without the protocol.\n      placeholder: api.internal.example.com"} />
+
+</Tab>
+</Tabs>
+
 ### `body[*].attributes.input_type`
 
 `input` fields only. Sets the HTML input type. If the value is missing or unrecognized, a text input is rendered.
@@ -214,6 +398,137 @@ Placeholder text for `input` and `textarea` fields. For `input_type: email` it d
 | `password` | Masked input with a reveal button |
 | `date` | Date picker. Supports `validations.min_date`/`max_date`. |
 
+#### Text
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Text input
+body:
+  - type: input
+    id: service_name
+    attributes:
+      label: Service name
+      input_type: text
+      placeholder: payments-api
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Text input\nbody:\n  - type: input\n    id: service_name\n    attributes:\n      label: Service name\n      input_type: text\n      placeholder: payments-api"} />
+
+</Tab>
+</Tabs>
+
+#### Email
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Email input
+body:
+  - type: input
+    id: requester_email
+    attributes:
+      label: Your email
+      input_type: email
+    validations:
+      required: true
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Email input\nbody:\n  - type: input\n    id: requester_email\n    attributes:\n      label: Your email\n      input_type: email\n    validations:\n      required: true"} />
+
+</Tab>
+</Tabs>
+
+#### Password
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Password input
+body:
+  - type: input
+    id: api_key
+    attributes:
+      label: API key
+      input_type: password
+      description: Stored as a secret. It never appears in logs.
+    validations:
+      required: true
+      min_length: 20
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Password input\nbody:\n  - type: input\n    id: api_key\n    attributes:\n      label: API key\n      input_type: password\n      description: Stored as a secret. It never appears in logs.\n    validations:\n      required: true\n      min_length: 20"} />
+
+</Tab>
+</Tabs>
+
+#### Number
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Number input
+body:
+  - type: input
+    id: disk_gb
+    attributes:
+      label: Disk size (GB)
+      input_type: number
+      default: 100
+    validations:
+      min: 20
+      max: 1000
+      step: 10
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Number input\nbody:\n  - type: input\n    id: disk_gb\n    attributes:\n      label: Disk size (GB)\n      input_type: number\n      default: 100\n    validations:\n      min: 20\n      max: 1000\n      step: 10"} />
+
+</Tab>
+</Tabs>
+
+#### Date
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Date input
+body:
+  - type: input
+    id: go_live
+    attributes:
+      label: Go-live date
+      input_type: date
+    validations:
+      required: true
+      min_date: "2026-01-01"
+      max_date: "2026-12-31"
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Date input\nbody:\n  - type: input\n    id: go_live\n    attributes:\n      label: Go-live date\n      input_type: date\n    validations:\n      required: true\n      min_date: \"2026-01-01\"\n      max_date: \"2026-12-31\""} />
+
+</Tab>
+</Tabs>
+
 ### `body[*].attributes.default`
 
 The initial value of the field. The type can be string, number, boolean, list, object, or null, and must suit the field type:
@@ -221,21 +536,169 @@ The initial value of the field. The type can be string, number, boolean, list, o
 - `tags`: an object of key/value pairs, e.g. `{ team: platform }`
 - `dropdown` with `multiple: true`: a list of option values
 
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Defaults
+body:
+  - type: input
+    id: team
+    attributes:
+      label: Team
+      default: platform
+  - type: dropdown
+    id: regions
+    attributes:
+      label: Regions
+      multiple: true
+      default: [us-east-1, eu-west-1]
+      options:
+        - { value: us-east-1 }
+        - { value: us-west-2 }
+        - { value: eu-west-1 }
+  - type: tags
+    id: labels
+    attributes:
+      label: Labels
+      default: { team: platform, cost_center: "4200" }
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Defaults\nbody:\n  - type: input\n    id: team\n    attributes:\n      label: Team\n      default: platform\n  - type: dropdown\n    id: regions\n    attributes:\n      label: Regions\n      multiple: true\n      default: [us-east-1, eu-west-1]\n      options:\n        - { value: us-east-1 }\n        - { value: us-west-2 }\n        - { value: eu-west-1 }\n  - type: tags\n    id: labels\n    attributes:\n      label: Labels\n      default: { team: platform, cost_center: \"4200\" }"} />
+
+</Tab>
+</Tabs>
+
 ### `body[*].attributes.readonly`
 
 Boolean. Renders the field as read-only.
+
+Pair it with `default` to show a fixed value the user can see but not change.
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Deploy to production
+body:
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      default: production
+      readonly: true
+  - type: input
+    id: version
+    attributes:
+      label: Version to deploy
+      placeholder: v1.4.2
+    validations:
+      required: true
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Deploy to production\nbody:\n  - type: input\n    id: environment\n    attributes:\n      label: Environment\n      default: production\n      readonly: true\n  - type: input\n    id: version\n    attributes:\n      label: Version to deploy\n      placeholder: v1.4.2\n    validations:\n      required: true"} />
+
+</Tab>
+</Tabs>
 
 ### `body[*].attributes.steppers_only`
 
 Boolean. Applies to `input_type: number` fields only. When true, typing is blocked and the value can only be changed with the spinner arrows.
 
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Scale a service
+body:
+  - type: input
+    id: replicas
+    attributes:
+      label: Replicas
+      input_type: number
+      default: 3
+      steppers_only: true
+    validations:
+      min: 1
+      max: 10
+      step: 1
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Scale a service\nbody:\n  - type: input\n    id: replicas\n    attributes:\n      label: Replicas\n      input_type: number\n      default: 3\n      steppers_only: true\n    validations:\n      min: 1\n      max: 10\n      step: 1"} />
+
+</Tab>
+</Tabs>
+
 ### `body[*].attributes.rows`
 
 Integer. The number of visible rows in a `textarea`. Defaults to `4`.
 
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Report an incident
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      placeholder: Describe the impact, when it started and what you have tried.
+      rows: 8
+    validations:
+      required: true
+      min_length: 30
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Report an incident\nbody:\n  - type: textarea\n    id: summary\n    attributes:\n      label: What happened?\n      placeholder: Describe the impact, when it started and what you have tried.\n      rows: 8\n    validations:\n      required: true\n      min_length: 30"} />
+
+</Tab>
+</Tabs>
+
 ### `body[*].attributes.multiple`
 
 Boolean. `dropdown` only. When true, the field is a multi-select and it submits a list of values.
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Subscribe to alerts
+body:
+  - type: dropdown
+    id: channels
+    attributes:
+      label: Alert channels
+      multiple: true
+      options:
+        - { value: email, label: Email }
+        - { value: slack, label: Slack }
+        - { value: pagerduty, label: PagerDuty }
+        - { value: sms, label: SMS }
+    validations:
+      min_selections: 1
+      max_selections: 2
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Subscribe to alerts\nbody:\n  - type: dropdown\n    id: channels\n    attributes:\n      label: Alert channels\n      multiple: true\n      options:\n        - { value: email, label: Email }\n        - { value: slack, label: Slack }\n        - { value: pagerduty, label: PagerDuty }\n        - { value: sms, label: SMS }\n    validations:\n      min_selections: 1\n      max_selections: 2"} />
+
+</Tab>
+</Tabs>
 
 ### `body[*].attributes.size`
 
@@ -244,6 +707,64 @@ Integer. `dropdown` only. The number of option rows visible in the panel before 
 ### `body[*].attributes.searchable`
 
 Boolean. `dropdown` only. Adds a search box that filters the options. Defaults to `false`.
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Pick a time zone
+body:
+  - type: dropdown
+    id: timezone
+    attributes:
+      label: Time zone
+      searchable: true
+      size: 5
+      options:
+        - { value: America/New_York, label: New York }
+        - { value: America/Chicago, label: Chicago }
+        - { value: America/Los_Angeles, label: Los Angeles }
+        - { value: Europe/London, label: London }
+        - { value: Europe/Berlin, label: Berlin }
+        - { value: Asia/Tokyo, label: Tokyo }
+        - { value: Australia/Sydney, label: Sydney }
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Pick a time zone\nbody:\n  - type: dropdown\n    id: timezone\n    attributes:\n      label: Time zone\n      searchable: true\n      size: 5\n      options:\n        - { value: America/New_York, label: New York }\n        - { value: America/Chicago, label: Chicago }\n        - { value: America/Los_Angeles, label: Los Angeles }\n        - { value: Europe/London, label: London }\n        - { value: Europe/Berlin, label: Berlin }\n        - { value: Asia/Tokyo, label: Tokyo }\n        - { value: Australia/Sydney, label: Sydney }"} />
+
+</Tab>
+</Tabs>
+
+A plain single-choice dropdown needs only `options`:
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Choose an environment
+body:
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - { value: dev, label: Development }
+        - { value: staging, label: Staging }
+        - { value: prod, label: Production }
+    validations:
+      required: true
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Choose an environment\nbody:\n  - type: dropdown\n    id: environment\n    attributes:\n      label: Environment\n      options:\n        - { value: dev, label: Development }\n        - { value: staging, label: Staging }\n        - { value: prod, label: Production }\n    validations:\n      required: true"} />
+
+</Tab>
+</Tabs>
 
 ### `body[*].attributes.options`
 
@@ -255,15 +776,90 @@ The choices for `dropdown`, `checkboxes`, and `radio` fields. Each option is an 
 | `label` | No | string | The text displayed. Defaults to `value`. |
 | `required` | No | boolean | `checkboxes` only: this box must be checked |
 
+<Tabs>
+<Tab title="YAML">
+
 ```yaml
-- type: radio
-  id: size
-  attributes:
-    label: Instance size
-    options:
-      - { value: small, label: "Small (2 vCPU)" }
-      - { value: large, label: "Large (8 vCPU)" }
+name: Launch an instance
+body:
+  - type: radio
+    id: size
+    attributes:
+      label: Instance size
+      options:
+        - { value: small, label: "Small (2 vCPU)" }
+        - { value: large, label: "Large (8 vCPU)" }
 ```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Launch an instance\nbody:\n  - type: radio\n    id: size\n    attributes:\n      label: Instance size\n      options:\n        - { value: small, label: \"Small (2 vCPU)\" }\n        - { value: large, label: \"Large (8 vCPU)\" }"} />
+
+</Tab>
+</Tabs>
+
+Use `required` on a checkbox option for an acknowledgement the user must tick.
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Delete a project
+body:
+  - type: input
+    id: project
+    attributes:
+      label: Project to delete
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirm
+      options:
+        - { value: backed_up, label: I have backed up anything I need, required: true }
+        - { value: irreversible, label: I understand this cannot be undone, required: true }
+        - { value: notify, label: Email the project members when it is done }
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Delete a project\nbody:\n  - type: input\n    id: project\n    attributes:\n      label: Project to delete\n    validations:\n      required: true\n  - type: checkboxes\n    id: confirm\n    attributes:\n      label: Confirm\n      options:\n        - { value: backed_up, label: I have backed up anything I need, required: true }\n        - { value: irreversible, label: I understand this cannot be undone, required: true }\n        - { value: notify, label: Email the project members when it is done }"} />
+
+</Tab>
+</Tabs>
+
+Options can also be written in block style. This is the same as the flow style above.
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Pick a support tier
+body:
+  - type: radio
+    id: tier
+    attributes:
+      label: Support tier
+      default: standard
+      options:
+        - value: basic
+          label: Basic (business hours)
+        - value: standard
+          label: Standard (24/5)
+        - value: premium
+          label: Premium (24/7, 1 hour response)
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Pick a support tier\nbody:\n  - type: radio\n    id: tier\n    attributes:\n      label: Support tier\n      default: standard\n      options:\n        - value: basic\n          label: Basic (business hours)\n        - value: standard\n          label: Standard (24/5)\n        - value: premium\n          label: Premium (24/7, 1 hour response)"} />
+
+</Tab>
+</Tabs>
 
 On the server, a submitted value for `dropdown`, `radio`, or `checkboxes` must be one of the listed option values. For cascading dropdowns, the value must be one of the options listed under the parent field's submitted value in `options_map`.
 
@@ -279,34 +875,80 @@ On the server, a submitted value for `dropdown`, `radio`, or `checkboxes` must b
 | `label` | No | The column shown as the option's text. Defaults to `value`. |
 | `where` | No | `dropdown` only. A map from column to a literal (string, number or boolean) or to `"{field_id}"`, another field's current value. Only rows that match every entry are offered. |
 
-```yaml
-- type: dropdown
-  id: repository
-  attributes:
-    label: Repository
-    searchable: true
-    options_from:
-      job: org-repository-inventory
-      dataset: repos
-      value: full_name
-      label: name
-      where: {archived: false}
+<Tabs>
+<Tab title="YAML">
 
-- type: dropdown
-  id: branch
-  attributes:
-    label: Branch
-    options_from:
-      job: org-repository-inventory
-      dataset: branches
-      value: branch
-      where: {repo: "{repository}"}   # cascades from the field above
+```yaml
+name: Create a branch protection rule
+body:
+  - type: dropdown
+    id: repository
+    attributes:
+      label: Repository
+      searchable: true
+      options_from:
+        job: org-repository-inventory
+        dataset: repos
+        value: full_name
+        label: name
+        where: {archived: false}
+
+  - type: dropdown
+    id: branch
+    attributes:
+      label: Branch
+      options_from:
+        job: org-repository-inventory
+        dataset: branches
+        value: branch
+        where: {repo: "{repository}"}   # cascades from the field above
 ```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Create a branch protection rule\nbody:\n  - type: dropdown\n    id: repository\n    attributes:\n      label: Repository\n      searchable: true\n      options_from:\n        job: org-repository-inventory\n        dataset: repos\n        value: full_name\n        label: name\n        where: {archived: false}\n\n  - type: dropdown\n    id: branch\n    attributes:\n      label: Branch\n      options_from:\n        job: org-repository-inventory\n        dataset: branches\n        value: branch\n        where: {repo: \"{repository}\"}   # cascades from the field above"} />
+
+</Tab>
+</Tabs>
+
+<Note>
+The preview can't read your job's dataset, so it shows placeholder rows. In Bentra the choices come from the latest published dataset version.
+</Note>
 
 - The form's workflow needs a **read grant** on the job (the job's Data sharing settings). Without one, the version can't be published.
 - A job that hasn't published the dataset yet is only a warning; the field has no choices until it does.
 - `options_from` can't be combined with `options` or `dynamic.options_map` on the same field.
 - With a `"{field_id}"` filter, the browser re-filters whenever that field changes, the same way `options_map` cascades. The server checks that the submitted value is in a matching row of the current dataset version.
+
+`options_from` also works with `checkboxes` and `radio`:
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Grant team access
+body:
+  - type: checkboxes
+    id: teams
+    attributes:
+      label: Teams
+      options_from:
+        job: directory-sync
+        dataset: teams
+        value: slug
+        label: display_name
+    validations:
+      min_selections: 1
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Grant team access\nbody:\n  - type: checkboxes\n    id: teams\n    attributes:\n      label: Teams\n      options_from:\n        job: directory-sync\n        dataset: teams\n        value: slug\n        label: display_name\n    validations:\n      min_selections: 1"} />
+
+</Tab>
+</Tabs>
 
 ### `body[*].attributes.key_placeholder`
 
@@ -319,6 +961,34 @@ On the server, a submitted value for `dropdown`, `radio`, or `checkboxes` must b
 ### `body[*].attributes.max_pairs`
 
 `tags` only. An integer or `null`. The maximum number of key/value pairs the user can add in the UI.
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Tag a resource
+body:
+  - type: tags
+    id: resource_tags
+    attributes:
+      label: Resource tags
+      description: Up to 5 tags. Keys are lowercase.
+      key_placeholder: tag name
+      value_placeholder: tag value
+      max_pairs: 5
+    validations:
+      min_selections: 1
+      key_pattern: "^[a-z][a-z0-9_-]*$"
+      value_pattern: "^.{1,64}$"
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Tag a resource\nbody:\n  - type: tags\n    id: resource_tags\n    attributes:\n      label: Resource tags\n      description: Up to 5 tags. Keys are lowercase.\n      key_placeholder: tag name\n      value_placeholder: tag value\n      max_pairs: 5\n    validations:\n      min_selections: 1\n      key_pattern: \"^[a-z][a-z0-9_-]*$\"\n      value_pattern: \"^.{1,64}$\""} />
+
+</Tab>
+</Tabs>
 
 <Warning>
 **Accepted but no effect**
@@ -353,6 +1023,42 @@ validations:
   pattern: "^[a-z][a-z0-9-]{2,30}$"
 ```
 
+A pattern combined with length limits gives a clearer error for short or long values:
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Create a service account
+body:
+  - type: input
+    id: account_name
+    attributes:
+      label: Account name
+      description: Lowercase letters, digits and hyphens. Must start with a letter.
+      placeholder: ci-deployer
+    validations:
+      required: true
+      min_length: 3
+      max_length: 30
+      pattern: "^[a-z][a-z0-9-]*$"
+  - type: input
+    id: ticket
+    attributes:
+      label: Ticket
+      placeholder: OPS-1234
+    validations:
+      pattern: "^[A-Z]+-[0-9]+$"
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Create a service account\nbody:\n  - type: input\n    id: account_name\n    attributes:\n      label: Account name\n      description: Lowercase letters, digits and hyphens. Must start with a letter.\n      placeholder: ci-deployer\n    validations:\n      required: true\n      min_length: 3\n      max_length: 30\n      pattern: \"^[a-z][a-z0-9-]*$\"\n  - type: input\n    id: ticket\n    attributes:\n      label: Ticket\n      placeholder: OPS-1234\n    validations:\n      pattern: \"^[A-Z]+-[0-9]+$\""} />
+
+</Tab>
+</Tabs>
+
 ### `body[*].validations.min`
 
 Number. The minimum value for `input_type: number`.
@@ -384,6 +1090,35 @@ Integer. The minimum number of checked boxes (`checkboxes`) or key/value pairs (
 ### `body[*].validations.max_selections`
 
 Integer. The maximum number of checked boxes (`checkboxes`) or key/value pairs (`tags`).
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Choose on-call days
+body:
+  - type: checkboxes
+    id: days
+    attributes:
+      label: Days you can cover
+      options:
+        - { value: mon, label: Monday }
+        - { value: tue, label: Tuesday }
+        - { value: wed, label: Wednesday }
+        - { value: thu, label: Thursday }
+        - { value: fri, label: Friday }
+    validations:
+      min_selections: 2
+      max_selections: 3
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Choose on-call days\nbody:\n  - type: checkboxes\n    id: days\n    attributes:\n      label: Days you can cover\n      options:\n        - { value: mon, label: Monday }\n        - { value: tue, label: Tuesday }\n        - { value: wed, label: Wednesday }\n        - { value: thu, label: Thursday }\n        - { value: fri, label: Friday }\n    validations:\n      min_selections: 2\n      max_selections: 3"} />
+
+</Tab>
+</Tabs>
 
 ### `body[*].validations.key_pattern`
 
@@ -424,16 +1159,92 @@ A [condition expression](#condition-syntax) evaluated against the current values
 
 A condition that doesn't parse is a form error when the form is saved.
 
+The change ticket below appears only when the environment is `prod`:
+
+<Tabs>
+<Tab title="YAML">
+
 ```yaml
-- type: input
-  id: approval_ticket
-  attributes:
-    label: Change ticket
-  validations:
-    required: true
-  visibility:
-    condition: "environment == 'prod'"
+name: Deploy a release
+body:
+  - type: radio
+    id: environment
+    attributes:
+      label: Environment
+      default: staging
+      options:
+        - { value: staging, label: Staging }
+        - { value: prod, label: Production }
+  - type: input
+    id: approval_ticket
+    attributes:
+      label: Change ticket
+    validations:
+      required: true
+    visibility:
+      condition: "environment == 'prod'"
 ```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Deploy a release\nbody:\n  - type: radio\n    id: environment\n    attributes:\n      label: Environment\n      default: staging\n      options:\n        - { value: staging, label: Staging }\n        - { value: prod, label: Production }\n  - type: input\n    id: approval_ticket\n    attributes:\n      label: Change ticket\n    validations:\n      required: true\n    visibility:\n      condition: \"environment == 'prod'\""} />
+
+</Tab>
+</Tabs>
+
+Combine `includes` with `&&` to check a checkbox and another field at once. Here the retention field appears only when backups are on and the environment isn't `dev`:
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Configure a database
+body:
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - { value: dev }
+        - { value: staging }
+        - { value: prod }
+  - type: checkboxes
+    id: features
+    attributes:
+      label: Features
+      options:
+        - { value: backups, label: Daily backups }
+        - { value: replicas, label: Read replicas }
+  - type: input
+    id: retention_days
+    attributes:
+      label: Backup retention (days)
+      input_type: number
+      default: 7
+    validations:
+      required: true
+      min: 1
+      max: 35
+    visibility:
+      condition: "features.includes('backups') && environment != 'dev'"
+  - type: input
+    id: replica_count
+    attributes:
+      label: Number of read replicas
+      input_type: number
+      default: 1
+    visibility:
+      condition: "features.includes('replicas')"
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Configure a database\nbody:\n  - type: dropdown\n    id: environment\n    attributes:\n      label: Environment\n      options:\n        - { value: dev }\n        - { value: staging }\n        - { value: prod }\n  - type: checkboxes\n    id: features\n    attributes:\n      label: Features\n      options:\n        - { value: backups, label: Daily backups }\n        - { value: replicas, label: Read replicas }\n  - type: input\n    id: retention_days\n    attributes:\n      label: Backup retention (days)\n      input_type: number\n      default: 7\n    validations:\n      required: true\n      min: 1\n      max: 35\n    visibility:\n      condition: \"features.includes('backups') && environment != 'dev'\"\n  - type: input\n    id: replica_count\n    attributes:\n      label: Number of read replicas\n      input_type: number\n      default: 1\n    visibility:\n      condition: \"features.includes('replicas')\""} />
+
+</Tab>
+</Tabs>
 
 <Note>
 A condition that fails to parse is treated as **true**, so the field is shown. The warning is logged rather than raised.
@@ -463,13 +1274,105 @@ Fills the field automatically. It accepts either a string or a built-in function
 | `today+N` or `today-N` | Today's date offset by N days |
 | Any other string | Used as a literal value |
 
+A template builds a value from other fields. The user can still edit the suggestion:
+
+<Tabs>
+<Tab title="YAML">
+
 ```yaml
-- type: input
-  id: resource_name
-  dynamic:
-    auto_populate: "{team}-{environment}-svc"
-    depends_on: [team, environment]
+name: Create a service
+body:
+  - type: input
+    id: team
+    attributes:
+      label: Team
+      placeholder: payments
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - { value: dev }
+        - { value: prod }
+  - type: input
+    id: resource_name
+    attributes:
+      label: Resource name
+    dynamic:
+      auto_populate: "{team}-{environment}-svc"
+      depends_on: [team, environment]
 ```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Create a service\nbody:\n  - type: input\n    id: team\n    attributes:\n      label: Team\n      placeholder: payments\n  - type: dropdown\n    id: environment\n    attributes:\n      label: Environment\n      options:\n        - { value: dev }\n        - { value: prod }\n  - type: input\n    id: resource_name\n    attributes:\n      label: Resource name\n    dynamic:\n      auto_populate: \"{team}-{environment}-svc\"\n      depends_on: [team, environment]"} />
+
+</Tab>
+</Tabs>
+
+A date keyword fills a date input relative to today:
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Schedule maintenance
+body:
+  - type: input
+    id: start_date
+    attributes:
+      label: Start date
+      input_type: date
+    dynamic:
+      auto_populate: today+7
+  - type: input
+    id: requested_on
+    attributes:
+      label: Requested on
+      input_type: date
+      readonly: true
+    dynamic:
+      auto_populate: today
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Schedule maintenance\nbody:\n  - type: input\n    id: start_date\n    attributes:\n      label: Start date\n      input_type: date\n    dynamic:\n      auto_populate: today+7\n  - type: input\n    id: requested_on\n    attributes:\n      label: Requested on\n      input_type: date\n      readonly: true\n    dynamic:\n      auto_populate: today"} />
+
+</Tab>
+</Tabs>
+
+A template can also read one entry of a `tags` field:
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Label a cluster
+body:
+  - type: tags
+    id: labels
+    attributes:
+      label: Labels
+      default: { owner: platform, tier: gold }
+  - type: input
+    id: owner
+    attributes:
+      label: Owner (from the owner label)
+    dynamic:
+      auto_populate: "{labels.owner}"
+      depends_on: [labels]
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Label a cluster\nbody:\n  - type: tags\n    id: labels\n    attributes:\n      label: Labels\n      default: { owner: platform, tier: gold }\n  - type: input\n    id: owner\n    attributes:\n      label: Owner (from the owner label)\n    dynamic:\n      auto_populate: \"{labels.owner}\"\n      depends_on: [labels]"} />
+
+</Tab>
+</Tabs>
 
 **Built-in function object**
 
@@ -502,6 +1405,77 @@ Fills the field automatically. It accepts either a string or a built-in function
     depends_on: [instance_count, disk_gb]
 ```
 
+In a full form, with `lowercase` and `concat` as well:
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Request storage
+body:
+  - type: input
+    id: project
+    attributes:
+      label: Project
+      placeholder: Checkout
+  - type: input
+    id: project_slug
+    attributes:
+      label: Project slug
+    dynamic:
+      auto_populate:
+        type: builtin
+        function: lowercase
+        params:
+          field: project
+      depends_on: [project]
+  - type: input
+    id: instance_count
+    attributes:
+      label: Instances
+      input_type: number
+      default: 2
+  - type: input
+    id: disk_gb
+    attributes:
+      label: Disk per instance (GB)
+      input_type: number
+      default: 50
+  - type: input
+    id: total_gb
+    attributes:
+      label: Total storage (GB)
+      input_type: number
+    dynamic:
+      auto_populate:
+        type: builtin
+        function: multiply
+        params:
+          values: ["{instance_count}", "{disk_gb}"]
+      computed: true
+      depends_on: [instance_count, disk_gb]
+  - type: input
+    id: volume_name
+    attributes:
+      label: Volume name
+    dynamic:
+      auto_populate:
+        type: builtin
+        function: concat
+        params:
+          values: ["vol-", "{project_slug}", "-", "{total_gb}", "gb"]
+      computed: true
+      depends_on: [project_slug, total_gb]
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Request storage\nbody:\n  - type: input\n    id: project\n    attributes:\n      label: Project\n      placeholder: Checkout\n  - type: input\n    id: project_slug\n    attributes:\n      label: Project slug\n    dynamic:\n      auto_populate:\n        type: builtin\n        function: lowercase\n        params:\n          field: project\n      depends_on: [project]\n  - type: input\n    id: instance_count\n    attributes:\n      label: Instances\n      input_type: number\n      default: 2\n  - type: input\n    id: disk_gb\n    attributes:\n      label: Disk per instance (GB)\n      input_type: number\n      default: 50\n  - type: input\n    id: total_gb\n    attributes:\n      label: Total storage (GB)\n      input_type: number\n    dynamic:\n      auto_populate:\n        type: builtin\n        function: multiply\n        params:\n          values: [\"{instance_count}\", \"{disk_gb}\"]\n      computed: true\n      depends_on: [instance_count, disk_gb]\n  - type: input\n    id: volume_name\n    attributes:\n      label: Volume name\n    dynamic:\n      auto_populate:\n        type: builtin\n        function: concat\n        params:\n          values: [\"vol-\", \"{project_slug}\", \"-\", \"{total_gb}\", \"gb\"]\n      computed: true\n      depends_on: [project_slug, total_gb]"} />
+
+</Tab>
+</Tabs>
+
 <Info>
 The schema also accepts a `values` key next to `params`, but it is ignored. Put the list under `params.values`.
 </Info>
@@ -512,6 +1486,52 @@ Boolean. Default `false`.
 
 - **`true`:** the field is read-only and is overwritten every time it is recalculated.
 - **`false`:** the auto-populated value is only a suggestion. It fills the field when the field is empty, or when the current value was itself auto-filled. It never overwrites a value the user typed.
+
+The first field below is a suggestion the user can overwrite. The second is computed and always matches the inputs:
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Name a DNS record
+body:
+  - type: input
+    id: service
+    attributes:
+      label: Service
+      placeholder: billing
+  - type: dropdown
+    id: zone
+    attributes:
+      label: Zone
+      options:
+        - { value: internal.example.com }
+        - { value: example.com }
+  - type: input
+    id: hostname
+    attributes:
+      label: Hostname (you can change it)
+    dynamic:
+      auto_populate: "{service}"
+      computed: false
+      depends_on: [service]
+  - type: input
+    id: fqdn
+    attributes:
+      label: Full name
+    dynamic:
+      auto_populate: "{hostname}.{zone}"
+      computed: true
+      depends_on: [hostname, zone]
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Name a DNS record\nbody:\n  - type: input\n    id: service\n    attributes:\n      label: Service\n      placeholder: billing\n  - type: dropdown\n    id: zone\n    attributes:\n      label: Zone\n      options:\n        - { value: internal.example.com }\n        - { value: example.com }\n  - type: input\n    id: hostname\n    attributes:\n      label: Hostname (you can change it)\n    dynamic:\n      auto_populate: \"{service}\"\n      computed: false\n      depends_on: [service]\n  - type: input\n    id: fqdn\n    attributes:\n      label: Full name\n    dynamic:\n      auto_populate: \"{hostname}.{zone}\"\n      computed: true\n      depends_on: [hostname, zone]"} />
+
+</Tab>
+</Tabs>
 
 ### `body[*].dynamic.depends_on`
 
@@ -533,6 +1553,52 @@ A list of field ids. A change to any of them recalculates `auto_populate`. Chang
       gcp:
         - { value: e2-micro }
 ```
+
+A complete provider and region cascade. Pick a provider and the region list changes:
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Choose a region
+body:
+  - type: radio
+    id: provider
+    attributes:
+      label: Cloud provider
+      default: aws
+      options:
+        - { value: aws, label: AWS }
+        - { value: gcp, label: Google Cloud }
+        - { value: azure, label: Azure }
+  - type: dropdown
+    id: region
+    attributes:
+      label: Region
+    dynamic:
+      depends_on_field: provider
+      options_map:
+        aws:
+          - { value: us-east-1, label: US East (N. Virginia) }
+          - { value: us-west-2, label: US West (Oregon) }
+          - { value: eu-central-1, label: EU (Frankfurt) }
+        gcp:
+          - { value: us-central1, label: Iowa }
+          - { value: europe-west1, label: Belgium }
+        azure:
+          - { value: eastus, label: East US }
+          - { value: westeurope, label: West Europe }
+    validations:
+      required: true
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Choose a region\nbody:\n  - type: radio\n    id: provider\n    attributes:\n      label: Cloud provider\n      default: aws\n      options:\n        - { value: aws, label: AWS }\n        - { value: gcp, label: Google Cloud }\n        - { value: azure, label: Azure }\n  - type: dropdown\n    id: region\n    attributes:\n      label: Region\n    dynamic:\n      depends_on_field: provider\n      options_map:\n        aws:\n          - { value: us-east-1, label: US East (N. Virginia) }\n          - { value: us-west-2, label: US West (Oregon) }\n          - { value: eu-central-1, label: EU (Frankfurt) }\n        gcp:\n          - { value: us-central1, label: Iowa }\n          - { value: europe-west1, label: Belgium }\n        azure:\n          - { value: eastus, label: East US }\n          - { value: westeurope, label: West Europe }\n    validations:\n      required: true"} />
+
+</Tab>
+</Tabs>
 
 The lookup is a flat `options_map[parent_value]` on a single parent. Nested maps and multi-parent lookups are not supported.
 
@@ -578,6 +1644,467 @@ Conditions are a small, fixed expression language. They cannot run arbitrary cod
 visibility:
   condition: "(environment == 'prod' || environment == 'staging') && !features.includes('skip_backup')"
 ```
+
+More conditions:
+
+| Condition | True when |
+|---|---|
+| `region != null` | A region is picked |
+| `!features.includes('managed')` | The `managed` box is not checked |
+| `replicas == 3` | The number field is exactly 3 |
+
+A form that uses grouping, negation and `null`:
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Open a firewall port
+body:
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - { value: dev }
+        - { value: staging }
+        - { value: prod }
+  - type: checkboxes
+    id: features
+    attributes:
+      label: Options
+      options:
+        - { value: skip_review, label: Skip security review (dev only) }
+  - type: input
+    id: port
+    attributes:
+      label: Port
+      input_type: number
+    validations:
+      min: 1
+      max: 65535
+  - type: textarea
+    id: risk_note
+    attributes:
+      label: Risk assessment
+      rows: 3
+    visibility:
+      condition: "(environment == 'prod' || environment == 'staging') && !features.includes('skip_review')"
+  - type: input
+    id: source_cidr
+    attributes:
+      label: Allowed source range
+      placeholder: 10.0.0.0/16
+    visibility:
+      condition: "port != null"
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Open a firewall port\nbody:\n  - type: dropdown\n    id: environment\n    attributes:\n      label: Environment\n      options:\n        - { value: dev }\n        - { value: staging }\n        - { value: prod }\n  - type: checkboxes\n    id: features\n    attributes:\n      label: Options\n      options:\n        - { value: skip_review, label: Skip security review (dev only) }\n  - type: input\n    id: port\n    attributes:\n      label: Port\n      input_type: number\n    validations:\n      min: 1\n      max: 65535\n  - type: textarea\n    id: risk_note\n    attributes:\n      label: Risk assessment\n      rows: 3\n    visibility:\n      condition: \"(environment == 'prod' || environment == 'staging') && !features.includes('skip_review')\"\n  - type: input\n    id: source_cidr\n    attributes:\n      label: Allowed source range\n      placeholder: 10.0.0.0/16\n    visibility:\n      condition: \"port != null\""} />
+
+</Tab>
+</Tabs>
+
+---
+
+## Recipes
+
+Complete forms for common requests. Copy one and adapt it.
+
+### Access request
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Request system access
+description: |
+  Ask for time-limited access to an engineering system.
+  Your manager approves the request before access is granted.
+body:
+  - type: dropdown
+    id: system
+    attributes:
+      label: System
+      searchable: true
+      options:
+        - { value: aws-prod, label: AWS production account }
+        - { value: aws-staging, label: AWS staging account }
+        - { value: datadog, label: Datadog }
+        - { value: github-admin, label: GitHub organization admin }
+        - { value: snowflake, label: Snowflake }
+    validations:
+      required: true
+  - type: radio
+    id: access_level
+    attributes:
+      label: Access level
+      default: read
+      options:
+        - { value: read, label: Read only }
+        - { value: write, label: Read and write }
+        - { value: admin, label: Admin }
+    validations:
+      required: true
+  - type: textarea
+    id: justification
+    attributes:
+      label: Justification
+      description: Say what you need the access for. Link a ticket if there is one.
+      rows: 4
+    validations:
+      required: true
+      min_length: 20
+  - type: input
+    id: end_date
+    attributes:
+      label: Access ends on
+      input_type: date
+      description: Access is removed at the end of this day.
+    dynamic:
+      auto_populate: today+30
+    validations:
+      required: true
+  - type: input
+    id: manager_email
+    attributes:
+      label: Manager's email
+      input_type: email
+      placeholder: manager@example.com
+    validations:
+      required: true
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Request system access\ndescription: |\n  Ask for time-limited access to an engineering system.\n  Your manager approves the request before access is granted.\nbody:\n  - type: dropdown\n    id: system\n    attributes:\n      label: System\n      searchable: true\n      options:\n        - { value: aws-prod, label: AWS production account }\n        - { value: aws-staging, label: AWS staging account }\n        - { value: datadog, label: Datadog }\n        - { value: github-admin, label: GitHub organization admin }\n        - { value: snowflake, label: Snowflake }\n    validations:\n      required: true\n  - type: radio\n    id: access_level\n    attributes:\n      label: Access level\n      default: read\n      options:\n        - { value: read, label: Read only }\n        - { value: write, label: Read and write }\n        - { value: admin, label: Admin }\n    validations:\n      required: true\n  - type: textarea\n    id: justification\n    attributes:\n      label: Justification\n      description: Say what you need the access for. Link a ticket if there is one.\n      rows: 4\n    validations:\n      required: true\n      min_length: 20\n  - type: input\n    id: end_date\n    attributes:\n      label: Access ends on\n      input_type: date\n      description: Access is removed at the end of this day.\n    dynamic:\n      auto_populate: today+30\n    validations:\n      required: true\n  - type: input\n    id: manager_email\n    attributes:\n      label: Manager's email\n      input_type: email\n      placeholder: manager@example.com\n    validations:\n      required: true"} />
+
+</Tab>
+</Tabs>
+
+### Provision a database
+
+The version list follows the engine. Backup and high-availability fields appear only for production.
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Provision a database
+description: Creates a managed database and stores its credentials in the secrets manager.
+body:
+  - type: dropdown
+    id: engine
+    section: Engine
+    attributes:
+      label: Engine
+      options:
+        - { value: postgres, label: PostgreSQL }
+        - { value: mysql, label: MySQL }
+    validations:
+      required: true
+  - type: dropdown
+    id: engine_version
+    section: Engine
+    attributes:
+      label: Version
+    dynamic:
+      depends_on_field: engine
+      options_map:
+        postgres:
+          - { value: "17", label: PostgreSQL 17 }
+          - { value: "16", label: PostgreSQL 16 }
+          - { value: "15", label: PostgreSQL 15 }
+        mysql:
+          - { value: "8.4", label: MySQL 8.4 }
+          - { value: "8.0", label: MySQL 8.0 }
+    validations:
+      required: true
+  - type: input
+    id: db_name
+    section: Instance
+    attributes:
+      label: Database name
+      placeholder: orders
+    validations:
+      required: true
+      pattern: "^[a-z][a-z0-9_]{2,62}$"
+  - type: radio
+    id: size
+    section: Instance
+    attributes:
+      label: Size
+      default: small
+      options:
+        - { value: small, label: "Small (2 vCPU, 8 GB)" }
+        - { value: medium, label: "Medium (4 vCPU, 16 GB)" }
+        - { value: large, label: "Large (16 vCPU, 64 GB)" }
+  - type: input
+    id: storage_gb
+    section: Instance
+    attributes:
+      label: Storage (GB)
+      input_type: number
+      default: 100
+    validations:
+      min: 20
+      max: 4000
+      step: 10
+  - type: radio
+    id: environment
+    section: Environment
+    attributes:
+      label: Environment
+      default: dev
+      options:
+        - { value: dev, label: Development }
+        - { value: staging, label: Staging }
+        - { value: prod, label: Production }
+  - type: input
+    id: backup_retention_days
+    section: Environment
+    attributes:
+      label: Backup retention (days)
+      input_type: number
+      default: 14
+    validations:
+      required: true
+      min: 7
+      max: 35
+    visibility:
+      condition: "environment == 'prod'"
+  - type: checkboxes
+    id: prod_options
+    section: Environment
+    attributes:
+      label: Production options
+      options:
+        - { value: multi_az, label: Standby in a second zone }
+        - { value: deletion_protection, label: Deletion protection, required: true }
+    visibility:
+      condition: "environment == 'prod'"
+  - type: input
+    id: change_ticket
+    section: Environment
+    attributes:
+      label: Change ticket
+      placeholder: CHG-1234
+    validations:
+      required: true
+      pattern: "^CHG-[0-9]+$"
+    visibility:
+      condition: "environment == 'prod'"
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Provision a database\ndescription: Creates a managed database and stores its credentials in the secrets manager.\nbody:\n  - type: dropdown\n    id: engine\n    section: Engine\n    attributes:\n      label: Engine\n      options:\n        - { value: postgres, label: PostgreSQL }\n        - { value: mysql, label: MySQL }\n    validations:\n      required: true\n  - type: dropdown\n    id: engine_version\n    section: Engine\n    attributes:\n      label: Version\n    dynamic:\n      depends_on_field: engine\n      options_map:\n        postgres:\n          - { value: \"17\", label: PostgreSQL 17 }\n          - { value: \"16\", label: PostgreSQL 16 }\n          - { value: \"15\", label: PostgreSQL 15 }\n        mysql:\n          - { value: \"8.4\", label: MySQL 8.4 }\n          - { value: \"8.0\", label: MySQL 8.0 }\n    validations:\n      required: true\n  - type: input\n    id: db_name\n    section: Instance\n    attributes:\n      label: Database name\n      placeholder: orders\n    validations:\n      required: true\n      pattern: \"^[a-z][a-z0-9_]{2,62}$\"\n  - type: radio\n    id: size\n    section: Instance\n    attributes:\n      label: Size\n      default: small\n      options:\n        - { value: small, label: \"Small (2 vCPU, 8 GB)\" }\n        - { value: medium, label: \"Medium (4 vCPU, 16 GB)\" }\n        - { value: large, label: \"Large (16 vCPU, 64 GB)\" }\n  - type: input\n    id: storage_gb\n    section: Instance\n    attributes:\n      label: Storage (GB)\n      input_type: number\n      default: 100\n    validations:\n      min: 20\n      max: 4000\n      step: 10\n  - type: radio\n    id: environment\n    section: Environment\n    attributes:\n      label: Environment\n      default: dev\n      options:\n        - { value: dev, label: Development }\n        - { value: staging, label: Staging }\n        - { value: prod, label: Production }\n  - type: input\n    id: backup_retention_days\n    section: Environment\n    attributes:\n      label: Backup retention (days)\n      input_type: number\n      default: 14\n    validations:\n      required: true\n      min: 7\n      max: 35\n    visibility:\n      condition: \"environment == 'prod'\"\n  - type: checkboxes\n    id: prod_options\n    section: Environment\n    attributes:\n      label: Production options\n      options:\n        - { value: multi_az, label: Standby in a second zone }\n        - { value: deletion_protection, label: Deletion protection, required: true }\n    visibility:\n      condition: \"environment == 'prod'\"\n  - type: input\n    id: change_ticket\n    section: Environment\n    attributes:\n      label: Change ticket\n      placeholder: CHG-1234\n    validations:\n      required: true\n      pattern: \"^CHG-[0-9]+$\"\n    visibility:\n      condition: \"environment == 'prod'\""} />
+
+</Tab>
+</Tabs>
+
+### Create a repository from a template
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Create a repository
+description: Creates a GitHub repository from one of the organization's templates.
+body:
+  - type: dropdown
+    id: template
+    attributes:
+      label: Template
+      options:
+        - { value: service-python, label: Python service }
+        - { value: service-go, label: Go service }
+        - { value: library-ts, label: TypeScript library }
+        - { value: terraform-module, label: Terraform module }
+    validations:
+      required: true
+  - type: input
+    id: repo_name
+    attributes:
+      label: Repository name
+      description: Lowercase letters, digits and hyphens.
+      placeholder: payments-api
+    validations:
+      required: true
+      min_length: 3
+      max_length: 50
+      pattern: "^[a-z][a-z0-9-]*$"
+  - type: radio
+    id: repo_visibility
+    attributes:
+      label: Visibility
+      default: internal
+      options:
+        - { value: private, label: Private }
+        - { value: internal, label: Internal }
+        - { value: public, label: Public }
+  - type: textarea
+    id: public_reason
+    attributes:
+      label: Why does this need to be public?
+      rows: 3
+    validations:
+      required: true
+    visibility:
+      condition: "repo_visibility == 'public'"
+  - type: dropdown
+    id: team
+    attributes:
+      label: Owning team
+      searchable: true
+      options:
+        - { value: platform, label: Platform }
+        - { value: payments, label: Payments }
+        - { value: data, label: Data }
+        - { value: security, label: Security }
+    validations:
+      required: true
+  - type: dropdown
+    id: topics
+    attributes:
+      label: Topics
+      multiple: true
+      searchable: true
+      options:
+        - { value: api }
+        - { value: backend }
+        - { value: frontend }
+        - { value: infrastructure }
+        - { value: machine-learning }
+    validations:
+      max_selections: 5
+  - type: tags
+    id: custom_properties
+    attributes:
+      label: Custom properties
+      key_placeholder: property
+      value_placeholder: value
+      max_pairs: 10
+      default: { tier: "3" }
+    validations:
+      key_pattern: "^[a-z_]+$"
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Create a repository\ndescription: Creates a GitHub repository from one of the organization's templates.\nbody:\n  - type: dropdown\n    id: template\n    attributes:\n      label: Template\n      options:\n        - { value: service-python, label: Python service }\n        - { value: service-go, label: Go service }\n        - { value: library-ts, label: TypeScript library }\n        - { value: terraform-module, label: Terraform module }\n    validations:\n      required: true\n  - type: input\n    id: repo_name\n    attributes:\n      label: Repository name\n      description: Lowercase letters, digits and hyphens.\n      placeholder: payments-api\n    validations:\n      required: true\n      min_length: 3\n      max_length: 50\n      pattern: \"^[a-z][a-z0-9-]*$\"\n  - type: radio\n    id: repo_visibility\n    attributes:\n      label: Visibility\n      default: internal\n      options:\n        - { value: private, label: Private }\n        - { value: internal, label: Internal }\n        - { value: public, label: Public }\n  - type: textarea\n    id: public_reason\n    attributes:\n      label: Why does this need to be public?\n      rows: 3\n    validations:\n      required: true\n    visibility:\n      condition: \"repo_visibility == 'public'\"\n  - type: dropdown\n    id: team\n    attributes:\n      label: Owning team\n      searchable: true\n      options:\n        - { value: platform, label: Platform }\n        - { value: payments, label: Payments }\n        - { value: data, label: Data }\n        - { value: security, label: Security }\n    validations:\n      required: true\n  - type: dropdown\n    id: topics\n    attributes:\n      label: Topics\n      multiple: true\n      searchable: true\n      options:\n        - { value: api }\n        - { value: backend }\n        - { value: frontend }\n        - { value: infrastructure }\n        - { value: machine-learning }\n    validations:\n      max_selections: 5\n  - type: tags\n    id: custom_properties\n    attributes:\n      label: Custom properties\n      key_placeholder: property\n      value_placeholder: value\n      max_pairs: 10\n      default: { tier: \"3\" }\n    validations:\n      key_pattern: \"^[a-z_]+$\""} />
+
+</Tab>
+</Tabs>
+
+### Employee onboarding
+
+<Tabs>
+<Tab title="YAML">
+
+```yaml
+name: Onboard a new employee
+description: |
+  Orders equipment and creates accounts for a new starter.
+  Submit at least a week before their first day.
+body:
+  - type: input
+    id: full_name
+    section: Person
+    attributes:
+      label: Full name
+    validations:
+      required: true
+  - type: input
+    id: work_email
+    section: Person
+    attributes:
+      label: Work email
+      input_type: email
+      placeholder: first.last@example.com
+    validations:
+      required: true
+  - type: input
+    id: start_date
+    section: Person
+    attributes:
+      label: Start date
+      input_type: date
+    dynamic:
+      auto_populate: today+14
+    validations:
+      required: true
+  - type: dropdown
+    id: department
+    section: Person
+    attributes:
+      label: Department
+      options:
+        - { value: engineering, label: Engineering }
+        - { value: design, label: Design }
+        - { value: sales, label: Sales }
+        - { value: finance, label: Finance }
+    validations:
+      required: true
+  - type: radio
+    id: laptop
+    section: Equipment
+    attributes:
+      label: Laptop
+      default: macbook_pro
+      options:
+        - { value: macbook_air, label: MacBook Air }
+        - { value: macbook_pro, label: MacBook Pro }
+        - { value: thinkpad, label: ThinkPad }
+  - type: checkboxes
+    id: accessories
+    section: Equipment
+    attributes:
+      label: Accessories
+      options:
+        - { value: monitor, label: External monitor }
+        - { value: keyboard, label: Keyboard and mouse }
+        - { value: headset, label: Headset }
+  - type: input
+    id: shipping_address
+    section: Equipment
+    attributes:
+      label: Shipping address
+      description: Leave empty to deliver to the office.
+  - type: checkboxes
+    id: accounts
+    section: Accounts
+    attributes:
+      label: Accounts to create
+      options:
+        - { value: google, label: Google Workspace, required: true }
+        - { value: slack, label: Slack, required: true }
+        - { value: github, label: GitHub }
+        - { value: aws, label: AWS }
+        - { value: salesforce, label: Salesforce }
+  - type: input
+    id: github_username
+    section: Accounts
+    attributes:
+      label: GitHub username
+    validations:
+      required: true
+    visibility:
+      condition: "accounts.includes('github')"
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Onboard a new employee\ndescription: |\n  Orders equipment and creates accounts for a new starter.\n  Submit at least a week before their first day.\nbody:\n  - type: input\n    id: full_name\n    section: Person\n    attributes:\n      label: Full name\n    validations:\n      required: true\n  - type: input\n    id: work_email\n    section: Person\n    attributes:\n      label: Work email\n      input_type: email\n      placeholder: first.last@example.com\n    validations:\n      required: true\n  - type: input\n    id: start_date\n    section: Person\n    attributes:\n      label: Start date\n      input_type: date\n    dynamic:\n      auto_populate: today+14\n    validations:\n      required: true\n  - type: dropdown\n    id: department\n    section: Person\n    attributes:\n      label: Department\n      options:\n        - { value: engineering, label: Engineering }\n        - { value: design, label: Design }\n        - { value: sales, label: Sales }\n        - { value: finance, label: Finance }\n    validations:\n      required: true\n  - type: radio\n    id: laptop\n    section: Equipment\n    attributes:\n      label: Laptop\n      default: macbook_pro\n      options:\n        - { value: macbook_air, label: MacBook Air }\n        - { value: macbook_pro, label: MacBook Pro }\n        - { value: thinkpad, label: ThinkPad }\n  - type: checkboxes\n    id: accessories\n    section: Equipment\n    attributes:\n      label: Accessories\n      options:\n        - { value: monitor, label: External monitor }\n        - { value: keyboard, label: Keyboard and mouse }\n        - { value: headset, label: Headset }\n  - type: input\n    id: shipping_address\n    section: Equipment\n    attributes:\n      label: Shipping address\n      description: Leave empty to deliver to the office.\n  - type: checkboxes\n    id: accounts\n    section: Accounts\n    attributes:\n      label: Accounts to create\n      options:\n        - { value: google, label: Google Workspace, required: true }\n        - { value: slack, label: Slack, required: true }\n        - { value: github, label: GitHub }\n        - { value: aws, label: AWS }\n        - { value: salesforce, label: Salesforce }\n  - type: input\n    id: github_username\n    section: Accounts\n    attributes:\n      label: GitHub username\n    validations:\n      required: true\n    visibility:\n      condition: \"accounts.includes('github')\""} />
+
+</Tab>
+</Tabs>
 
 ---
 

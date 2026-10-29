@@ -2,6 +2,14 @@
 title: "Workflow syntax for Bentra"
 ---
 
+<Tip>
+**Let an AI agent write your workflow**
+
+Connect the [Bentra MCP server](/ai/mcp-server) to Claude, Cursor or another agent and describe what the workflow should do. The agent writes `workflow.yml` (and `form.yml` for request workflows), sets up the workflow, approvers and schedule, and publishes a version. The `set_up_workflow` prompt walks it through each step.
+
+> Create a job in the Platform workspace that runs `terraform plan` for acme/infra every night at 2am UTC and fails if the plan has changes.
+</Tip>
+
 A workflow is a YAML file listing the steps a runner executes. Each step is a bash script. Steps run in order, in one workspace that holds the workflow's files.
 
 ## About YAML syntax for workflows
@@ -329,6 +337,267 @@ echo "::bentra-check status=warning,name=Cost,monthly=412::Above the 400 USD bud
 - **Step timeout:** 300 s by default. This is set by the runner's `STEP_TIMEOUT` environment variable, not in the YAML.
 - **Run timeout:** 1800 s by default, set by the runner's `EXECUTION_TIMEOUT`.
 - **Dependency install:** before your steps, the runner adds an "Install Python dependencies" step (`pip install -r requirements.txt`) if `requirements.txt` exists in the workspace root, and an "Install Node.js dependencies" step (`npm install --production`) if `package.json` exists. If either fails, the run stops.
+
+---
+
+## Recipes
+
+Complete `workflow.yml` files for common tasks. Copy one and change the names, paths and commands.
+
+<Note>
+Each step already runs with `-eo pipefail`. The recipes add `set -euo pipefail` so that a typo in a variable name also fails the step.
+</Note>
+
+### Read form answers
+
+A request workflow reads simple answers from environment variables. Lists arrive comma-joined, so read them from `bento_inputs.json` with `jq` when you need each item. `tags` values only exist in `bento_inputs.json`.
+
+```yaml workflow.yml
+name: Grant repository access
+steps:
+  - name: Show the request
+    run: |
+      set -euo pipefail
+      echo "User: $GITHUB_USER"
+      echo "Teams: $TEAMS"   # multi-select dropdown, e.g. platform,security
+
+  - name: Add the user to each team
+    run: |
+      set -euo pipefail
+      jq -r '.teams[]' bento_inputs.json | while read -r team; do
+        ./scripts/add-team-member.sh "$team" "$GITHUB_USER"
+      done
+
+  - name: Read labels
+    run: |
+      set -euo pipefail
+      jq -r '.labels | to_entries[] | "\(.key)=\(.value)"' bento_inputs.json
+```
+
+### Terraform plan and apply
+
+Pin the Terraform version with `tools` and keep credentials in a variable collection. Add `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` as secrets in a collection attached to the workflow: they reach every step as environment variables, which the AWS provider reads.
+
+```yaml workflow.yml
+name: Apply network changes
+tools:
+  terraform_version: "1.7.5"
+
+steps:
+  - name: Terraform init
+    run: terraform -chdir=infra init -input=false
+
+  - name: Terraform plan
+    run: terraform -chdir=infra plan -input=false -out=tfplan
+
+  - name: Terraform apply
+    run: terraform -chdir=infra apply -input=false tfplan
+```
+
+The plan file is written to the workspace, so the apply step can read it.
+
+### Retry a flaky step and continue past a non-critical one
+
+[`retry`](#stepsretry) isn't applied by the runner yet, so retry inside the script. Keep the loop within the 300 s [step timeout](#timeouts-and-implicit-setup). Mark a step that is allowed to fail with `continue_on_error: true`. The run is still reported as failed if it does.
+
+```yaml workflow.yml
+name: Plan with a module mirror
+tools:
+  terraform_version: "1.7.5"
+
+steps:
+  - name: Download modules
+    run: |
+      set -euo pipefail
+      for attempt in 1 2 3; do
+        if curl -fsSL -o modules.tar.gz "$MODULE_MIRROR_URL"; then
+          tar -xzf modules.tar.gz -C infra
+          exit 0
+        fi
+        echo "Attempt $attempt failed, retrying in 10 s"
+        sleep 10
+      done
+      echo "Download failed after 3 attempts"
+      exit 1
+
+  - name: Lint (non-blocking)
+    continue_on_error: true
+    run: tflint --chdir=infra
+
+  - name: Terraform plan
+    run: |
+      set -euo pipefail
+      terraform -chdir=infra init -input=false
+      terraform -chdir=infra plan -input=false
+```
+
+### Report checks
+
+Print `::bentra-check` lines to show pass/fail annotations on the run. This nightly job turns `terraform plan -detailed-exitcode` into a check. A `failed` check fails the step, so the run fails when the plan has changes.
+
+```yaml workflow.yml
+name: Nightly drift check
+tools:
+  terraform_version: "1.7.5"
+
+steps:
+  - name: Terraform init
+    run: terraform -chdir=infra init -input=false
+
+  - name: Detect drift
+    run: |
+      set -euo pipefail
+      code=0
+      terraform -chdir=infra plan -input=false -lock=false -detailed-exitcode || code=$?
+      case "$code" in
+        0) echo "::bentra-check status=passed,name=Drift,dir=infra::No changes" ;;
+        2) echo "::bentra-check status=failed,name=Drift,dir=infra::The plan has changes" ;;
+        *) exit "$code" ;;
+      esac
+```
+
+Set the schedule in the job's settings.
+
+### Publish a dataset
+
+A job declares a dataset under `outputs` and writes its rows to `$BENTRA_DATASETS/<name>.json`. This one lists the first 100 repositories in a GitHub organization, with a `GITHUB_TOKEN` secret from a variable collection.
+
+```yaml workflow.yml
+name: Org repository inventory
+outputs:
+  datasets:
+    repos:
+      description: Repositories in the acme GitHub organization
+      columns: [name, archived, default_branch, visibility]
+      max_rows: 1000
+
+steps:
+  - name: List repositories
+    run: |
+      set -euo pipefail
+      curl -fsSL \
+        -H "Authorization: Bearer $GITHUB_TOKEN" \
+        -H "Accept: application/vnd.github+json" \
+        "https://api.github.com/orgs/acme/repos?per_page=100" \
+        | jq '[.[] | {name, archived, default_branch, visibility}]' \
+        > "$BENTRA_DATASETS/repos.json"
+```
+
+The rows are published after all steps succeed.
+
+### Read a dataset in another job
+
+Declare the dataset under `inputs.datasets` and read it from `$BENTRA_INPUTS/<job>/<dataset>.json`. This job reads the `repos` dataset published by the `org-repository-inventory` job above. It needs a read grant in that job's Data sharing settings.
+
+```yaml workflow.yml
+name: Archived repository report
+inputs:
+  datasets:
+    - job: org-repository-inventory
+      dataset: repos
+
+steps:
+  - name: Count archived repositories
+    run: |
+      set -euo pipefail
+      repos="$BENTRA_INPUTS/org-repository-inventory/repos.json"
+      total=$(jq 'length' "$repos")
+      archived=$(jq '[.[] | select(.archived)] | length' "$repos")
+      echo "::bentra-check status=info,name=Archived repositories,total=$total::$archived of $total repositories are archived"
+```
+
+### A request workflow and its form
+
+A request workflow pairs `workflow.yml` with a form. Each field `id` becomes an environment variable, and the `checkboxes` list is read from `bento_inputs.json`.
+
+```yaml .bento/form/form.yml
+# .bento/form/form.yml
+name: Create a storage bucket
+body:
+  - type: input
+    id: bucket_name
+    attributes:
+      label: Bucket name
+    validations:
+      required: true
+      pattern: "^[a-z0-9-]{3,63}$"
+
+  - type: dropdown
+    id: region
+    attributes:
+      label: Region
+      options:
+        - { value: us-east-1, label: US East (N. Virginia) }
+        - { value: eu-west-1, label: EU (Ireland) }
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: features
+    attributes:
+      label: Features
+      options:
+        - { value: versioning, label: Versioning }
+        - { value: encryption, label: Encryption at rest }
+```
+
+```yaml .bento/workflow/workflow.yml
+name: Create a storage bucket
+steps:
+  - name: Create bucket
+    run: |
+      set -euo pipefail
+      aws s3 mb "s3://$BUCKET_NAME" --region "$REGION"
+
+  - name: Apply features
+    run: |
+      set -euo pipefail
+      if jq -e '.features | index("versioning")' bento_inputs.json > /dev/null; then
+        aws s3api put-bucket-versioning --bucket "$BUCKET_NAME" \
+          --versioning-configuration Status=Enabled
+      fi
+      if jq -e '.features | index("encryption")' bento_inputs.json > /dev/null; then
+        aws s3api put-bucket-encryption --bucket "$BUCKET_NAME" \
+          --server-side-encryption-configuration \
+          '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+      fi
+
+  - name: Confirm
+    run: |
+      set -euo pipefail
+      if aws s3api head-bucket --bucket "$BUCKET_NAME"; then
+        echo "::bentra-check status=passed,name=Bucket exists::$BUCKET_NAME is ready in $REGION"
+      else
+        echo "::bentra-check status=failed,name=Bucket exists::$BUCKET_NAME not found"
+      fi
+```
+
+### Test against two Terraform versions
+
+A step's `tools` switches the version from that step onward. To go back, set the version again in a later step.
+
+```yaml workflow.yml
+name: Terraform upgrade check
+tools:
+  terraform_version: "1.5.7"
+
+steps:
+  - name: Terraform init
+    run: terraform -chdir=infra init -input=false
+
+  - name: Plan with 1.5.7
+    run: terraform -chdir=infra plan -input=false -lock=false
+
+  - name: Plan with 1.7.5
+    tools:
+      terraform_version: "1.7.5"
+    run: terraform -chdir=infra plan -input=false -lock=false
+
+  - name: Back to 1.5.7
+    tools:
+      terraform_version: "1.5.7"
+    run: terraform version
+```
 
 ---
 
