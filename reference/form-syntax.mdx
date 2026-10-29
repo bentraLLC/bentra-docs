@@ -33,7 +33,7 @@ Most examples on this page have a **Preview** tab that shows roughly how the for
 
 The smallest useful form has a `name` and one field.
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -57,7 +57,7 @@ body:
 
 ### Example: a complete form
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -179,7 +179,7 @@ The form `description` and each field's `attributes.description` are rendered as
 
 Raw HTML, images and tables are removed.
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -240,7 +240,7 @@ body:
 
 This form uses every field type once.
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -304,7 +304,7 @@ Use `snake_case` ids. Since they become environment variable names, keep them to
 
 **Optional.** Groups fields under a header. A section header is shown whenever the `section` value changes between one field and the next, so list the fields of each section consecutively.
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -364,7 +364,7 @@ Help text displayed under the field's label. Supports [Markdown](#markdown-in-de
 
 Placeholder text for `input` and `textarea` fields. For `input_type: email` it defaults to `you@example.com`.
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -400,7 +400,7 @@ body:
 
 #### Text
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -424,7 +424,7 @@ body:
 
 #### Email
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -449,7 +449,7 @@ body:
 
 #### Password
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -476,7 +476,7 @@ body:
 
 #### Number
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -504,7 +504,7 @@ body:
 
 #### Date
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -536,7 +536,7 @@ The initial value of the field. The type can be string, number, boolean, list, o
 - `tags`: an object of key/value pairs, e.g. `{ team: platform }`
 - `dropdown` with `multiple: true`: a list of option values
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -578,7 +578,7 @@ Boolean. Renders the field as read-only.
 
 Pair it with `default` to show a fixed value the user can see but not change.
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -611,7 +611,7 @@ body:
 
 Boolean. Applies to `input_type: number` fields only. When true, typing is blocked and the value can only be changed with the spinner arrows.
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -642,7 +642,7 @@ body:
 
 Integer. The number of visible rows in a `textarea`. Defaults to `4`.
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -671,7 +671,7 @@ body:
 
 Boolean. `dropdown` only. When true, the field is a multi-select and it submits a list of values.
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -708,7 +708,7 @@ Integer. `dropdown` only. The number of option rows visible in the panel before 
 
 Boolean. `dropdown` only. Adds a search box that filters the options. Defaults to `false`.
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -740,7 +740,7 @@ body:
 
 A plain single-choice dropdown needs only `options`:
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -776,7 +776,7 @@ The choices for `dropdown`, `checkboxes`, and `radio` fields. Each option is an 
 | `label` | No | string | The text displayed. Defaults to `value`. |
 | `required` | No | boolean | `checkboxes` only: this box must be checked |
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -801,7 +801,7 @@ body:
 
 Use `required` on a checkbox option for an acknowledgement the user must tick.
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -833,7 +833,7 @@ body:
 
 Options can also be written in block style. This is the same as the flow style above.
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -875,7 +875,7 @@ On the server, a submitted value for `dropdown`, `radio`, or `checkboxes` must b
 | `label` | No | The column shown as the option's text. Defaults to `value`. |
 | `where` | No | `dropdown` only. A map from column to a literal (string, number or boolean) or to `"{field_id}"`, another field's current value. Only rows that match every entry are offered. |
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -923,7 +923,7 @@ The preview can't read your job's dataset, so it shows placeholder rows. In Bent
 
 `options_from` also works with `checkboxes` and `radio`:
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -962,7 +962,7 @@ body:
 
 `tags` only. An integer or `null`. The maximum number of key/value pairs the user can add in the UI.
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -1025,7 +1025,7 @@ validations:
 
 A pattern combined with length limits gives a clearer error for short or long values:
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -1091,7 +1091,7 @@ Integer. The minimum number of checked boxes (`checkboxes`) or key/value pairs (
 
 Integer. The maximum number of checked boxes (`checkboxes`) or key/value pairs (`tags`).
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -1161,7 +1161,7 @@ A condition that doesn't parse is a form error when the form is saved.
 
 The change ticket below appears only when the environment is `prod`:
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -1195,7 +1195,7 @@ body:
 
 Combine `includes` with `&&` to check a checkbox and another field at once. Here the retention field appears only when backups are on and the environment isn't `dev`:
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -1276,7 +1276,7 @@ Fills the field automatically. It accepts either a string or a built-in function
 
 A template builds a value from other fields. The user can still edit the suggestion:
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -1313,7 +1313,7 @@ body:
 
 A date keyword fills a date input relative to today:
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -1346,7 +1346,7 @@ body:
 
 A template can also read one entry of a `tags` field:
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -1407,7 +1407,7 @@ body:
 
 In a full form, with `lowercase` and `concat` as well:
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -1489,7 +1489,7 @@ Boolean. Default `false`.
 
 The first field below is a suggestion the user can overwrite. The second is computed and always matches the inputs:
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -1556,7 +1556,7 @@ A list of field ids. A change to any of them recalculates `auto_populate`. Chang
 
 A complete provider and region cascade. Pick a provider and the region list changes:
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -1655,7 +1655,7 @@ More conditions:
 
 A form that uses grouping, negation and `null`:
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -1715,7 +1715,7 @@ Complete forms for common requests. Copy one and adapt it.
 
 ### Access request
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -1789,7 +1789,7 @@ body:
 
 The version list follows the engine. Backup and high-availability fields appear only for production.
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -1909,7 +1909,7 @@ body:
 
 ### Create a repository from a template
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
@@ -2004,7 +2004,7 @@ body:
 
 ### Employee onboarding
 
-<Tabs>
+<Tabs sync={false}>
 <Tab title="YAML">
 
 ```yaml
