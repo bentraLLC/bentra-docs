@@ -2,6 +2,17 @@
 
 Dated entries from Bentra's top-level log. Most recent first.
 
+## 2026-10-29 — Form field widths and inline options
+
+Form fields no longer have to stack one per row. Two optional attributes:
+
+- `width: half` or `third` lets fields share a row. Not allowed on `tags` fields.
+- `layout: inline` puts `radio` and `checkboxes` options on one line, wrapping as needed.
+
+Forms narrower than 600 pixels (phones, narrow windows, the editor preview) go back to one field per row. The docs form preview follows the same rules.
+
+See [Form syntax → width](../reference/form-syntax.mdx).
+
 ## 2026-10-20 — Per-organization single sign-on
 
 Settings → Authentication is now a self-service SSO page for Enterprise organizations. It has:

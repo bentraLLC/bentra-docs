@@ -302,7 +302,7 @@ Use `snake_case` ids. Since they become environment variable names, keep them to
 
 ## `body[*].section`
 
-**Optional.** Groups fields under a header. A section header is shown whenever the `section` value changes between one field and the next, so list the fields of each section consecutively.
+**Optional.** Groups fields under a header. A section header is shown whenever the `section` value changes between one field and the next, so list the fields of each section consecutively. A section always starts on a new row, even when the fields before it use [`width`](#body--attributes-width).
 
 <Tabs sync={false}>
 <Tab title="YAML">
@@ -607,6 +607,71 @@ body:
 </Tab>
 </Tabs>
 
+### `body[*].attributes.width`
+
+String. `half` or `third`. Lets a field share a row with the fields next to it. Leave it out and the field is full width.
+
+Fields fill a row from left to right and move to the next row when it is full. A `section` header always starts a new row.
+
+<Tabs sync={false}>
+<Tab title="YAML">
+
+```yaml
+name: Onboard a new hire
+body:
+  - type: input
+    id: full_name
+    attributes:
+      label: Full name
+      placeholder: Ada Lovelace
+      width: half
+    validations:
+      required: true
+  - type: input
+    id: work_email
+    attributes:
+      label: Work email
+      input_type: email
+      placeholder: you@example.com
+      width: half
+    validations:
+      required: true
+  - type: input
+    id: username
+    attributes:
+      label: Username
+      width: third
+  - type: input
+    id: home_directory
+    attributes:
+      label: Home directory
+      placeholder: /home/
+      width: third
+  - type: input
+    id: reference
+    attributes:
+      label: Reference
+      placeholder: EMP-
+      width: third
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Onboard a new hire\nbody:\n  - type: input\n    id: full_name\n    attributes:\n      label: Full name\n      placeholder: Ada Lovelace\n      width: half\n    validations:\n      required: true\n  - type: input\n    id: work_email\n    attributes:\n      label: Work email\n      input_type: email\n      placeholder: you@example.com\n      width: half\n    validations:\n      required: true\n  - type: input\n    id: username\n    attributes:\n      label: Username\n      width: third\n  - type: input\n    id: home_directory\n    attributes:\n      label: Home directory\n      placeholder: /home/\n      width: third\n  - type: input\n    id: reference\n    attributes:\n      label: Reference\n      placeholder: EMP-\n      width: third\n  - type: textarea\n    id: notes\n    attributes:\n      label: Notes"} />
+
+</Tab>
+</Tabs>
+
+- **Small screens.** When the form is narrower than 600 pixels, for example on a phone or in a narrow window, every field is full width and the form reads top to bottom.
+- **One size per row.** A half next to a third leaves a gap at the end of the row. Keep each row to halves or to thirds.
+- **Hidden fields.** A field hidden by `visibility.condition` leaves its row, so the fields after it move up to fill the space.
+- **Not on tags.** `tags` fields are always full width. Setting `width` on one is a validation error.
+
 ### `body[*].attributes.steppers_only`
 
 Boolean. Applies to `input_type: number` fields only. When true, typing is blocked and the value can only be changed with the spinner arrows.
@@ -762,6 +827,49 @@ body:
 <Tab title="Preview">
 
 <FormPreview yaml={"name: Choose an environment\nbody:\n  - type: dropdown\n    id: environment\n    attributes:\n      label: Environment\n      options:\n        - { value: dev, label: Development }\n        - { value: staging, label: Staging }\n        - { value: prod, label: Production }\n    validations:\n      required: true"} />
+
+</Tab>
+</Tabs>
+
+### `body[*].attributes.layout`
+
+String. `radio` and `checkboxes` only. The only value is `inline`, which puts the options on one line. Options wrap onto the next line when they run out of room. Leave it out to list one option per line.
+
+Inline works best for a few short options, such as yes or no.
+
+<Tabs sync={false}>
+<Tab title="YAML">
+
+```yaml
+name: Onboard a new hire
+body:
+  - type: radio
+    id: contractor
+    attributes:
+      label: Is this person a contractor?
+      layout: inline
+      default: employee
+      options:
+        - { value: employee, label: "No, an employee" }
+        - { value: contractor, label: "Yes, a contractor" }
+    validations:
+      required: true
+  - type: checkboxes
+    id: tools
+    attributes:
+      label: Tools
+      layout: inline
+      options:
+        - { value: github, label: GitHub }
+        - { value: slack, label: Slack }
+        - { value: jira, label: Jira }
+        - { value: vpn, label: VPN }
+```
+
+</Tab>
+<Tab title="Preview">
+
+<FormPreview yaml={"name: Onboard a new hire\nbody:\n  - type: radio\n    id: contractor\n    attributes:\n      label: Is this person a contractor?\n      layout: inline\n      default: employee\n      options:\n        - { value: employee, label: \"No, an employee\" }\n        - { value: contractor, label: \"Yes, a contractor\" }\n    validations:\n      required: true\n  - type: checkboxes\n    id: tools\n    attributes:\n      label: Tools\n      layout: inline\n      options:\n        - { value: github, label: GitHub }\n        - { value: slack, label: Slack }\n        - { value: jira, label: Jira }\n        - { value: vpn, label: VPN }"} />
 
 </Tab>
 </Tabs>
@@ -2018,6 +2126,7 @@ body:
     section: Person
     attributes:
       label: Full name
+      width: half
     validations:
       required: true
   - type: input
@@ -2027,6 +2136,7 @@ body:
       label: Work email
       input_type: email
       placeholder: first.last@example.com
+      width: half
     validations:
       required: true
   - type: input
@@ -2035,6 +2145,7 @@ body:
     attributes:
       label: Start date
       input_type: date
+      width: half
     dynamic:
       auto_populate: today+14
     validations:
@@ -2044,6 +2155,7 @@ body:
     section: Person
     attributes:
       label: Department
+      width: half
       options:
         - { value: engineering, label: Engineering }
         - { value: design, label: Design }
@@ -2056,6 +2168,7 @@ body:
     section: Equipment
     attributes:
       label: Laptop
+      layout: inline
       default: macbook_pro
       options:
         - { value: macbook_air, label: MacBook Air }
@@ -2066,6 +2179,7 @@ body:
     section: Equipment
     attributes:
       label: Accessories
+      layout: inline
       options:
         - { value: monitor, label: External monitor }
         - { value: keyboard, label: Keyboard and mouse }
@@ -2101,7 +2215,7 @@ body:
 </Tab>
 <Tab title="Preview">
 
-<FormPreview yaml={"name: Onboard a new employee\ndescription: |\n  Orders equipment and creates accounts for a new starter.\n  Submit at least a week before their first day.\nbody:\n  - type: input\n    id: full_name\n    section: Person\n    attributes:\n      label: Full name\n    validations:\n      required: true\n  - type: input\n    id: work_email\n    section: Person\n    attributes:\n      label: Work email\n      input_type: email\n      placeholder: first.last@example.com\n    validations:\n      required: true\n  - type: input\n    id: start_date\n    section: Person\n    attributes:\n      label: Start date\n      input_type: date\n    dynamic:\n      auto_populate: today+14\n    validations:\n      required: true\n  - type: dropdown\n    id: department\n    section: Person\n    attributes:\n      label: Department\n      options:\n        - { value: engineering, label: Engineering }\n        - { value: design, label: Design }\n        - { value: sales, label: Sales }\n        - { value: finance, label: Finance }\n    validations:\n      required: true\n  - type: radio\n    id: laptop\n    section: Equipment\n    attributes:\n      label: Laptop\n      default: macbook_pro\n      options:\n        - { value: macbook_air, label: MacBook Air }\n        - { value: macbook_pro, label: MacBook Pro }\n        - { value: thinkpad, label: ThinkPad }\n  - type: checkboxes\n    id: accessories\n    section: Equipment\n    attributes:\n      label: Accessories\n      options:\n        - { value: monitor, label: External monitor }\n        - { value: keyboard, label: Keyboard and mouse }\n        - { value: headset, label: Headset }\n  - type: input\n    id: shipping_address\n    section: Equipment\n    attributes:\n      label: Shipping address\n      description: Leave empty to deliver to the office.\n  - type: checkboxes\n    id: accounts\n    section: Accounts\n    attributes:\n      label: Accounts to create\n      options:\n        - { value: google, label: Google Workspace, required: true }\n        - { value: slack, label: Slack, required: true }\n        - { value: github, label: GitHub }\n        - { value: aws, label: AWS }\n        - { value: salesforce, label: Salesforce }\n  - type: input\n    id: github_username\n    section: Accounts\n    attributes:\n      label: GitHub username\n    validations:\n      required: true\n    visibility:\n      condition: \"accounts.includes('github')\""} />
+<FormPreview yaml={"name: Onboard a new employee\ndescription: |\n  Orders equipment and creates accounts for a new starter.\n  Submit at least a week before their first day.\nbody:\n  - type: input\n    id: full_name\n    section: Person\n    attributes:\n      label: Full name\n      width: half\n    validations:\n      required: true\n  - type: input\n    id: work_email\n    section: Person\n    attributes:\n      label: Work email\n      input_type: email\n      placeholder: first.last@example.com\n      width: half\n    validations:\n      required: true\n  - type: input\n    id: start_date\n    section: Person\n    attributes:\n      label: Start date\n      input_type: date\n      width: half\n    dynamic:\n      auto_populate: today+14\n    validations:\n      required: true\n  - type: dropdown\n    id: department\n    section: Person\n    attributes:\n      label: Department\n      width: half\n      options:\n        - { value: engineering, label: Engineering }\n        - { value: design, label: Design }\n        - { value: sales, label: Sales }\n        - { value: finance, label: Finance }\n    validations:\n      required: true\n  - type: radio\n    id: laptop\n    section: Equipment\n    attributes:\n      label: Laptop\n      layout: inline\n      default: macbook_pro\n      options:\n        - { value: macbook_air, label: MacBook Air }\n        - { value: macbook_pro, label: MacBook Pro }\n        - { value: thinkpad, label: ThinkPad }\n  - type: checkboxes\n    id: accessories\n    section: Equipment\n    attributes:\n      label: Accessories\n      layout: inline\n      options:\n        - { value: monitor, label: External monitor }\n        - { value: keyboard, label: Keyboard and mouse }\n        - { value: headset, label: Headset }\n  - type: input\n    id: shipping_address\n    section: Equipment\n    attributes:\n      label: Shipping address\n      description: Leave empty to deliver to the office.\n  - type: checkboxes\n    id: accounts\n    section: Accounts\n    attributes:\n      label: Accounts to create\n      options:\n        - { value: google, label: Google Workspace, required: true }\n        - { value: slack, label: Slack, required: true }\n        - { value: github, label: GitHub }\n        - { value: aws, label: AWS }\n        - { value: salesforce, label: Salesforce }\n  - type: input\n    id: github_username\n    section: Accounts\n    attributes:\n      label: GitHub username\n    validations:\n      required: true\n    visibility:\n      condition: \"accounts.includes('github')\""} />
 
 </Tab>
 </Tabs>

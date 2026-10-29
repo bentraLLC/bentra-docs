@@ -705,7 +705,7 @@ const Control = ({ field, options, value, onChange, readOnly }) => {
   if (field.type === "checkboxes" || field.type === "radio") {
     const multi = field.type === "checkboxes";
     return (
-      <div className="bt-fp-choices">
+      <div className={`bt-fp-choices${field.attributes?.layout === "inline" ? " is-inline" : ""}`}>
         {options.map((opt) => {
           const on = multi ? (value || []).includes(opt.value) : value === opt.value;
           return (
@@ -851,9 +851,10 @@ const PreviewForm = ({ form }) => {
             const compact = field.type === "input" || (field.type === "dropdown" && !attrs.multiple);
             const options = fieldOptions(field, values);
             const isGroup = field.type === "checkboxes" || field.type === "radio";
+            const width = attrs.width === "half" || attrs.width === "third" ? ` is-${attrs.width}` : "";
             return [
               header,
-              <div className={`bt-fp-field${compact ? " is-compact" : ""}`} key={field.id}>
+              <div className={`bt-fp-field${compact ? " is-compact" : ""}${width}`} key={field.id}>
                 <div className="bt-fp-label">
                   <span>{labelOf(field)}</span>
                   {required ? (

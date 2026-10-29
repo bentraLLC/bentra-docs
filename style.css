@@ -215,10 +215,33 @@ html.dark .bt-fp {
   padding: 24px;
 }
 
+/* Six columns: attributes.width puts halves (3) and thirds (2) side by side. Below 600px of
+   form width every field is full width again, as in the app. */
 .bt-fp-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 24px 16px;
+  container: bt-fp-fields / inline-size;
+}
+
+.bt-fp-fields > * {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.bt-fp-fields > .bt-fp-field.is-half {
+  grid-column: span 3;
+}
+
+.bt-fp-fields > .bt-fp-field.is-third {
+  grid-column: span 2;
+}
+
+@container bt-fp-fields (max-width: 600px) {
+  .bt-fp-fields > .bt-fp-field.is-half,
+  .bt-fp-fields > .bt-fp-field.is-third {
+    grid-column: 1 / -1;
+  }
 }
 
 .bt-fp-section {
@@ -252,6 +275,11 @@ html.dark .bt-fp {
 
 .bt-fp-field.is-compact .bt-fp-control-wrap {
   max-width: 480px;
+}
+
+.bt-fp-field.is-half .bt-fp-control-wrap,
+.bt-fp-field.is-third .bt-fp-control-wrap {
+  max-width: none;
 }
 
 .bt-fp-label {
@@ -433,6 +461,12 @@ html.dark .bt-fp {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.bt-fp-choices.is-inline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px 24px;
 }
 
 .bt-fp-choice {
