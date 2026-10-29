@@ -71,11 +71,11 @@ A **run** is one execution of a workflow, from an approved request or a job trig
 
 ## Connectors
 
-A **connector** gives Bentra access to GitHub so it can read workflow files and hand runners a short-lived token to clone the repository. A connector is owned by a workspace and can be shared with others. See [Connect a repository](/get-started/connect-repository) and [Connectors](/reference/connectors).
+A **connector** gives Bentra access to GitHub so it can read workflow files and hand runners a short-lived token to clone the repository. Its maintainers (users and groups) manage it, and it's usable in the workspaces it's shared with. See [Connect a repository](/get-started/connect-repository) and [Connectors](/reference/connectors).
 
 ## Variables and collections
 
-**Variables** reach a workflow's steps as environment variables; secret values are write-only. A **variable collection** is a reusable set owned by a workspace that you attach to any number of workflows, and a workflow's own variables override it. See [Variables and secrets](/guides/variables-and-secrets).
+**Variables** reach a workflow's steps as environment variables; secret values are write-only. A **variable collection** is a reusable set, managed by its maintainers and shared with the workspaces that can use it, that you attach to any number of workflows, and a workflow's own variables override it. See [Variables and secrets](/guides/variables-and-secrets).
 
 ## Job datasets
 

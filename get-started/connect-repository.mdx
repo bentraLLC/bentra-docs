@@ -11,11 +11,12 @@ You don't need a repository to get started. Choose **Bentra-managed** when you c
 
 ## Who can add a connector
 
-- **Owners and admins** can add a connector owned by any workspace and share it with any workspace, including every workspace at once.
-- **Members** can add a connector owned by a workspace they belong to, except the default workspace, and share it with their other workspaces.
+- **Owners and admins** can add a connector available in any workspace, including every workspace at once.
+- **Members** can add a connector available in a workspace they belong to, except the default workspace, and later add their other workspaces.
+- Whoever adds a connector becomes its maintainer. Add other users or groups as maintainers from its page.
 - **Requesters** can't.
 
-The full rules are in [Connectors](/reference/connectors#who-owns-and-uses-a-connector).
+The full rules are in [Connectors](/reference/connectors#who-manages-and-uses-a-connector).
 
 ## Choose how the connector signs in
 
@@ -69,8 +70,9 @@ Click the connector in **Settings → Connectors** to open its page:
 - **Test connection** checks that the stored credentials still work.
 - **Rotate** replaces the credentials, for example when a token is about to expire.
 - **Edit** changes the name and description.
-- **Permissions** shows the owning workspace and who it's shared with. Add or remove workspaces, or move it to another workspace, here.
-- **Used by** lists the workflows that use it. You can't stop sharing with a workspace, or delete the connector, while workflows there still use it.
+- **Maintainers** lists the users and groups that manage it. Add or remove them here.
+- **Workspaces** lists where workflows can use it. Add or remove workspaces here; admins can make it available in every workspace.
+- **Used by** lists the workflows that use it. You can't remove a workspace, or delete the connector, while workflows there still use it.
 
 To manage connectors from scripts, see the [API](/reference/api/organization#patch-connectorsid).
 

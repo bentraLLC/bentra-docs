@@ -2,26 +2,27 @@
 title: "Connectors"
 ---
 
-A connector gives Bentra access to the Git provider that holds your workflows. Only **GitHub** is supported today. Add connectors under **Settings → Connectors**, and click one to see its details, rotate its credentials, test it, move it and change who it's shared with.
+A connector gives Bentra access to the Git provider that holds your workflows. Only **GitHub** is supported today. Add connectors under **Settings → Connectors**, and click one to see its details, rotate its credentials, test it, and change its maintainers and the workspaces that can use it.
 
-## Who owns and uses a connector
+## Who manages and uses a connector
 
-Every connector is **owned by a workspace**. That workspace's team manages it, whoever added it. When you add one, **Owned by** defaults to the workspace you're in; if you belong to several, pick the team it's for. The person who added it is shown as **Added by**, which gives them no extra rights.
+Two separate lists decide this, both on the connector's page:
 
-A workflow can use a connector its own workspace owns, or one shared with it. A connector can be shared with **selected workspaces** or **every workspace**. Shared workspaces can use it but not change it.
+- **Maintainers** are the users and groups that manage the connector: edit it, rotate or test its credentials, change where it's used, and delete it. Whoever adds a connector becomes its first maintainer. Owners and admins can always manage every connector.
+- **Workspaces** are where workflows can use it: the workspaces on its list, or **every workspace** in the organization. People in those workspaces can pick the connector in their workflows but can't change it.
+
+When you add a connector, **Available in** defaults to the workspace you're in. Add more workspaces and maintainers from its page afterwards.
 
 | | Owners and admins | Members |
 |---|---|---|
-| Add a connector | Owned by any workspace, shared with any | Owned by a workspace they belong to (not the default workspace), shared with their other workspaces |
-| Change, rotate, share or delete it | Any connector | Connectors their workspaces own |
-| Move it to another workspace | Any connector | Between two workspaces they belong to |
-| Share with every workspace | Yes | No |
+| Add a connector | Available in any workspace, or every workspace | Available in a workspace they belong to (not the default workspace) |
+| Change, rotate, share or delete it | Any connector | Connectors they maintain, directly or through a group |
+| Add a workspace | Any workspace | Workspaces they belong to (not the default workspace) |
+| Make it available in every workspace | Yes | No |
 
-Members can't add connectors to the default workspace, so it doesn't fill up with personal connectors, and the connectors it owns are managed by owners and admins.
+Members can't add the default workspace, so it doesn't fill up with personal connectors. A group maintainer covers whoever is in the group, so a team keeps managing its connector when people join or leave. If a connector has no maintainers left, only owners and admins can change it.
 
-If someone leaves a workspace, they stop managing its connectors and the rest of the team carries on. When you move a connector, the old workspace stays shared while its workflows still use it.
-
-You can't stop sharing a connector with a workspace, or delete it, while workflows there still use it. The connector page lists them under **Used by**; switch them to another connector first. A workspace that owns a connector used by other workspaces can't be deleted until you move the connector.
+You can't remove a workspace from a connector, or delete it, while workflows there still use it. The connector page lists them under **Used by**; switch them to another connector first. Deleting a workspace just removes it from its connectors' lists.
 
 Bentra uses a connector to:
 

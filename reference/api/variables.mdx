@@ -2,7 +2,7 @@
 title: "Variables"
 ---
 
-Variables reach a workflow's steps as environment variables. They come from **variable collections** (reusable sets owned by a workspace, shareable with others and attachable to any number of workflows) and from the workflow's **own variables**, which override collection values. Among attached collections, a later one overrides an earlier one.
+Variables reach a workflow's steps as environment variables. They come from **variable collections** (reusable sets managed by their maintainers, usable in the workspaces they're shared with, and attachable to any number of workflows) and from the workflow's **own variables**, which override collection values. Among attached collections, a later one overrides an earlier one.
 
 Secret values are encrypted with a key unique to your organization and are **never returned**: responses show a masked `display_value`.
 
@@ -24,7 +24,7 @@ Secret values are encrypted with a key unique to your organization and are **nev
 | `POST` | `workflows/{id}/variable-collections/` | `edit:variables` | `attach_collection` |
 | `DELETE` | `workflows/{id}/variable-collections/{collection_id}/` | `edit:variables` | `detach_collection` |
 
-**Permissions:** reading collections needs `org.view_variable_collections`. Owners and admins (`org.manage_variable_collections`) can create and change any collection. Members (`org.create_variable_collections`) can create collections owned by a workspace they belong to, except the default workspace, and change any collection their workspaces own, whoever created it. A workflow's variables and attached collections need `workflow.manage_variables`.
+**Permissions:** reading collections needs `org.view_variable_collections`. Owners and admins (`org.manage_variable_collections`) can create and change any collection. Members (`org.create_variable_collections`) can create collections available in a workspace they belong to, except the default workspace, and change the collections they maintain, directly or through a group. A workflow's variables and attached collections need `workflow.manage_variables`.
 
 ---
 
@@ -55,16 +55,17 @@ An agent can set a secret if you give it the value, but the value then passes th
 
 ### `GET variable-collections/`
 
-Owners and admins see every collection. Everyone else sees the ones usable in a workspace they belong to: owned by it, shared with it, or shared with every workspace. `?workspace=<slug>` narrows the list to the collections that workspace's workflows can attach. Paginated.
+Owners and admins see every collection. Everyone else sees the ones they maintain and the ones usable in a workspace they belong to (shared with it, or with every workspace). `?workspace=<slug>` narrows the list to the collections that workspace's workflows can attach. Paginated.
 
 ```json
 {"count": 1, "next": null, "previous": null,
- "results": [{"id": "…", "name": "AWS prod", "description": "", "workspace": "platform",
-              "visibility": "selected_workspaces", "shared_with": ["data"],
+ "results": [{"id": "…", "name": "AWS prod", "description": "",
+              "visibility": "selected_workspaces", "shared_with": ["platform", "data"],
+              "maintainers": [{"id": "…", "type": "user", "email": "dana@acme.com"}],
               "created_by": "dana@acme.com", "created_at": "…", "updated_at": "…"}]}
 ```
 
-`workspace` owns the collection; its members manage it. `visibility` is `this_workspace`, `selected_workspaces` (the ones in `shared_with`) or `all_workspaces`. Shared workspaces can attach it but not change it.
+`maintainers` (users and groups) manage the collection. `visibility` is `selected_workspaces` (the ones in `shared_with` can attach it) or `all_workspaces`. Those workspaces can attach it but not change it.
 
 ### `GET variable-collections/{id}/`
 
@@ -72,7 +73,7 @@ The collection plus `variables`.
 
 ### `POST variable-collections/`
 
-`{"workspace": "platform", "name": "AWS prod", "description": "…", "visibility": "selected_workspaces", "workspaces": ["data"]}` → `201`. `workspace` is the owning workspace; `visibility` (default `this_workspace`) and `workspaces` are optional. `403` if you can't create collections there. `502` if secret storage is unavailable.
+`{"name": "AWS prod", "description": "…", "workspaces": ["platform"]}` → `201`. `workspaces` are the ones that can attach it; members need at least one, and only non-default workspaces they belong to. Owners and admins can send `"visibility": "all_workspaces"` instead. You become its maintainer. `403` if you can't create collections there. `502` if secret storage is unavailable.
 
 ### `PATCH variable-collections/{id}/`
 
@@ -84,11 +85,19 @@ Deletes the collection, its variables and their secrets, and detaches it from wo
 
 ### `PATCH variable-collections/{id}/sharing/`
 
-`{"workspace": "platform", "visibility": "selected_workspaces", "workspaces": ["data", "ml"]}`, every field optional.
+`{"visibility": "selected_workspaces", "workspaces": ["data", "ml"]}`, every field optional.
 
-- `workspace` moves the collection. A member must belong to both workspaces, and neither can be the default workspace. The old workspace stays shared while its workflows have the collection attached.
-- `workspaces` replaces the shared list; `[]` stops sharing. Only owners and admins can use `all_workspaces` or share with the default workspace. When a member saves, workspaces they can't manage stay on the list.
+- `workspaces` replaces the list of workspaces that can attach it. Members can add only non-default workspaces they belong to; workspaces they can't add stay on the list when they save.
+- `visibility` (`selected_workspaces` or `all_workspaces`) is owners and admins only.
 - Returns `409` with `blocking_workflows` (`slug`, `name`, `workspace`) when a workflow in a workspace that would lose access still has the collection attached. Nothing changes.
+
+### `POST variable-collections/{id}/maintainers/`
+
+`{"user": "ana@acme.com"}` or `{"group": "<group id>"}` → `201` with the maintainer. Needs `edit:variables`.
+
+### `DELETE variable-collections/{id}/maintainers/{maintainer_id}/`
+
+Returns `204`. Only owners and admins can remove the last maintainer.
 
 ## A workflow's variables
 

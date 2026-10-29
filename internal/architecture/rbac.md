@@ -59,10 +59,10 @@ Lives in `permissions/constants.py`. Each permission is a dotted string like `wo
 - `org.view_members`
 - `org.create_workflow`
 - `org.view_connectors`
-- `org.create_connectors` (add connectors owned by a non-default workspace you belong to, and manage the ones your workspaces own)
+- `org.create_connectors` (add connectors available in a non-default workspace you belong to, and manage the ones you maintain directly or through a group)
 - `org.manage_connectors`
 - `org.view_variable_collections`
-- `org.create_variable_collections` (create collections owned by a non-default workspace you belong to, and manage the ones your workspaces own)
+- `org.create_variable_collections` (create collections available in a non-default workspace you belong to, and manage the ones you maintain directly or through a group)
 - `org.manage_variable_collections`
 
 **Workflow scope** (`ALL_WORKFLOW_PERMISSIONS`):

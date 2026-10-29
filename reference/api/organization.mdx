@@ -22,32 +22,41 @@ Lookups you need before creating things (VCS connectors and their repositories, 
 
 ## `GET connectors/`
 
-VCS connectors you can see. Owners and admins see every connector. Everyone else sees the ones usable in a workspace they belong to: owned by it, shared with it, or shared with every workspace. `?workspace=<slug>` narrows the list to the connectors a workflow in that workspace can use. Paginated.
+VCS connectors you can see. Owners and admins see every connector. Everyone else sees the ones they maintain and the ones usable in a workspace they belong to (shared with it, or with every workspace). `?workspace=<slug>` narrows the list to the connectors a workflow in that workspace can use. Paginated.
 
 ```json
 {"count": 1, "next": null, "previous": null,
  "results": [{"id": "6c2f…", "name": "GitHub", "description": "", "vcs_type": "github",
-              "auth_type": "github_app", "owner": "acme", "workspace": "platform",
-              "visibility": "selected_workspaces", "shared_with": ["data"],
+              "auth_type": "github_app", "owner": "acme",
+              "visibility": "selected_workspaces", "shared_with": ["platform", "data"],
+              "maintainers": [{"id": "…", "type": "user", "email": "dana@acme.com"},
+                              {"id": "…", "type": "group", "group_id": "…", "name": "Platform"}],
               "created_by": "dana@acme.com"}]}
 ```
 
-`workspace` owns the connector; its members manage it. `visibility` is `this_workspace`, `selected_workspaces` (the ones in `shared_with`) or `all_workspaces`. `owner` is the GitHub organization.
+`maintainers` manage the connector (owners and admins manage every connector). `visibility` is `selected_workspaces` (the ones in `shared_with` can use it) or `all_workspaces`. `owner` is the GitHub organization.
 
 Connectors hold credentials, so you add them and change their credentials in **Settings → Connectors**, not through the API.
 
 ## `PATCH connectors/{id}/`
 
-Rename a connector, move it to another workspace, or change who it's shared with. Allowed for owners and admins, and for members of the owning workspace. Every field is optional.
+Rename a connector or change which workspaces can use it. Allowed for owners and admins, and for its maintainers. Every field is optional.
 
 ```json
-{"name": "Platform GitHub", "workspace": "platform", "visibility": "selected_workspaces",
- "workspaces": ["data", "ml"]}
+{"name": "Platform GitHub", "visibility": "selected_workspaces", "workspaces": ["data", "ml"]}
 ```
 
-- `workspace` moves the connector. A member must belong to both workspaces, and neither can be the default workspace. The old workspace stays shared while its workflows use the connector.
-- `workspaces` replaces the shared list; `[]` stops sharing. Only owners and admins can use `all_workspaces` or share with the default workspace. When a member saves, workspaces they can't manage stay on the list.
+- `workspaces` replaces the list of workspaces that can use it. Members can add only non-default workspaces they belong to; workspaces they can't add stay on the list when they save.
+- `visibility` (`selected_workspaces` or `all_workspaces`) is owners and admins only. The workspace list is kept while it's `all_workspaces`.
 - `409` with `blocking_workflows` (`slug`, `name`, `workspace`) when a workflow that uses the connector would lose it. Nothing changes; switch those workflows to another connector first.
+
+## `POST connectors/{id}/maintainers/`
+
+Add a maintainer: `{"user": "ana@acme.com"}` (an organization member) or `{"group": "<group id>"}`. Returns `201` with the maintainer (`id`, `type`, …). Needs `manage:connectors` and the right to manage the connector.
+
+## `DELETE connectors/{id}/maintainers/{maintainer_id}/`
+
+Remove a user or group. Returns `204`. Only owners and admins can remove the last maintainer.
 
 ## `POST connectors/{id}/test/`
 
