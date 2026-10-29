@@ -83,8 +83,6 @@
               "guides/runs",
               "guides/job-datasets",
               "guides/variables-and-secrets",
-              "reference/workflow-syntax",
-              "reference/form-syntax",
               "reference/connectors"
             ]
           },
@@ -96,6 +94,18 @@
               "guides/api-tokens",
               "guides/organization-settings",
               "ai/mcp-server"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Syntax",
+        "groups": [
+          {
+            "group": "Syntax",
+            "pages": [
+              "reference/workflow-syntax",
+              "reference/form-syntax"
             ]
           }
         ]
