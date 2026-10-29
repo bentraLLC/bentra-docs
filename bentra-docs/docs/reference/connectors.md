@@ -1,6 +1,19 @@
 # Connectors
 
-A connector gives Bentra access to the Git provider that holds your workflows. Only **GitHub** is supported today. Create connectors under **Settings → Connectors**; only organization admins can.
+A connector gives Bentra access to the Git provider that holds your workflows. Only **GitHub** is supported today. Add connectors under **Settings → Connectors**, and click one to see its details, rotate its credentials, test it and change where it's available.
+
+## Who can use a connector
+
+A connector is available either to **every workspace** in the organization or to **selected workspaces**. A workflow can use any connector available to its workspace.
+
+| | Owners and admins | Members |
+|---|---|---|
+| Add a connector | For every workspace, or any workspaces | For workspaces they belong to, except the default workspace |
+| Change, rotate, re-share or delete it | Any connector | Connectors they added |
+
+Members can't add connectors to the default workspace, so it doesn't fill up with personal connectors. Ask an admin, or use another workspace.
+
+You can't take a connector away from a workspace, or delete it, while workflows still use it. The connector page lists them under **Used by**; switch them to another connector first. If the person who added a connector leaves the organization, it keeps working and the page shows a warning so someone can replace its credentials.
 
 Bentra uses a connector to:
 

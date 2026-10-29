@@ -48,12 +48,13 @@ Personal tokens carry `*` (all scopes). Delegated tokens carry the named scopes,
 | `manage:data_sharing` | Change a job's dataset sharing. |
 | `read:org` | View workspaces, members, groups, connectors, runner pools and branding. |
 | `manage:org` | Change organization details, request-portal branding and single sign-on. |
+| `manage:connectors` | Rename connectors, change which workspaces can use them, and test their connection. |
 | `manage:workspaces` | Create, rename and delete workspaces. |
 | `manage:members` | Invite and remove members, change roles, manage groups and workspace access. |
 
 ## What stays in the UI
 
-Anything that takes or mints a secret is read-only through the API: adding VCS connectors, runner tokens and personal API tokens. You can list connectors and runner pools so you can choose one. Single sign-on is partly here: domains, provisioning and setup links, but a person connects the identity provider in the WorkOS assistant.
+Anything that takes or mints a secret stays in the UI: adding VCS connectors or changing their credentials, runner tokens and personal API tokens. You can list connectors and runner pools so you can choose one, and rename or re-share a connector. Single sign-on is partly here: domains, provisioning and setup links, but a person connects the identity provider in the WorkOS assistant.
 
 ## Conventions
 

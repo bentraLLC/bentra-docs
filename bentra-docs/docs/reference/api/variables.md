@@ -1,6 +1,6 @@
 # Variables
 
-Variables reach a workflow's steps as environment variables. They come from **variable collections** (reusable sets in a workspace, attached to any number of workflows) and from the workflow's **own variables**, which override collection values. Among attached collections, a later one overrides an earlier one.
+Variables reach a workflow's steps as environment variables. They come from **variable collections** (reusable sets that live in a workspace and can be shared with others, attached to any number of workflows) and from the workflow's **own variables**, which override collection values. Among attached collections, a later one overrides an earlier one.
 
 Secret values are stored in OpenBao and are **never returned**: responses show a masked `display_value`.
 
@@ -11,6 +11,7 @@ Secret values are stored in OpenBao and are **never returned**: responses show a
 | `POST` | `variable-collections/` | `edit:variables` | `create_variable_collection` |
 | `PATCH` | `variable-collections/{id}/` | `edit:variables` | `update_variable_collection` |
 | `DELETE` | `variable-collections/{id}/` | `edit:variables` | `delete_variable_collection` |
+| `PATCH` | `variable-collections/{id}/sharing/` | `edit:variables` | `set_collection_sharing` |
 | `POST` | `variable-collections/{id}/variables/` | `edit:variables` | `add_collection_variable` |
 | `PATCH` | `variable-collections/{id}/variables/{variable_id}/` | `edit:variables` | `update_collection_variable` |
 | `DELETE` | `variable-collections/{id}/variables/{variable_id}/` | `edit:variables` | `delete_collection_variable` |
@@ -21,7 +22,7 @@ Secret values are stored in OpenBao and are **never returned**: responses show a
 | `POST` | `workflows/{id}/variable-collections/` | `edit:variables` | `attach_collection` |
 | `DELETE` | `workflows/{id}/variable-collections/{collection_id}/` | `edit:variables` | `detach_collection` |
 
-**Permissions:** collections need `org.view_variable_collections` to read and `org.manage_variable_collections` to change. A workflow's variables and attached collections need `workflow.manage_variables`.
+**Permissions:** reading collections needs `org.view_variable_collections`. Owners and admins (`org.manage_variable_collections`) can create and change any collection. Members (`org.create_variable_collections`) can create collections in workspaces they belong to, except the default workspace, and change only the ones they created. A workflow's variables and attached collections need `workflow.manage_variables`.
 
 ---
 
@@ -49,12 +50,16 @@ Body for creating or changing one:
 
 ### `GET variable-collections/`
 
-Collections in workspaces you belong to. `?workspace=<slug>` filters. Paginated.
+Collections usable in a workspace you belong to: the ones that live there, the ones shared with it, and the ones shared with every workspace. `?workspace=<slug>` narrows the list to the collections that workspace's workflows can attach. Paginated.
 
 ```json
 {"count": 1, "next": null, "previous": null,
- "results": [{"id": "…", "name": "AWS prod", "description": "", "workspace": "platform", "created_at": "…", "updated_at": "…"}]}
+ "results": [{"id": "…", "name": "AWS prod", "description": "", "workspace": "platform",
+              "visibility": "selected_workspaces", "shared_with": ["data"],
+              "created_at": "…", "updated_at": "…"}]}
 ```
+
+`workspace` is the collection's home. `visibility` is `this_workspace`, `selected_workspaces` (the ones in `shared_with`) or `all_workspaces`. Shared workspaces can attach a collection, but only someone who can manage it can change it.
 
 ### `GET variable-collections/{id}/`
 
@@ -62,7 +67,7 @@ The collection plus `variables`.
 
 ### `POST variable-collections/`
 
-`{"workspace": "platform", "name": "AWS prod", "description": "…"}` → `201`. `502` if secret storage is unavailable.
+`{"workspace": "platform", "name": "AWS prod", "description": "…"}` → `201`. `403` if you can't create collections in that workspace. `502` if secret storage is unavailable.
 
 ### `PATCH variable-collections/{id}/`
 
@@ -71,6 +76,13 @@ The collection plus `variables`.
 ### `DELETE variable-collections/{id}/`
 
 Deletes the collection, its variables and their secrets, and detaches it from workflows. Returns `204`.
+
+### `PATCH variable-collections/{id}/sharing/`
+
+`{"visibility": "selected_workspaces", "workspaces": ["data", "ml"]}` sets which other workspaces can attach the collection. `workspaces` replaces the list.
+
+- Only owners and admins can use `all_workspaces`, or share to the default workspace or a workspace they don't belong to. When a member saves, workspaces they can't manage stay on the list.
+- Returns `409` with `blocking_workflows` (`slug`, `name`, `workspace`) when a workflow in a workspace that would lose access still has the collection attached.
 
 ## A workflow's variables
 
@@ -91,7 +103,7 @@ Deletes the collection, its variables and their secrets, and detaches it from wo
 
 ### `POST workflows/{id}/variable-collections/`
 
-`{"collection_id": "…"}` attaches a collection from the same workspace, after the existing ones. `409` if already attached.
+`{"collection_id": "…"}` attaches a collection usable in the workflow's workspace (its own, one shared with it, or one shared with every workspace), after the existing ones. `404` if it isn't usable there; `409` if already attached.
 
 ### `DELETE workflows/{id}/variable-collections/{collection_id}/`
 

@@ -6,6 +6,8 @@ Lookups you need before creating things (VCS connectors and their repositories, 
 |---|---|---|---|
 | `GET` | `connectors/` | `read:org` | `list_connectors` |
 | `GET` | `connectors/{id}/` | `read:org` | — |
+| `PATCH` | `connectors/{id}/` | `manage:connectors` | `update_connector` |
+| `POST` | `connectors/{id}/test/` | `manage:connectors` | `test_connector` |
 | `GET` | `connectors/{id}/repositories/` | `read:org` | `list_repositories` |
 | `GET` | `connectors/{id}/refs/?repo=owner/repo` | `read:org` | `list_repository_refs` |
 | `GET` | `runner-pools/` | `read:org` | `list_runner_pools` |
@@ -18,15 +20,33 @@ Lookups you need before creating things (VCS connectors and their repositories, 
 
 ## `GET connectors/`
 
-The organization's VCS connectors. Visible to members who can view connectors or create workflows; others get an empty list. Paginated.
+VCS connectors you can see. Owners and admins see every connector. Everyone else sees the org-wide ones, the ones shared to a workspace they belong to, and the ones they added. `?workspace=<slug>` narrows the list to the connectors a workflow in that workspace can use. Paginated.
 
 ```json
 {"count": 1, "next": null, "previous": null,
  "results": [{"id": "6c2f…", "name": "GitHub", "description": "", "vcs_type": "github",
-              "auth_type": "github_app", "owner": "acme"}]}
+              "auth_type": "github_app", "owner": "acme", "scope": "workspaces",
+              "workspaces": ["platform"], "created_by": "dana@acme.com"}]}
 ```
 
-Connectors hold credentials, so you add, change and remove them in **Settings → Connectors**, not through the API.
+`scope` is `organization` (every workspace) or `workspaces` (only those listed in `workspaces`).
+
+Connectors hold credentials, so you add them and change their credentials in **Settings → Connectors**, not through the API.
+
+## `PATCH connectors/{id}/`
+
+Rename a connector or change where it's available. Allowed for owners and admins, and for the member who added it.
+
+```json
+{"name": "Platform GitHub", "scope": "workspaces", "workspaces": ["platform", "data"]}
+```
+
+- Only owners and admins can set `scope` to `organization`, change an org-wide connector, or share it to the default workspace or a workspace they're not in. When a member saves, workspaces they can't manage stay on the list.
+- `409` with `blocking_workflows` (`slug`, `name`, `workspace`) when a workflow that uses the connector would lose it. Switch those workflows to another connector first.
+
+## `POST connectors/{id}/test/`
+
+Checks the stored credentials still work by listing one repository. Returns `{"success": true}`, or `502` with the provider's error.
 
 ## `GET connectors/{id}/repositories/`
 

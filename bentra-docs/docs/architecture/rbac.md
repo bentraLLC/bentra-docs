@@ -59,8 +59,10 @@ Lives in `permissions/constants.py`. Each permission is a dotted string like `wo
 - `org.view_members`
 - `org.create_workflow`
 - `org.view_connectors`
+- `org.create_connectors` (add connectors to non-default workspaces you belong to)
 - `org.manage_connectors`
 - `org.view_variable_collections`
+- `org.create_variable_collections` (create collections in non-default workspaces you belong to)
 - `org.manage_variable_collections`
 
 **Workflow scope** (`ALL_WORKFLOW_PERMISSIONS`):
@@ -86,7 +88,7 @@ Roles are seeded (`is_system=True`) from `SEEDED_ROLES` in `constants.py`. Each 
 | Scope | Name | Permissions |
 |---|---|---|
 | organization | `admin` | all org perms |
-| organization | `user` | `create_workflow`, `view_connectors`, `view_variable_collections`, `view_members` |
+| organization | `user` | `create_workflow`, `view_connectors`, `create_connectors`, `view_variable_collections`, `create_variable_collections`, `view_members` |
 | workflow | `admin` | all workflow perms |
 | workflow | `writer` | `view`, `edit`, `execute`, `manage_form_settings`, `manage_variables` |
 | workflow | `reader` | `view` |
