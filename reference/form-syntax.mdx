@@ -231,7 +231,7 @@ body:
 
 | Type | Renders as | Uses `attributes.options` |
 |---|---|---|
-| `input` | A single-line input. See [`input_type`](#bodyattributesinput_type). | No |
+| `input` | A single-line input. See [`input_type`](#body--attributes-input_type). | No |
 | `textarea` | A multi-line text box | No |
 | `dropdown` | A select, or a multi-select when `multiple: true` | Yes, or `options_from` |
 | `checkboxes` | A group of checkboxes | Yes |
@@ -1108,7 +1108,7 @@ The schema accepts `cols` and `render` (`text` or `markdown`), but no template u
 
 ## `body[*].validations`
 
-**Optional.** Rules the value must satisfy. Every key except `required` accepts `null`, which means "no limit". The server skips all validation for a field that is [hidden](#bodyvisibilitycondition).
+**Optional.** Rules the value must satisfy. Every key except `required` accepts `null`, which means "no limit". The server skips all validation for a field that is [hidden](#body--visibility-condition).
 
 ### `body[*].validations.required`
 
@@ -1647,7 +1647,7 @@ A list of field ids. A change to any of them recalculates `auto_populate`. Chang
 
 ### `body[*].dynamic.options_map`
 
-`dropdown` only. Replaces the field's options based on the value of a parent field. This is how you build cascading dropdowns. It is a map from each parent value to a list of [options](#bodyattributesoptions).
+`dropdown` only. Replaces the field's options based on the value of a parent field. This is how you build cascading dropdowns. It is a map from each parent value to a list of [options](#body--attributes-options).
 
 ```yaml
 - type: dropdown
