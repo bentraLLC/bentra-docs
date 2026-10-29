@@ -1,0 +1,63 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Bentra",
+  "colors": {
+    "primary": "#4F46E5"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": ["index", "plans"]
+          },
+          {
+            "group": "Runners",
+            "pages": ["runners/install", "runners/network"]
+          },
+          {
+            "group": "Authentication",
+            "pages": ["authentication/overview", "authentication/setup-sso"]
+          },
+          {
+            "group": "Build workflows",
+            "pages": [
+              "reference/workflow-syntax",
+              "reference/form-syntax",
+              "reference/connectors"
+            ]
+          },
+          {
+            "group": "AI agents",
+            "pages": ["mcp"]
+          }
+        ]
+      },
+      {
+        "tab": "API reference",
+        "groups": [
+          {
+            "group": "API",
+            "pages": [
+              "reference/api/overview",
+              "reference/api/organization",
+              "reference/api/plan",
+              "reference/api/administration",
+              "reference/api/workflows",
+              "reference/api/workflow-access",
+              "reference/api/files",
+              "reference/api/variables",
+              "reference/api/requests",
+              "reference/api/runs",
+              "reference/api/datasets",
+              "reference/api/sso"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
