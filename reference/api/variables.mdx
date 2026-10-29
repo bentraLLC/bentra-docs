@@ -4,7 +4,7 @@ title: "Variables"
 
 Variables reach a workflow's steps as environment variables. They come from **variable collections** (reusable sets owned by a workspace, shareable with others and attachable to any number of workflows) and from the workflow's **own variables**, which override collection values. Among attached collections, a later one overrides an earlier one.
 
-Secret values are stored in OpenBao and are **never returned**: responses show a masked `display_value`.
+Secret values are encrypted with a key unique to your organization and are **never returned**: responses show a masked `display_value`.
 
 | Method | Path | Scope | MCP tool |
 |---|---|---|---|
@@ -40,7 +40,7 @@ Body for creating or changing one:
 |---|---|
 | `key` | Letters, digits and underscores, not starting with a digit. Unique within the collection or workflow. Required on create. |
 | `value` | The value. For a secret, write-only. |
-| `is_secret` | Store the value in OpenBao; it's never returned. |
+| `is_secret` | Store the value encrypted; it's never returned. |
 | `treat_as_json` | Validate the value as JSON. |
 
 `PATCH` changes only what you send. Changing a key or value of a secret never reveals the old value.

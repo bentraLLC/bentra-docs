@@ -1,0 +1,116 @@
+---
+title: "Members and groups"
+description: "Invite people, set their roles, organize them into workspaces and groups, and remove them."
+---
+
+This page shows where to manage people in the app. For what each role can do, see [Permissions and recommended setup](/guides/permissions). To do the same from code, see the [Administration API](/reference/api/administration).
+
+## Members
+
+Open **Settings → Users**. Owners, admins and members can see the list; owners and admins manage it.
+
+### Invite someone
+
+<Steps>
+<Step title="Open the invite form">
+On **Settings → Users**, select **Invite User**.
+</Step>
+<Step title="Enter their email and a role">
+Choose **Requester (request portal only)**, **Member**, **Admin** or **Owner**. Only owners can invite an owner.
+</Step>
+<Step title="Send">
+Select **Send Invite**. Bentra emails them a link that's valid for 7 days.
+</Step>
+</Steps>
+
+The invitation appears under **Pending Invitations** until it's accepted or expires. To cancel it, select **Revoke**.
+
+You can't invite someone who's already a member or already has a pending invitation. Members, admins and owners take a seat, so inviting one fails when the organization is at its plan's user limit; requesters don't take a seat but need a plan with the [request portal](/guides/request-portal). See [Plans and limits](/plans).
+
+<Tip>
+With single sign-on, people at your verified domains can be added automatically the first time they sign in, as requesters or members. See [member provisioning](/authentication/setup-sso#3-member-provisioning).
+</Tip>
+
+### Change a role
+
+Pick the new role in the person's row on **Settings → Users**. The change applies straight away.
+
+- Only owners can make someone an owner, or change or remove an owner. An organization always keeps at least one owner.
+- Making someone a **Requester** removes them from every workspace and revokes their API tokens.
+- Changing a requester to another role gives them a seat in the default workspace, and needs a free seat on your plan.
+
+### Remove someone
+
+Select **Remove** in the person's row. Removing someone takes them out of the organization completely:
+
+- their workspace memberships, group memberships and group ownerships are removed;
+- their workflow roles and other role assignments are removed;
+- their API tokens for the organization are revoked.
+
+Requests they submitted and runs they started stay in the organization's history. If they were the only owner of a group, the group is left without owners; organization owners and admins can still manage it. You can't remove the last owner of the organization.
+
+## Workspaces
+
+Every organization has a **default workspace**. Every member except requesters gets a seat in it, and it can't be deleted.
+
+### Create a workspace
+
+Open the workspace menu at the top of the sidebar and select **Create workspace**. Enter a **Name** and an optional **Description**, then **Create**. You join the new workspace as its owner. Members, admins and owners can create workspaces.
+
+The workspace's URL comes from its name, so names must be unique within the organization.
+
+### Add people to a workspace
+
+Switch to the workspace, then open **Settings → Members** (under **Workspace**). Organization owners and admins can:
+
+- add a person: select **Add Member**, then on the **User** tab enter their **Username** and pick a **Role**;
+- add a group: on the **Group** tab, pick the group and a **Role**. Bentra adds each of the group's current members who isn't already in the workspace. People who join the group later aren't added automatically, so add the group again when its membership changes;
+- change someone's role in their row;
+- remove someone with **Remove**. They stay in the organization.
+
+Requesters can't join workspaces.
+
+### Rename or delete a workspace
+
+Owners and admins open **Settings → Workspaces** (or **View all workspaces** in the workspace menu) and select a workspace.
+
+- Under **Workspace Settings**, change the **Workspace name** or **Description** and select **Save settings**. Renaming changes the workspace's URL.
+- Under **Danger Zone**, **Delete** removes an empty workspace and its memberships. It's only offered when the workspace has no workflows, forms, runs, requests, connectors, variable collections or runner pools: move or remove them first.
+
+The default workspace can't be deleted. A workspace that owns a connector or variable collection used by workflows in other workspaces can't be deleted until you move it. See [Connectors](/reference/connectors).
+
+## Groups
+
+A group is a named set of organization members. Use groups to give workflow roles and to make a set of people approvers, so access follows group membership. See [how groups are used](/guides/permissions#groups).
+
+### Create a group
+
+Owners and admins open **Settings → Groups** and select **Create Group**. Enter a **Group Name** and an optional **Description**. You become the group's first owner. Group names are unique in the organization.
+
+### Add members and owners
+
+Open the group from **Settings → Groups**. A group's owners, and organization owners and admins, can manage it.
+
+- On the **Members** tab, select **Add Member**, choose a user and a **Role**: **Member** or **Owner**.
+- **Make Owner** promotes a member. Owners can add and remove members and owners, rename the group and delete it.
+- **Remove** takes someone out of the group; **Remove owner** removes an owner. A group always keeps at least one owner.
+
+### Use a group
+
+- **Workflow roles**: on a workflow's **Settings → Permissions**, select **Add Permission**, then **Group**. Access follows the group's membership straight away.
+- **Approvers**: on a workflow's **Settings → Request Settings**, select **Add Approver**, then **Group**. See [Requests and approvals](/guides/requests-and-approvals#designated-approvers).
+- **Workspace access**: add the group from the workspace's **Settings → Members**, as above.
+
+### Delete a group
+
+On the group's **Settings** tab, select **Delete group** and type the group's name to confirm. This removes its members, owners and workspace access, and any approver and workflow role grants made to the group. It can't be undone.
+
+### Groups from your identity provider
+
+If your organization syncs groups from its identity provider through directory sync (SCIM, on Enterprise, rolling out), a synced group's name and members follow the IdP. Change them there; Bentra shows them read-only. You can still use a synced group for workflow roles and approvers.
+
+## Related
+
+- [Permissions and recommended setup](/guides/permissions)
+- [Request portal](/guides/request-portal)
+- [Administration API](/reference/api/administration)

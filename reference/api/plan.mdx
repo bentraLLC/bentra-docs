@@ -18,33 +18,45 @@ Every member can read it. `license_key` is only included for callers with `org.m
 
 ```json
 {
-  "plan": {"key": "free", "name": "Free"},
+  "plan": {"key": "team", "name": "Team"},
   "active": true,
+  "license_phase": "active",
   "expires_at": null,
+  "grace_ends_at": null,
+  "suspends_at": null,
   "features": [
     {"key": "sso", "label": "Single sign-on", "enabled": false, "available_on": "enterprise"},
-    {"key": "portal", "label": "The employee request portal", "enabled": false, "available_on": "enterprise"}
+    {"key": "portal", "label": "The employee request portal", "enabled": true, "available_on": "team"}
   ],
-  "limits": {"max_orgs": 1, "max_users": 3, "max_workflows": 5, "max_runners_per_pool": 1,
-             "max_active_schedules": 2, "max_runs_per_month": 300, "log_retention_days": 3},
-  "usage": {"users": 2, "workflows": 4, "runs_this_month": 120, "active_schedules": 1, "orgs": 1,
+  "limits": {"max_orgs": 1, "max_users": 10, "max_workflows": null, "max_runners": 5,
+             "max_runner_pools": 1, "max_active_schedules": 20, "max_runs_per_month": 5000,
+             "log_retention_days": 14, "api_requests_per_minute": …, "max_concurrent_runs": …},
+  "limits_base": {"max_runners": 3},
+  "usage": {"users": 6, "workflows": 12, "runs_this_month": 1200, "active_schedules": 4,
+            "runners": 3, "runner_pools": 1, "orgs": 1,
             "period_resets_at": "2026-11-01T00:00:00+00:00"},
   "meters": [
-    {"key": "max_workflows", "label": "Workflows", "used": 4, "limit": 5, "percent": 80,
-     "tone": "warning", "unlimited": false, "monthly": false, "noun": "workflows"}
+    {"key": "max_runners", "label": "Runners", "used": 3, "limit": 5, "percent": 60,
+     "tone": "neutral", "unlimited": false, "monthly": false, "noun": "runners"}
   ],
+  "subscription": {"status": "active", "interval": "month", "cancel_at_period_end": true,
+                   "current_period_end": "2026-11-28T00:00:00+00:00", …},
+  "ending": {"reason": "cancel_scheduled", "ends_at": "2026-11-28T00:00:00+00:00",
+             "next_retry_at": null},
   "license_key": "lic_…"
 }
 ```
 
 - A `null` limit means unlimited.
+- `limits_base` lists only the limits your account has raised above the plan, with the plan's own value. Here the plan includes 3 runners and the account added 2.
 - `tone` is `neutral` under 80% of the limit, `warning` from 80%, and `danger` at the limit.
-- `active: false` means the plan expired. The organization then gets Free entitlements and keeps its data.
+- `ending` is `null` unless the plan is about to end. `reason` is `payment_failed` (the plan stays while payment is retried; `next_retry_at` says when), `cancel_scheduled` (ends at `ends_at`, the end of the paid period) or `license_expiring` (a contract ending within 30 days).
+- `active: false` means the plan has lapsed. `license_phase` is `active`, `grace` (full access for 7 days after `expires_at`), `restricted` (read-only until `suspends_at`) or `suspended`. See [When a plan ends](/plans#when-a-plan-ends).
 - `plan: null` means the organization has no account (only staff-created test orgs).
 
 ## `GET account/organizations/`
 
-Organizations that share this organization's account (License). Needs `org.manage_settings`.
+Organizations that share this organization's account. Needs `org.manage_settings`.
 
 ```json
 {"results": [{"id": "…", "name": "Acme", "slug": "k3j9x2m4pqrt"},
@@ -61,7 +73,7 @@ Organizations that share this organization's account (License). Needs `org.manag
 
 | Status | `code` | When |
 |---|---|---|
-| `402` | `plan_required` | A feature isn't on the plan: the portal API, branding changes, `portal_enabled`, requester invitations, `jit_role: requester`, SSO. The body names `feature` and the `plan` that includes it. |
+| `402` | `plan_required` | A feature isn't on the plan: the portal API, branding changes, `portal_enabled`, requester invitations, `jit_role: requester` (Team and above), and SSO (Enterprise). The body names `feature` and the `plan` that includes it. |
 | `409` | `plan_limit_reached` | Submissions and triggers once the month's runs are used, or restoring an archived workflow at the workflow limit. |
 | `400` | | Creating a workflow at the workflow limit (`errors.name`), or saving a schedule over the schedule limit. |
 | `409` | | Inviting a member at the user limit. |

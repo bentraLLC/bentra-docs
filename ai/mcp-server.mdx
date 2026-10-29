@@ -8,18 +8,6 @@ The agent acts **as you**: it can do exactly what you can do in Bentra, and your
 
 ## Connect
 
-<Tabs>
-<Tab title="Hosted (recommended)">
-
-```bash
-claude mcp add --transport http bentra https://mcp.bentralabs.com/mcp
-```
-
-The first tool call opens your browser to sign in to Bentra and approve the agent. Each agent you approve is listed under **Settings → API Access → AI agent sessions**, where you can revoke it.
-
-</Tab>
-<Tab title="Local, with a personal token">
-
 Generate a personal token in **Settings → API Access**, then:
 
 ```bash
@@ -30,25 +18,23 @@ claude mcp add bentra \
 
 Set `BENTRA_READ_ONLY=true` for an assistant that can only look.
 
-</Tab>
-</Tabs>
-
 If you belong to several organizations, tell the agent which one to use, or let it call `list_organizations`.
 
 ## What the agent can do
 
 | Area | Tools | API reference |
 |---|---|---|
-| Find things | `list_organizations`, `list_workspaces`, `list_connectors`, `list_repositories`, `list_repository_refs`, `list_runner_pools` | [Organization](/reference/api/organization) |
-| Workflows | `list_workflows`, `get_workflow`, `create_workflow`, `update_workflow`, `get_workflow_settings`, `update_workflow_settings`, `set_workflow_status`, `get_form`, `update_form` | [Workflows](/reference/api/workflows) |
+| Find things | `list_organizations`, `get_plan`, `list_workspaces`, `list_connectors`, `list_repositories`, `list_repository_refs`, `list_runner_pools` | [Organization](/reference/api/organization) |
+| Workflows | `list_workflows`, `get_workflow`, `create_workflow`, `update_workflow`, `get_workflow_settings`, `update_workflow_settings`, `set_workflow_status`, `delete_workflow`, `get_form`, `update_form` | [Workflows](/reference/api/workflows) |
 | Access | `list_approvers`, `add_approver`, `update_approver`, `remove_approver`, `list_workflow_permissions`, `grant_workflow_role`, `change_workflow_role`, `revoke_workflow_role`, `get_form_visibility`, `share_form_with_workspace`, `unshare_form_with_workspace` | [Workflow access](/reference/api/workflow-access) |
 | Files (Bentra-stored workflows) | `list_files`, `read_file`, `create_file`, `update_file`, `delete_file`, `list_versions`, `publish_version`, `activate_version` | [Files and versions](/reference/api/files) |
 | Variables | `list_variable_collections`, `get_variable_collection`, `create_variable_collection`, `update_variable_collection`, `delete_variable_collection`, `add_collection_variable`, `update_collection_variable`, `delete_collection_variable`, `list_workflow_variables`, `add_workflow_variable`, `update_workflow_variable`, `delete_workflow_variable`, `attach_collection`, `detach_collection` | [Variables](/reference/api/variables) |
-| Requests | `submit_request`, `get_form_options`, `list_requests`, `get_request`, `get_request_activity`, `list_request_comments`, `add_request_comment`, `update_request`, `cancel_request`, `approve_request`, `reject_request`, `request_changes` | [Requests](/reference/api/requests) |
+| Requests | `submit_request`, `start_request`, `get_form_options`, `list_requests`, `get_request`, `get_request_activity`, `list_request_comments`, `add_request_comment`, `update_request`, `cancel_request`, `approve_request`, `reject_request`, `request_changes` | [Requests](/reference/api/requests) |
 | Runs | `trigger_run`, `list_runs`, `get_run`, `get_run_logs`, `rerun`, `cancel_run` | [Runs](/reference/api/runs) |
 | Job datasets | `list_job_datasets`, `get_job_dataset`, `promote_dataset_version`, `freeze_dataset`, `get_data_sharing`, `update_data_sharing`, `grant_data_access`, `revoke_data_access`, `get_data_access` | [Job datasets](/reference/api/datasets) |
-| Administration | `get_organization`, `update_organization`, `get_portal_branding`, `update_portal_branding`, `upload_portal_logo`, `remove_portal_logo`, `list_members`, `change_member_role`, `remove_member`, `list_invitations`, `invite_member`, `revoke_invitation`, `create_workspace`, `update_workspace`, `delete_workspace`, `list_workspace_members`, `add_workspace_member`, `change_workspace_member_role`, `remove_workspace_member`, `list_groups`, `get_group`, `create_group`, `update_group`, `delete_group`, `add_group_member`, `remove_group_member`, `add_group_owner`, `remove_group_owner`, `grant_group_workspace_access`, `revoke_group_workspace_access` | [Administration](/reference/api/administration), [Organization](/reference/api/organization#request-portal-branding) |
+| Administration | `get_organization`, `update_organization`, `delete_organization`, `list_account_organizations`, `create_account_organization`, `list_notification_recipients`, `add_notification_recipient`, `remove_notification_recipient`, `get_portal_branding`, `update_portal_branding`, `upload_portal_logo`, `remove_portal_logo`, `list_members`, `change_member_role`, `remove_member`, `list_invitations`, `invite_member`, `revoke_invitation`, `create_workspace`, `update_workspace`, `delete_workspace`, `list_workspace_members`, `add_workspace_member`, `change_workspace_member_role`, `remove_workspace_member`, `list_groups`, `get_group`, `create_group`, `update_group`, `delete_group`, `add_group_member`, `remove_group_member`, `add_group_owner`, `remove_group_owner`, `grant_group_workspace_access`, `revoke_group_workspace_access` | [Administration](/reference/api/administration), [Organization](/reference/api/organization#request-portal-branding) |
 | Single sign-on | `get_sso`, `update_sso`, `add_sso_domain`, `verify_sso_domain`, `remove_sso_domain`, `get_sso_setup_link` | [Single sign-on](/reference/api/sso) |
+| Your preferences | `get_preferences`, `update_preferences` (theme) | [Organization settings](/guides/organization-settings) |
 
 The server also gives the agent:
 
@@ -73,7 +59,7 @@ The agent:
 These take or mint secrets, so the agent can't do them. It points you to the right page instead:
 
 - adding, changing or removing VCS connectors (**Settings → Connectors**)
-- runner pools and runner tokens (**Settings → Runners**)
+- runner pools and runner tokens (**Settings → Runner Pools**)
 - personal API tokens (**Settings → API Access**)
 - connecting an identity provider for SSO: the agent can manage allowed domains and provisioning and give you a setup link (`get_sso_setup_link`), but you complete setup in the WorkOS assistant
 - secret variable values: the agent can set them if you give them, but should ask you to enter them in Bentra instead

@@ -2,7 +2,7 @@
 title: "Bentra API"
 ---
 
-The Bentra API lets scripts, integrations and AI agents do what people do in the Bentra UI: create and configure workflows, submit and approve requests, trigger and follow runs, and administer the organization. The [Bentra MCP server](/mcp) is built on it.
+The Bentra API lets scripts, integrations and AI agents do what people do in the Bentra UI: create and configure workflows, submit and approve requests, trigger and follow runs, and administer the organization. The [Bentra MCP server](/ai/mcp-server) is built on it.
 
 Every call acts as a user and can only do what that user can do in the UI.
 
@@ -25,7 +25,7 @@ curl -H "Authorization: Bearer $BENTRA_TOKEN" \
 
 | Token | How you get it | What it can do |
 |---|---|---|
-| Personal access token | Settings → API in Bentra. Shown once. | Everything its user can do. |
+| Personal access token | **Settings → API Access** in Bentra. Shown once. See [API tokens](/guides/api-tokens). | Everything its user can do. |
 | AI agent (delegated) token | Issued to the Bentra MCP server when you connect an agent. Short-lived. | Everything its user can do through the scopes below, except skipping approval. |
 
 A token belongs to one organization; using it on another organization's URL returns `401`.

@@ -1,0 +1,110 @@
+---
+title: "Create your first workflow"
+description: "Create a workspace, build a request workflow with a form, submit it and watch it run."
+---
+
+This guide builds a small **request** workflow: a form that asks for a name, and a step that prints it. You need a [runner](/runners/install) connected to a pool. For a repository-backed workflow you also need a [connector](/get-started/connect-repository).
+
+## Create a workspace
+
+You can use the default workspace, or create one for your team. Owners, admins and members can create workspaces; requesters can't.
+
+1. Open the workspace switcher at the top of the sidebar and click **Create workspace**.
+2. Enter a **Name** and, optionally, a **Description**.
+3. Click **Create**.
+
+You join the new workspace as its owner. Add your team in **Settings → Members**; see [Members and groups](/guides/members-and-groups).
+
+## Create the workflow
+
+In the workspace, open **Workflows** and click **Create Workflow**.
+
+<Steps>
+  <Step title="Where does this workflow live?">
+    - **VCS-backed**: the files are in a Git repository. Runners clone it for each run.
+    - **Bentra-managed**: the files are stored and versioned in Bentra. No repository needed.
+  </Step>
+  <Step title="Which connector should Bentra use?">
+    VCS-backed only. Pick the connector that can reach your repository. If the list is empty, [add a connector](/get-started/connect-repository) first.
+  </Step>
+  <Step title="How is this workflow triggered?">
+    Choose **Form**. (A **Job** runs without a form: manually, from the API or on a schedule.)
+  </Step>
+  <Step title="Describe the workflow">
+    - **Workflow name**: letters, numbers, spaces, hyphens and underscores.
+    - **Owner**: set to you.
+    - **Repository**: VCS-backed only. Pick the repository that holds the files.
+    - **Description** and **Tags** (optional): help others find the workflow.
+
+    Click **Create workflow**. You become the workflow's admin.
+  </Step>
+</Steps>
+
+A VCS-backed workflow reads the repository's default branch. To read another branch or pin a tag, open the workflow's **Settings → Source** and change **Tracking Mode**.
+
+## Add the files
+
+A request workflow needs two files.
+
+`.bento/workflow/workflow.yml` lists the steps. Each `run` is a bash script:
+
+```yaml
+name: Say hello
+steps:
+  - name: Greet
+    run: |
+      echo "Hello, $PERSON_NAME"
+      cat bento_inputs.json
+```
+
+`.bento/form/form.yml` defines the form. Each field's `id` reaches the steps as an upper-case environment variable, so `person_name` becomes `$PERSON_NAME`:
+
+```yaml
+name: Say hello
+description: Prints a greeting.
+body:
+  - type: input
+    id: person_name
+    attributes:
+      label: Your name
+    validations:
+      required: true
+```
+
+<Tabs>
+  <Tab title="VCS-backed">
+    Commit both files to the branch the workflow tracks. Bentra reads them from there, so there's nothing to publish.
+  </Tab>
+  <Tab title="Bentra-managed">
+    The workflow starts with starter files and a published version 1. Open the workflow's **Files** tab, replace the contents of both files and click **Save**. Then click **Publish version**: runs only use published versions, never the draft. See [Bentra-stored workflows](/guides/bentra-stored-workflows).
+  </Tab>
+</Tabs>
+
+See [Workflow syntax](/reference/workflow-syntax) and [Form syntax](/reference/form-syntax) for everything the files can do.
+
+## Choose approvals and a runner pool
+
+Open the workflow's **Settings** tab.
+
+- **Request Settings**: new request workflows have **Require Approvals** on, with one approval needed, and only **Designated Approvers** can approve. Before you submit, either click **Add Approver** and add yourself, or turn **Require Approvals** off for this test. Approvers are assigned when a request is submitted.
+- **Execution**: **Runner Pool** chooses where runs go. Leave it on **Default pool** if that's where your runner is.
+
+Click **Save Settings**. See [Requests and approvals](/guides/requests-and-approvals) for the full approval options.
+
+## Submit the form
+
+1. Open **Forms** in the sidebar and click your form.
+2. Fill in **Your name** and click **Submit request**.
+3. Bentra opens the request. If it needs approval, an approver clicks **Approve** on this page; once approved, the run starts.
+
+## Watch the run
+
+The request page links to its run, and every run is also under **Runs** in the sidebar and on the workflow's **Runs** tab. The run page shows each step as it executes, with **Logs**, **Checks** and **Details**. When it finishes, the **Greet** step's log shows your greeting.
+
+If the run stays queued, check that a runner in the workflow's pool is connected on **Settings → Runner Pools**. See [Runs](/guides/runs) to follow, re-run and cancel runs.
+
+## Next
+
+- [Requests and approvals](/guides/requests-and-approvals): approvers, groups and multi-approval.
+- [Variables and secrets](/guides/variables-and-secrets): give steps configuration and credentials.
+- [Request portal](/guides/request-portal): let the rest of the company submit your form.

@@ -1,0 +1,79 @@
+---
+title: "Connect a repository"
+description: "Add a GitHub connector so Bentra can read your workflow files and runners can clone them."
+---
+
+A connector gives Bentra access to the GitHub repositories that hold your workflows. Only **GitHub** is supported today.
+
+<Tip>
+You don't need a repository to get started. Choose **Bentra-managed** when you create a workflow and its files are stored and versioned in Bentra. See [Bentra-stored workflows](/guides/bentra-stored-workflows).
+</Tip>
+
+## Who can add a connector
+
+- **Owners and admins** can add a connector owned by any workspace and share it with any workspace, including every workspace at once.
+- **Members** can add a connector owned by a workspace they belong to, except the default workspace, and share it with their other workspaces.
+- **Requesters** can't.
+
+The full rules are in [Connectors](/reference/connectors#who-owns-and-uses-a-connector).
+
+## Choose how the connector signs in
+
+| Auth type | What you enter | When to use it |
+|---|---|---|
+| **GitHub App** (recommended) | App ID, installation ID and private key | Access is limited to the repositories you install the app on, and tokens expire after an hour. |
+| **Personal Access Token** | A fine-grained token | Quick to set up. The token acts as its owner, so prefer a dedicated machine user. |
+
+[Connectors](/reference/connectors) lists exactly which GitHub permissions each one needs.
+
+## Add the connector
+
+<Steps>
+  <Step title="Prepare the credentials in GitHub">
+    <Tabs>
+      <Tab title="GitHub App">
+        1. In your GitHub organization's settings, under **Developer settings → GitHub Apps**, create an app with the [permissions Bentra needs](/reference/connectors#github-app-recommended).
+        2. Note its **App ID** and generate a **private key** (a `.pem` file).
+        3. Install the app on the repositories your workflows use, not the whole organization.
+        4. Note the **installation ID**: the number at the end of the installation's settings URL.
+      </Tab>
+      <Tab title="Personal access token">
+        Create a **fine-grained** personal access token limited to the repositories your workflows use, with the [permissions Bentra needs](/reference/connectors#personal-access-token).
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="Open the GitHub connector form">
+    In Bentra, open **Settings → Connectors**. Under **Add Connector**, click **Connect** on the GitHub card.
+  </Step>
+  <Step title="Fill in the details">
+    - **Name**: a descriptive name, such as `Platform GitHub`.
+    - **GitHub Owner** (optional): the GitHub organization or username.
+    - **Description** (optional).
+    - **Auth Type**: **GitHub App** or **Personal Access Token**, then paste the credentials from step 1.
+  </Step>
+  <Step title="Choose who owns and uses it">
+    - **Owned by**: the workspace whose members manage the connector. It defaults to the workspace you're in; if you belong to several, pick the team it's for.
+    - **Also share with**: other workspaces whose workflows may use it. They can use it but not change it. Owners and admins can also choose **Every workspace in the organization**.
+
+    You can change both later.
+  </Step>
+  <Step title="Create it">
+    Click **Create Connector**. Bentra checks the credentials against GitHub and only saves them if they work.
+  </Step>
+</Steps>
+
+## Check and manage the connector
+
+Click the connector in **Settings → Connectors** to open its page:
+
+- **Test connection** checks that the stored credentials still work.
+- **Rotate** replaces the credentials, for example when a token is about to expire.
+- **Edit** changes the name and description.
+- **Permissions** shows the owning workspace and who it's shared with. Add or remove workspaces, or move it to another workspace, here.
+- **Used by** lists the workflows that use it. You can't stop sharing with a workspace, or delete the connector, while workflows there still use it.
+
+To manage connectors from scripts, see the [API](/reference/api/organization#patch-connectorsid).
+
+## Next
+
+Create a workflow that reads from the repository: [Create your first workflow](/get-started/first-workflow).

@@ -12,27 +12,59 @@
         "groups": [
           {
             "group": "Get started",
-            "pages": ["index", "plans"]
-          },
-          {
-            "group": "Runners",
-            "pages": ["runners/install", "runners/network"]
-          },
-          {
-            "group": "Authentication",
-            "pages": ["authentication/overview", "authentication/setup-sso"]
-          },
-          {
-            "group": "Build workflows",
             "pages": [
+              "index",
+              "get-started/journey",
+              "get-started/concepts",
+              {
+                "group": "Sign-in and SSO",
+                "pages": [
+                  "authentication/overview",
+                  "authentication/setup-sso"
+                ]
+              },
+              {
+                "group": "Your first runner",
+                "pages": [
+                  "runners/install",
+                  "runners/network"
+                ]
+              },
+              "get-started/connect-repository",
+              "get-started/first-workflow",
+              "guides/requests-and-approvals",
+              "guides/request-portal"
+            ]
+          },
+          {
+            "group": "Organize your team",
+            "pages": [
+              "guides/permissions",
+              "guides/members-and-groups"
+            ]
+          },
+          {
+            "group": "Workflows",
+            "pages": [
+              "guides/workflow-status-and-schedules",
+              "guides/bentra-stored-workflows",
+              "guides/runs",
+              "guides/job-datasets",
+              "guides/variables-and-secrets",
               "reference/workflow-syntax",
               "reference/form-syntax",
               "reference/connectors"
             ]
           },
           {
-            "group": "AI agents",
-            "pages": ["mcp"]
+            "group": "Account",
+            "pages": [
+              "plans",
+              "guides/billing",
+              "guides/api-tokens",
+              "guides/organization-settings",
+              "ai/mcp-server"
+            ]
           }
         ]
       },

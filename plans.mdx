@@ -1,33 +1,44 @@
 ---
 title: "Plans and limits"
+description: "What each Bentra plan includes, and what happens when you reach a limit."
 ---
 
-Every organization belongs to an **account** (a `License`). The account has a **plan**, and Bentra can add per-account **overrides** for custom deals. What an organization may use is that plan merged with its overrides.
+Every organization belongs to an **account**. The account has a **plan**, which sets the limits and features for each of its organizations. Enterprise contracts can change any limit.
 
 | | Free | Team | Business | Enterprise |
 |---|---|---|---|---|
 | Organizations per account | 1 | 1 | 3 | Unlimited |
-| Users (requesters are free) | 3 | 10 | 30 | Per contract |
+| Users (requesters are free) | 3 | 10 | 100 | Unlimited |
 | Workflows | 5 | Unlimited | Unlimited | Unlimited |
-| Concurrent runners per pool | 1 | 5 | 20 | Custom |
-| Enabled schedules | 2 | 20 | 50 | Custom |
-| Runs per month | 300 | 5,000 | 25,000 | Custom |
-| Run log retention (days) | 3 | 14 | 30 | Custom |
+| Runners | 1 | 3 | 10 | Unlimited |
+| Runner pools | 1 | 1 | 2 | Unlimited |
+| Enabled schedules | 2 | 20 | 50 | Unlimited |
+| Runs per month | 300 | 5,000 | 25,000 | Unlimited |
+| Run log retention (days) | 3 | 14 | 30 | 30 |
+| [Request portal](/guides/request-portal) | | Included | Included | Included |
 | SSO, SCIM, audit logs | | | | Included |
-| Employee request portal | | | | Add-on |
+
+Bentra can raise the runner and runner pool limits for Team and Business accounts on request. Upgrade, change or cancel a plan in **Settings → Billing**. See [Billing](/guides/billing).
 
 ## How limits behave
 
 - **Limits only stop new things.** Nothing you already have is disabled or deleted when you're over a limit.
 - **Users** count owners, admins and members. Requesters (portal-only) are free and unlimited.
 - **Workflows**: archived workflows don't count. Restoring one counts again.
+- **Runners** count the runners connected across all pools. A runner over the limit is refused until another one stops. See [Install a runner](/runners/install).
 - **Runs per month** reset on the 1st (UTC). At the limit, forms, the API, the portal, schedules and manual triggers stop accepting new runs until the month resets.
-- **Expired plan**: the organization falls back to Free entitlements and keeps all its data. Settings → Billing shows a banner.
-- **Settings → Billing** shows the plan, the limits and this month's usage meters (workflows, runs, users) to every member. Owners and admins also see the license key and can add organizations to the account. The Workflows and Runs lists show a banner from 80% of a limit.
+- **Usage**: **Settings → Billing** shows the plan, the limits and this month's usage (workflows, runs, users, runners and pools) to owners and admins. The Workflows and Runs lists show a banner from 80% of a limit.
+
+## When a plan ends
+
+- **Cancelled subscription**: the plan stays until the end of the period you paid for, then the organization moves to Free. Billing shows the date beforehand.
+- **Failed payment**: the plan stays while the payment is retried, and Billing shows a warning.
+- **Unpaid or ended subscription**: the organization moves to Free and keeps all its data. Free limits then apply to anything new.
+- **Contract with an end date** (Enterprise): Billing warns 30 days ahead. For 7 days after the end date everything keeps working. Then the organization is read-only until day 30, after which only owners and admins can sign in, to **Settings → Billing**, and API, MCP and runner tokens stop working. Data is kept.
 
 ## Organizations and their IDs
 
 - Anyone can sign up and create an organization. It starts on **Free** on its own account.
-- **Free and Team allow one organization at a time.** To start over, an owner deletes the organization (Settings → Organization), which also removes its account, and then creates a new one.
-- **Business and Enterprise accounts** add organizations from Settings → Billing → *New organization* (owners and admins), or with `POST account/organizations/`. New organizations join the same account and plan.
-- **Names don't have to be unique.** An organization's URL ID (`/orgs/<id>/`, the API's `slug`) is 12 random characters generated at creation. It never comes from the name and never changes. Settings → Organization shows it as *URL ID*.
+- **Free and Team allow one organization at a time.** To start over, an owner deletes the organization (**Settings → Organization**), which also removes its account, and then creates a new one. An organization with an active subscription can't be deleted until the subscription is set to cancel. See [Organization settings](/guides/organization-settings).
+- **Business and Enterprise accounts** add organizations from **Settings → Billing → New organization** (owners and admins), or with `POST account/organizations/`. New organizations join the same account and plan.
+- **Names don't have to be unique.** An organization's URL ID (`/orgs/<id>/`, the API's `slug`) is 12 random characters generated at creation. It never comes from the name and never changes. **Settings → Organization** shows it as *URL ID*.

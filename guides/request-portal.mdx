@@ -1,0 +1,99 @@
+---
+title: "Request portal"
+description: "Give everyone in your company one branded place to find request forms and follow what they've asked for."
+---
+
+The **request portal** is a simple catalogue of request forms for your whole organization. People pick a form, submit it, and follow their request through approval to the finished run, without seeing workflows, runs or settings.
+
+<Info>
+The portal is included in the **Team**, **Business** and **Enterprise** plans. It isn't available on Free. See [Plans and limits](/plans) and [Billing](/guides/billing).
+</Info>
+
+## Open the portal
+
+The portal lives at:
+
+```
+https://app.bentralabs.com/orgs/<org-id>/portal/
+```
+
+`<org-id>` is your organization's URL ID, shown on **Settings → Organization**. Members reach it from **Portal** in the app's sidebar, or **Open portal** on **Settings → Request portal**. Share the link with the people who'll use it.
+
+## Requesters
+
+A **requester** is a member who can only use the portal. Requesters:
+
+- don't take a paid seat and don't count towards your plan's user limit;
+- can't join workspaces or open any other part of Bentra: the app sends them to the portal;
+- can be designated approvers on a workflow.
+
+Add requesters from **Settings → Users** with **Invite User** and the role **Requester (request portal only)**. With single sign-on you can also add people as requesters automatically the first time they sign in: see [member provisioning](/authentication/setup-sso#3-member-provisioning). See [Members and groups](/guides/members-and-groups).
+
+Owners, admins and members can use the portal too. It's a convenient way for anyone to submit a request without going into a workspace.
+
+## What people see
+
+The portal has three pages:
+
+- **Request forms**: every form published to the portal, with a search box, a category sidebar and tag filters. The page also shows the person's most recent requests.
+- **My requests**: everything they've submitted, filtered by **In progress**, **Completed** or **Closed** (rejected, cancelled or failed).
+- **Approvals**: shown only to people who are designated approvers. **Waiting on you** lists open requests they haven't decided on yet.
+
+On a request's page, people see its status, their answers, each approver's decision and note, the run's status, and an activity feed with comments. Depending on the request's state and their part in it, they can:
+
+- comment;
+- **Update details**, while the request is open or changes are requested (submitter);
+- **Cancel request**, before it starts running (submitter);
+- approve, reject or request changes (designated approvers).
+
+Requesters see the run's status and timing but not its logs. See [Requests and approvals](/guides/requests-and-approvals) for the full lifecycle.
+
+## Publish a form to the portal
+
+A form appears in the portal when all of these are true:
+
+- the workflow is a request workflow and its status is **Active** (see [Workflow status and schedules](/guides/workflow-status-and-schedules));
+- **Show in request portal** is on.
+
+To turn it on, open the workflow, then **Settings → Form Settings**, switch on **Show in request portal** and select **Save**. You need the Writer or Admin role on the workflow.
+
+A form in the portal can be found and submitted by **everyone in the organization**, whatever its workspace visibility. **Listed in Forms section** and **Workspaces** only control the in-app **Forms** list; they don't affect the portal.
+
+<Tip>
+Approval still applies to portal submissions. A portal form is a good fit for anything people across the company ask for, like access or a new environment, with your team's approvers in the loop.
+</Tip>
+
+### Description, category and icon
+
+On the same **Form Settings** tab:
+
+- **Description** is shown under the form's name in the portal and in the Forms list.
+- **Category** decides where the form sits in the portal's sidebar. The categories are **Access & permissions**, **Infrastructure**, **Data & databases**, **Developer tools**, **Security & credentials**, **Operations & incidents**, **People & onboarding** and **Other requests** (the default). Each has its own icon, and the sidebar only shows categories that hold at least one form.
+- **Icon** is shown next to the form in the in-app Forms list.
+
+**Tags** on the workflow's **General** settings become the portal's tag filters.
+
+## Brand the portal
+
+Open **Settings → Request portal**. Owners and admins can change:
+
+| Field | What it does |
+|---|---|
+| **Portal name** | Shown in the portal header, on the sign-in page and in the browser tab. Up to 100 characters. Defaults to your organization's name. |
+| **Welcome message** | Shown on the portal's home page. Up to 1,000 characters. |
+| **Accent colour** | Buttons, links and focus rings in the portal and sign-in page. A hex colour such as `#1f6feb`. Leave it empty for the default blue. |
+| **Logo** | **Upload logo** takes a PNG, JPEG or WebP image up to 256 KB. SVG isn't accepted. The logo is also the portal's browser icon. **Remove** goes back to the organization's initial. |
+
+Select **Save** to apply the name, message and colour. The logo is saved as soon as you upload or remove it. The portal always uses the light theme.
+
+To set branding from code, see [Request portal branding](/reference/api/organization#request-portal-branding).
+
+## If your plan changes
+
+If the organization moves to a plan without the portal, its pages close for everyone and **Show in request portal** can't be turned on. Requesters see a message that the portal isn't available. Your forms, requests and settings are kept, and the portal reopens when the plan includes it again.
+
+## Related
+
+- [Requests and approvals](/guides/requests-and-approvals)
+- [Members and groups](/guides/members-and-groups)
+- [Permissions and recommended setup](/guides/permissions)

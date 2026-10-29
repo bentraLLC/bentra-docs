@@ -1,0 +1,56 @@
+---
+title: "Organization settings"
+description: "View your organization's details, choose your theme and delete an organization."
+---
+
+## Organization details
+
+**Settings → Organization** shows:
+
+| Field | |
+|---|---|
+| **Name** | The name you gave the organization. Names don't have to be unique. |
+| **Organization ID** | The organization's internal ID. |
+| **Description** | Optional. Owners and admins click **Edit**, change it and click **Save**. Up to 2,000 characters. |
+| **URL ID** | The ID in your Bentra URLs (`/orgs/<url-id>/`) and in the API base URL. It's 12 random characters generated when the organization is created. |
+| **Created** | When the organization was created. |
+
+The URL ID never changes, so links and API scripts keep working. The name and the IDs can't be changed.
+
+You can also read the details and change the description through the API (`GET` and `PATCH organization/`) or the MCP server (`get_organization`, `update_organization`). See [Administration](/reference/api/administration).
+
+## Appearance
+
+**Settings → Appearance** sets your theme:
+
+- **Light**
+- **Dark**
+- **System**: follows your device's light or dark setting. This is the default.
+
+The theme is personal. It applies to your account in every organization and doesn't change what anyone else sees. The request portal always uses the light theme.
+
+You can also read and set it through the API (`GET` and `PATCH me/preferences/` with `{"theme": "dark"}`) or the MCP server (`get_preferences`, `update_preferences`).
+
+## Delete an organization
+
+Only an owner can delete an organization. Deleting it permanently removes all its workspaces, workflows, runs, requests and secrets, and its encryption key is destroyed. This can't be undone.
+
+<Steps>
+<Step title="Open the danger zone">
+Go to **Settings → Organization** and scroll to **Delete organization**.
+</Step>
+<Step title="Confirm the name">
+Type the organization's exact name.
+</Step>
+<Step title="Delete">
+Click **Delete organization**.
+</Step>
+</Steps>
+
+On Free and Team you can have one organization at a time. Deleting it frees you to create a new one.
+
+<Warning>
+You can't delete the last organization on an account while its paid subscription is active. Cancel it in **Settings → Billing → Manage billing** first. Once the cancellation is scheduled, you can delete the organization. See [Billing](/guides/billing#deleting-your-last-organization).
+</Warning>
+
+Owners can also delete an organization through the API (`DELETE organization/` with the exact name as `confirm`) or the MCP server (`delete_organization`).

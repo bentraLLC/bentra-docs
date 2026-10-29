@@ -1,0 +1,71 @@
+---
+title: "Billing"
+description: "See your plan and usage, upgrade, manage your subscription and understand what happens when a plan ends."
+---
+
+**Settings → Billing** shows your organization's plan, its limits and how much of them is in use. Owners and admins manage billing there. Members don't see the Billing page. For what each plan includes, see [Plans and limits](/plans).
+
+## What the page shows
+
+- **Usage**: meters for workflows, runs this month, users, active runners and runner pools. A meter shows **Near limit** from 80% and **Limit reached** at the limit. Run counts reset on the 1st of the month (UTC).
+- **Plan**: every limit of your plan and the features it includes. A locked feature shows the plan it's available on. A limit Bentra raised for your account shows the plan's own value next to it.
+- **Subscription**: how you're billed and when the plan renews, with **Manage billing** once you have billing details.
+- **Account**: the license key (quote it when you contact Bentra) and the organizations that share the plan.
+- **Billing contacts**: extra email addresses that receive plan notices, one per line. Owners and admins of the account's organizations always receive them. Click **Save contacts**.
+
+Limits only stop new things from being created. Nothing you already have is turned off or deleted.
+
+The same plan, limits and usage are available from the API and the MCP server. See [Plan and account](/reference/api/plan).
+
+## Upgrade from Free
+
+<Steps>
+<Step title="Pick a plan">
+In **Settings → Billing**, under **Subscription**, find **Team** or **Business**.
+</Step>
+<Step title="Choose how to pay">
+Click **Monthly** or **Yearly**. Bentra opens a Stripe checkout page.
+</Step>
+<Step title="Pay">
+Enter your card, billing address and, if you have one, a tax ID. When you finish, Stripe sends you back to Billing.
+</Step>
+</Steps>
+
+Billing shows **Thanks! Your plan is updated.** and the new limits apply right away. If it says your plan updates as soon as Stripe confirms it, refresh the page after a moment.
+
+<Note>
+An organization that already has a subscription can't start a second one. Change plans in **Manage billing** instead.
+</Note>
+
+## Manage your subscription
+
+Click **Manage billing** in **Settings → Billing**. It opens Stripe's billing portal, where you can:
+
+- update your card
+- download invoices
+- switch plan or billing period, for example Team to Business, or monthly to yearly
+- cancel
+
+When you return, Billing shows the change. The **Subscription** section says how you're billed and when the plan renews.
+
+## When a plan ends
+
+| What happened | What you keep | What Billing shows |
+|---|---|---|
+| A payment failed | Your plan. Stripe retries the charge. | A warning with the next retry date. Update your card in **Manage billing**. If every retry fails, the account moves to Free. |
+| You cancelled | Your plan until the end of the billing period. | **Cancels on** the date, and from 30 days before it a warning that the plan ends on that date. Resume in **Manage billing** to keep the plan. |
+| The subscription ended (cancelled or unpaid) | All your data. | The account is on Free. |
+
+On Free, nothing is deleted. Workflows, runs, members, runner pools and settings stay. Free limits only stop new things: for example, you can't create a workflow while you're over the workflow limit, and runners beyond the Free runner limit wait until a connected one stops. Upgrade again at any time.
+
+## Extra runners and runner pools
+
+Team and Business include a set number of runners and runner pools. Bentra can raise these limits for your account: contact us. Billing then shows the plan's value and the extra next to the limit. See [Install a runner](/runners/install#plan-limits).
+
+## Enterprise
+
+Enterprise isn't sold through checkout. Click **Contact sales** under **Enterprise** in **Settings → Billing**, or email support@bentralabs.com. An Enterprise plan is set up by Bentra; to change it, contact us.
+
+## Deleting your last organization
+
+You can't delete the last organization on an account while its subscription is active. Cancel the subscription in **Manage billing** first. Once the cancellation is scheduled, you can delete the organization in **Settings → Organization**. See [Organization settings](/guides/organization-settings).

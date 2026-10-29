@@ -1,0 +1,123 @@
+---
+title: "Runs"
+description: "Follow a run step by step, read its logs and checks, and re-run or cancel it."
+---
+
+A **run** is one execution of a workflow: from an approved request, or from a job's manual trigger, API call or schedule. A runner in the workflow's [runner pool](/runners/install) picks it up and executes the steps in `workflow.yml`.
+
+Each time a runner picks up a run is an **attempt**. A run starts with attempt #1; [re-running](#re-run-a-run) it adds attempt #2, and so on. The run keeps its name and inputs across attempts.
+
+## Find runs
+
+The **Runs** page lists every run you can view, newest first. A workflow's own **Runs** tab lists just that workflow's runs, with its success rate by version.
+
+Narrow the list with:
+
+- The status cards at the top: **All**, **Queued**, **Running**, **Success**, **Failed** and **Cancelled**, each with a count.
+- The workflow rail on the left, or the **All workflows** menu.
+- The search box. It matches runs, the people who started them, and tags.
+- **Filters**: **Trigger** (**Form**, **Manual** or **API**) and **Tag** (the tags set in a workflow's **Settings → General → Tags**).
+
+Each row shows the run, its status, who or what triggered it, when it started and how long it took. Click a run to open it.
+
+**New Run** takes you to the Workflows list, where you pick a workflow: submit its form, or click **Trigger Run** on a job's **Runs** tab.
+
+## Run status
+
+| Status | Meaning |
+|---|---|
+| **Queued** | Waiting for a runner in the pool to pick it up. |
+| **Running** | A runner is executing it. |
+| **Success** | Every step succeeded. |
+| **Failed** | A step failed, a check failed, or setup failed. |
+| **Timeout** | A step or the whole run took too long. |
+| **Cancelled** | Cancelled before a runner picked it up. |
+
+A run that stays **Queued** usually means no runner in the pool is connected. The run page says **Waiting for a runner** until one picks it up. Check the pool in **Settings → Runner Pools**.
+
+## The run page
+
+The header shows the workflow, the status, how the run was triggered and by whom, when it started, how long it took, the runner pool, and how many steps are done.
+
+The rail on the left has three groups:
+
+- **Run**: **Details** and **Inputs**.
+- **Attempt #N**: **All logs** (every step's output, grouped by step) and **Checks** (every check the attempt reported).
+- **Steps**: the pipeline. Each step shows its status and duration, live while the run is in progress.
+
+### Steps
+
+The pipeline lists your `workflow.yml` steps plus the ones Bentra adds:
+
+| Step | Kind | What it does |
+|---|---|---|
+| **Set up job** | Setup | Prepares the workspace: fetches the files, reads the workflow, installs pinned tools and fetches variables and secrets. Starts as soon as a runner picks up the run. |
+| **Install Python dependencies**, **Install Node.js dependencies** | Dependency | Only when `requirements.txt` or `package.json` exists. |
+| Your steps | Workflow | In the order of `workflow.yml`. |
+| **Publish datasets** | Publish datasets | Only for jobs that declare datasets. See [Job datasets](/guides/job-datasets). |
+
+For a repo-backed workflow, the steps appear a few seconds after the run starts, once the runner has read `workflow.yml`.
+
+A step is **Pending**, **Running**, **Success**, **Failed**, **Timeout** or **Skipped**. When a run fails, the steps it didn't reach are marked **Skipped**. A step with an empty `run` is also skipped.
+
+### Step tabs
+
+Click a step to open it. Its header shows the status, the exit code, the duration, and a **continue on error** badge if the step has `continue_on_error: true`.
+
+| Tab | Shows |
+|---|---|
+| **Logs** | The step's output with line numbers. You can follow new lines as they arrive, wrap long lines and copy the log. |
+| **Checks** | The checks this step reported. |
+| **Details** | The **Command** (the step's script), its **Kind**, **Started** and **Completed** times, and **Tool versions**. |
+
+### Details and Inputs
+
+**Details** shows the workflow and the version or commit it ran, the status and number of attempts, how it was triggered, the request and who approved it (for request workflows), the workflow's tags, the runner pool, the queued, started and completed times, the error if it failed, and the **Run ID**.
+
+**Inputs** shows the values the run was started with: **Form values** for a request, or **Runtime variables** for a job run started manually or by API. Password fields are masked. It also lists the workflow's variable collections and workflow variables. Those two sections show the workflow's current configuration, not a snapshot of what this run received. Secret values are never shown.
+
+## Checks
+
+A step can report a **check**: a pass, fail, warning or info result shown on the run, with a name, a message and optional details. Links in the details are clickable. Steps report checks by printing a `::bentra-check` line:
+
+```bash
+echo "::bentra-check status=passed,name=Health check,url=https://app.example.com::Responding in 342 ms"
+```
+
+<Warning>
+A `failed` check fails the step, even if the script exits with 0.
+</Warning>
+
+See [Reporting checks](/reference/workflow-syntax#reporting-checks) for the full syntax.
+
+## How steps fail
+
+- **Strict bash.** Each step runs with `bash -eo pipefail`, so any failing command fails the step, including one in the middle of a pipeline. For a command that may legitimately fail, such as `grep` with no match, add `|| true`.
+- **The first failure stops the run.** Later steps are skipped.
+- **`continue_on_error: true`** lets later steps run after this step fails. The step is still shown as failed and the run still ends as **Failed**.
+- **Timeouts** always stop the run, even with `continue_on_error`.
+
+See `steps[*].run` and `steps[*].continue_on_error` in the [Workflow syntax](/reference/workflow-syntax).
+
+## Re-run a run
+
+Click **Re-run** on a finished run (success, failed, timeout or cancelled). The same run goes back to **Queued** with the same inputs, and the next runner to pick it up starts a new attempt. The page then follows the new attempt.
+
+When a run has several attempts, an attempt menu in the header lets you switch between them. Each attempt keeps its own steps, logs and checks.
+
+- A request workflow's re-run doesn't need approval again.
+- The workflow must be **Active**. You can't re-run a run of a paused or archived workflow.
+
+## Cancel a run
+
+Click **Cancel** on a **Queued** run to stop it before a runner picks it up. You can also cancel from the row's action in the Runs list. A run that has started can't be cancelled.
+
+## Who can do what
+
+Viewing a run follows your access to its workflow and workspace. **Re-run** and **Cancel** need permission to manage runs. If you don't see the buttons, ask a workspace admin. See [Permissions](/guides/permissions).
+
+## Log retention
+
+Log lines are kept for a number of days after an attempt finishes, depending on your plan. After that, the log lines are deleted; the run, its status and its steps remain. See **Run log retention** in [Plans and limits](/plans).
+
+To keep logs longer, copy them out with the API before they expire: [`GET runs/{id}/logs/`](/reference/api/runs).

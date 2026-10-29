@@ -1,0 +1,68 @@
+---
+title: "API tokens"
+description: "Create personal access tokens to use the Bentra API and the MCP server as yourself."
+---
+
+A personal access token lets a script, a CI pipeline or an AI agent call Bentra as you. You manage your tokens in **Settings → API Access**. API and MCP access is available on every plan.
+
+## How tokens work
+
+- A token acts as you, with your permissions. It can do what you can do in the UI and nothing more. If your role or group access changes, the token follows.
+- Personal tokens carry the `*` scope: every scope. See [Scopes](/reference/api/overview#scopes).
+- A token belongs to one organization. Create a separate token in each organization you work in.
+- You see and manage only your own tokens.
+
+## Create a token
+
+<Steps>
+<Step title="Open API Access">
+Go to **Settings → API Access** and click **Create Token**.
+</Step>
+<Step title="Describe it">
+Enter a **Token Name**, for example `CI Pipeline`, and optionally a **Description**.
+</Step>
+<Step title="Choose an expiration">
+Pick **Never**, **7 days**, **30 days**, **90 days** or **Custom date**.
+</Step>
+<Step title="Copy the token">
+Bentra shows the token once. Copy it and store it somewhere safe, such as your CI system's secret store.
+</Step>
+</Steps>
+
+<Warning>
+You can't see a token again after you close the dialog. If you lose it, delete it and create a new one.
+</Warning>
+
+The token list shows each token's name, when it was created and last used, when it expires, and its status: **Active**, **Expired** or **Revoked**. The page also shows how many tokens expire in the next 30 days.
+
+## Delete a token
+
+Open the menu on the token's row and click **Delete token**. The token stops working immediately. Calls that use it get `401`.
+
+Bentra also revokes tokens for you:
+
+- When someone is removed from the organization, all their tokens for it are revoked.
+- When someone's role changes to requester, their tokens are revoked. Requesters can't use API tokens.
+
+## Use a token with the API
+
+Send the token as a bearer token. **API Information** on the API Access page shows your organization's base URL and an example request.
+
+```bash
+curl -H "Authorization: Bearer $BENTRA_TOKEN" \
+  https://app.bentralabs.com/orgs/<org-id>/api/v1/workflows/
+```
+
+See the [API reference](/reference/api/overview) for every endpoint.
+
+### Interactive API docs
+
+When you're signed in, open `/orgs/<org-id>/api/v1/docs/` to browse the API in Swagger UI and try calls with your token. The OpenAPI specification is at `/orgs/<org-id>/api/v1/schema/`, also linked from **API Information**.
+
+## Use a token with the MCP server
+
+The Bentra MCP server lets Claude Code, Cursor and other MCP clients work in Bentra for you. Give it a token from this page. The agent acts as you, with your permissions. See [MCP server](/ai/mcp-server).
+
+<Tip>
+Create a separate token for each script or agent, with a name that says where it's used. Then you can delete one without breaking the others.
+</Tip>

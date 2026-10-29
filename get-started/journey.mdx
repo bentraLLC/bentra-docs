@@ -1,0 +1,53 @@
+---
+title: "Your first steps in Bentra"
+description: "The path a new organization follows from first sign-in to a request portal the whole company uses."
+---
+
+This page walks through what a new organization usually sets up, in order. Each step links to a page with the details. You can stop after step 5 and already have a working workflow.
+
+<Steps>
+  <Step title="Understand Bentra">
+    Bentra turns infrastructure tasks into **workflows**. A request workflow collects input through a form and can wait for approval; a job runs manually, from the API or on a schedule. Steps run as bash on runners in your own infrastructure. Read [Understand Bentra](/get-started/concepts) for the building blocks: organizations, workspaces, workflows, requests, runs and runners.
+  </Step>
+  <Step title="Sign in and set up SSO (optional)">
+    Sign in at [app.bentralabs.com](https://app.bentralabs.com) with your work email. Single sign-on is an Enterprise feature: owners and admins connect your identity provider in **Settings → Authentication** and choose whether people who sign in through it join automatically. Skip this step if you're not on Enterprise; people sign in with email and password or a social login instead. See [How sign-in works](/authentication/overview) and [Set up SSO](/authentication/setup-sso).
+  </Step>
+  <Step title="Set up your first runner">
+    Runs execute on runners you host: a Kubernetes cluster, a Docker host or a Linux VM. Open **Settings → Runner Pools**, create a pool or use the default one, copy its runner token, and install a runner with it. Runners connect out to Bentra over HTTPS, so you don't open any inbound ports. See [Install a runner](/runners/install).
+  </Step>
+  <Step title="Connect a repository">
+    If your workflow files live in GitHub, add a connector in **Settings → Connectors** so Bentra can read them and runners can clone them. You can skip this and keep the files in Bentra instead. See [Connect a repository](/get-started/connect-repository).
+  </Step>
+  <Step title="Create a workspace and your first workflow">
+    A workspace groups a team's workflows, connectors and variables. Create one from the workspace switcher, or use the default workspace, then click **Create Workflow** and follow the wizard. Submit the form and watch the run. See [Create your first workflow](/get-started/first-workflow).
+  </Step>
+  <Step title="Understand requests and approvals">
+    Each form submission becomes a request. By default a request needs one approval from a designated approver before it runs. Decide who approves each workflow and how many approvals it needs. See [Requests and approvals](/guides/requests-and-approvals).
+  </Step>
+  <Step title="Open the request portal to the rest of the company">
+    The request portal is a simple catalogue where anyone in the organization, including requesters who don't use the rest of Bentra, finds forms, submits them and follows their requests. Brand it, then choose which forms appear there. The portal is available on [plans](/plans) that include it. See [Request portal](/guides/request-portal).
+  </Step>
+</Steps>
+
+## Then
+
+<CardGroup cols={2}>
+  <Card title="Permissions" icon="shield-check" href="/guides/permissions">
+    The recommended setup for roles, workspaces and workflow access.
+  </Card>
+  <Card title="Members and groups" icon="users" href="/guides/members-and-groups">
+    Invite people and organize them into groups.
+  </Card>
+  <Card title="Variables and secrets" icon="key" href="/guides/variables-and-secrets">
+    Give workflows the configuration and credentials they need.
+  </Card>
+  <Card title="Status and schedules" icon="calendar" href="/guides/workflow-status-and-schedules">
+    Pause, archive and schedule workflows.
+  </Card>
+  <Card title="Runs" icon="circle-play" href="/guides/runs">
+    Follow logs, re-run and cancel.
+  </Card>
+  <Card title="API tokens" icon="brackets-curly" href="/guides/api-tokens">
+    Automate Bentra from scripts and CI.
+  </Card>
+</CardGroup>

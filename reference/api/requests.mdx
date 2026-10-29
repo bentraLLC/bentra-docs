@@ -5,14 +5,14 @@ title: "Requests"
 A request is one submission of a request workflow's form. Its status moves through:
 
 ```
-pending ──approve (enough approvals)──▶ approved ──▶ executing ──▶ completed | failed
+open ──approve (enough approvals)──▶ approved ──▶ executing ──▶ completed | failed
    │  ▲                                                    
    │  └── update answers ── changes_requested ◀── request changes
    ├── reject ──▶ rejected
    └── cancel ──▶ cancelled
 ```
 
-Requests that don't need approval start running as soon as they're submitted. Approval itself lives on the request; the execution is a [run](/reference/api/runs).
+Requests that don't need approval start running as soon as they're submitted. If the workflow turns off **auto-run on approval**, an approved request waits in `approved` until someone starts it with [`POST requests/{id}/start/`](#post-requestsidstart). Approval itself lives on the request; the execution is a [run](/reference/api/runs).
 
 | Method | Path | Scope | MCP tool |
 |---|---|---|---|
@@ -28,6 +28,7 @@ Requests that don't need approval start running as soon as they're submitted. Ap
 | `POST` | `requests/{id}/approve/` | `approve:workflow_requests` | `approve_request` |
 | `POST` | `requests/{id}/reject/` | `approve:workflow_requests` | `reject_request` |
 | `POST` | `requests/{id}/request-changes/` | `approve:workflow_requests` | `request_changes` |
+| `POST` | `requests/{id}/start/` | `approve:workflow_requests` | `start_request` |
 
 ---
 
@@ -46,7 +47,7 @@ The API equivalent of filling in the form.
 **Response** `201`:
 
 ```json
-{"success": true, "request_id": "…", "status": "pending"}
+{"success": true, "request_id": "…", "status": "open"}
 ```
 
 **Errors:** `422` with `errors` per field when answers don't pass the form's validation; `400` if the workflow isn't a request workflow or its form can't be loaded.
@@ -61,9 +62,9 @@ Requests you can see: on workflows you can view, ones you submitted, and ones yo
 
 | Query | Notes |
 |---|---|
-| `status` | `pending`, `changes_requested`, `approved`, `executing`, `completed`, `failed`, `cancelled`, `rejected`. |
+| `status` | `open`, `changes_requested`, `approved`, `executing`, `completed`, `failed`, `cancelled`, `rejected`. |
 | `workflow` | Workflow id. |
-| `awaiting` | `me`: pending requests waiting on your decision. |
+| `awaiting` | `me`: open requests waiting on your decision. |
 
 ## `GET requests/{id}/`
 
@@ -72,7 +73,7 @@ Requests you can see: on workflows you can view, ones you submitted, and ones yo
   "id": "…",
   "workflow_id": "…",
   "workflow_name": "Create bucket",
-  "status": "pending",
+  "status": "open",
   "submitted_by": "alice",
   "form_data": {"bucket_name": "logs"},
   "notes": "",
@@ -98,7 +99,7 @@ Requests you can see: on workflows you can view, ones you submitted, and ones yo
 
 ## `PATCH requests/{id}/`
 
-The submitter updates the answers while the request is `pending` or `changes_requested`. The old answers are kept as a revision, approvals already given are cleared, and the request goes back to `pending`.
+The submitter updates the answers while the request is `open` or `changes_requested`. The old answers are kept as a revision, approvals already given are cleared, and the request goes back to `open`.
 
 ```json
 {"form_data": {"bucket_name": "logs-eu", "region": "eu-west-1"}}
@@ -171,4 +172,13 @@ As a designated approver. `notes` (the reason, or what to change) is required.
 {"notes": "Use the eu-west-1 region."}
 ```
 
-**Errors** for all decisions: `403` if you're not a designated approver; `409` if the request isn't pending.
+**Errors** for all decisions: `403` if you're not a designated approver; `409` if the request isn't open.
+
+## `POST requests/{id}/start/`
+
+Starts a request that is approved (or needs no approval) but hasn't run, because the workflow doesn't run on approval automatically. Designated approvers and anyone with `workflow.execute` can start it. `200` with `request_status`; `409` if the request isn't waiting to run; `403` without permission.
+
+## Answers on a request
+
+- `form_data` holds the answers. Answers to `password` fields are masked as `••••••••` wherever a request is shown, including this API.
+- `dataset_selections` records, for each field whose options came from a [job dataset](/guides/job-datasets), the dataset version and the full row that was picked: `{"repo": {"version_id": "…", "row": {"name": "infra", "url": "…"}}}`. It keeps the record accurate after that dataset version is pruned.

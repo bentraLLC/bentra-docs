@@ -60,6 +60,20 @@ The pool page has the full commands: a network, the orchestrator container and t
 
 The pool page lists the connected runners with their version and status, refreshed every 15 seconds. A runner older than the latest release shows **Outdated**.
 
+## Plan limits
+
+Your plan sets how many runners can be connected at once, across all your pools together, and how many runner pools you can create. See [Plans and limits](/plans).
+
+| | Free | Team | Business | Enterprise |
+|---|---|---|---|---|
+| Runners (all pools together) | 1 | 3 | 10 | Unlimited |
+| Runner pools | 1 | 1 | 2 | Unlimited |
+
+- **Settings → Runner Pools** shows meters for active runners and runner pools.
+- A runner that starts when you're at the limit is refused jobs and keeps retrying. It gets a slot about 90 seconds after another runner stops.
+- At the pool limit, you can't create another pool. Existing pools keep working if your plan changes.
+- On Team and Business, Bentra can add extra runners or pools to your account. See [Billing](/guides/billing#extra-runners-and-runner-pools).
+
 ## Versions
 
 - Runners send their version with every call.
