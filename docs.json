@@ -3,7 +3,39 @@
   "theme": "mint",
   "name": "Bentra",
   "colors": {
-    "primary": "#4F46E5"
+    "primary": "#2563EB",
+    "light": "#3B82F6",
+    "dark": "#1D4ED8"
+  },
+  "background": {
+    "color": {
+      "light": "#F8FAFC",
+      "dark": "#0B1220"
+    }
+  },
+  "fonts": {
+    "family": "Inter",
+    "weight": 400,
+    "heading": {
+      "family": "Inter",
+      "weight": 600
+    }
+  },
+  "appearance": {
+    "default": "system"
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "favicon": "/favicon.svg",
+  "styling": {
+    "codeblocks": {
+      "theme": {
+        "light": "github-light",
+        "dark": "night-owl"
+      }
+    }
   },
   "navigation": {
     "tabs": [

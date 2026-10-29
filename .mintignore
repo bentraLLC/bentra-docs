@@ -1,3 +1,4 @@
 # Internal docs: kept in the repo, never published
 internal/
 README.md
+.venv/

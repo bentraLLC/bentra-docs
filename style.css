@@ -1,0 +1,156 @@
+/* Bentra design system for the docs: navy structure, electric-blue interaction,
+   neutral surfaces, functional colours for status only. Brand colours, page
+   background and fonts are set in docs.json; this file adds the semantic tokens. */
+
+:root {
+  --bt-text-primary: #0f172a;
+  --bt-text-secondary: #64748b;
+  --bt-surface: #ffffff;
+  --bt-surface-elevated: #ffffff;
+  --bt-border: #e2e8f0;
+  --bt-border-strong: #cbd5e1;
+  --bt-brand-primary: #2563eb;
+  --bt-brand-subtle: #eff6ff;
+  --bt-table-header: #f1f5f9;
+  --bt-code-bg: #f1f5f9;
+
+  --bt-info: #2563eb;
+  --bt-info-bg: #eff6ff;
+  --bt-info-border: #bfdbfe;
+  --bt-success: #0f766e;
+  --bt-success-bg: #f0fdfa;
+  --bt-success-border: #99f6e4;
+  --bt-warning: #b45309;
+  --bt-warning-bg: #fffbeb;
+  --bt-warning-border: #fde68a;
+  --bt-error: #dc2626;
+  --bt-error-bg: #fef2f2;
+  --bt-error-border: #fecaca;
+}
+
+html.dark {
+  --bt-text-primary: #f8fafc;
+  --bt-text-secondary: #94a3b8;
+  --bt-surface: #111c2e;
+  --bt-surface-elevated: #17243a;
+  --bt-border: #27364b;
+  --bt-border-strong: #334155;
+  --bt-brand-primary: #3b82f6;
+  --bt-brand-subtle: #1e3a8a;
+  --bt-table-header: #17243a;
+  --bt-code-bg: #17243a;
+
+  --bt-info: #60a5fa;
+  --bt-info-bg: #172554;
+  --bt-info-border: #1e3a8a;
+  --bt-success: #2dd4bf;
+  --bt-success-bg: #042f2e;
+  --bt-success-border: #115e59;
+  --bt-warning: #fbbf24;
+  --bt-warning-bg: #422006;
+  --bt-warning-border: #78350f;
+  --bt-error: #f87171;
+  --bt-error-bg: #450a0a;
+  --bt-error-border: #7f1d1d;
+}
+
+/* Headings: navy in light, near-white in dark. */
+#content h1,
+#content h2,
+#content h3,
+#content h4,
+[data-layout-item="page-header"] h1 {
+  color: var(--bt-text-primary);
+}
+
+[data-layout-item="toc-item-link"] {
+  color: var(--bt-text-secondary);
+}
+
+/* Callouts: status colour on the icon and border; body text stays readable. */
+.callout {
+  --bt-callout: var(--bt-info);
+  --bt-callout-bg: var(--bt-info-bg);
+  --bt-callout-border: var(--bt-info-border);
+  background-color: var(--bt-callout-bg);
+  border-color: var(--bt-callout-border);
+}
+
+.callout[data-callout-type="tip"] {
+  --bt-callout: var(--bt-brand-primary);
+  --bt-callout-bg: var(--bt-surface);
+  --bt-callout-border: var(--bt-border-strong);
+}
+
+.callout[data-callout-type="check"] {
+  --bt-callout: var(--bt-success);
+  --bt-callout-bg: var(--bt-success-bg);
+  --bt-callout-border: var(--bt-success-border);
+}
+
+.callout[data-callout-type="warning"] {
+  --bt-callout: var(--bt-warning);
+  --bt-callout-bg: var(--bt-warning-bg);
+  --bt-callout-border: var(--bt-warning-border);
+}
+
+.callout[data-callout-type="danger"] {
+  --bt-callout: var(--bt-error);
+  --bt-callout-bg: var(--bt-error-bg);
+  --bt-callout-border: var(--bt-error-border);
+}
+
+.callout [data-component-part="callout-icon"] svg {
+  color: var(--bt-callout);
+  fill: var(--bt-callout);
+}
+
+.callout [data-component-part="callout-content"] {
+  color: var(--bt-text-primary);
+}
+
+/* Cards: neutral surfaces, no coloured fills. */
+.card {
+  background-color: var(--bt-surface);
+  border-color: var(--bt-border);
+}
+
+.card:hover {
+  border-color: var(--bt-border-strong);
+}
+
+/* Selected sidebar page. */
+#sidebar-content li[data-active] > a {
+  background-color: var(--bt-brand-subtle);
+}
+
+html.dark #sidebar-content li[data-active] > a {
+  color: var(--bt-text-primary);
+}
+
+/* Tables. */
+#content table th {
+  background-color: var(--bt-table-header);
+  color: var(--bt-text-primary);
+}
+
+#content table th,
+#content table td {
+  border-color: var(--bt-border);
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+/* Inline code; fenced blocks keep Mintlify's highlighting theme. */
+#content :not(pre) > code {
+  background-color: var(--bt-code-bg);
+  color: var(--bt-text-primary);
+}
+
+/* Visible keyboard focus. */
+#content a:focus-visible,
+#sidebar-content a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--bt-brand-primary);
+  outline-offset: 2px;
+}
