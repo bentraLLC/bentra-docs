@@ -30,7 +30,7 @@ Bentra uses a connector to:
 - read `.bento/workflow/workflow.yml`, `.bento/form/form.yml` and the README
 - hand a token to a runner so it can clone the repository; a runner only gets it for a run its pool is executing
 - commit form edits made in Bentra to a branch and open a pull request
-- trigger GitHub Actions workflows from a [`github_workflow_dispatch`](/reference/workflow-syntax#github_workflow_dispatch) step
+- trigger GitHub Actions workflows from a [`github_workflow_dispatch`](/reference/workflow-syntax#github-actions-steps) step
 
 ## GitHub App (recommended)
 
@@ -41,7 +41,7 @@ Install the app on the repositories your workflows use, not on the whole organiz
 | Metadata | Read | Required by GitHub for every app |
 | Contents | Read and write | Read workflow and form files; clone for runs. Write only commits form edits to a branch |
 | Pull requests | Read and write | Open a pull request for a form edit |
-| Actions | Read and write | Only for [`github_workflow_dispatch`](/reference/workflow-syntax#github_workflow_dispatch) steps: trigger a workflow and follow its run |
+| Actions | Read and write | Only for [`github_workflow_dispatch`](/reference/workflow-syntax#github-actions-steps) steps: trigger a workflow and follow its run |
 
 If you don't edit forms from Bentra, **Contents: Read** and no pull request access are enough. Without `github_workflow_dispatch` steps, the app needs no Actions access.
 

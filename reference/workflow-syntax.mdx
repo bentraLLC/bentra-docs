@@ -405,7 +405,7 @@ Variables and secrets from the workflow's variable collections are injected as u
 | `BENTO_EXECUTION_ID` | The run's execution id |
 | `BENTO_WORKFLOW_ID` | The workflow id |
 | `BENTRA_DATASETS` | The directory for [dataset](#writing-a-dataset) files. It is set last, so a secret can't override it. |
-| `BENTRA_INPUTS` | The directory holding the [input datasets](#inputsdatasets) |
+| `BENTRA_INPUTS` | The directory holding the [input datasets](#inputs-datasets) |
 
 The runner's own credentials (`BENTRA_RUNNER_TOKEN`, and anything prefixed `OPENBAO_`, `BAO_`, or `VAULT_`) are removed from the step environment.
 
@@ -512,7 +512,7 @@ The plan file is written to the workspace, so the apply step can read it.
 
 ### Retry a flaky step and continue past a non-critical one
 
-[`retry`](#stepsretry) isn't applied by the runner yet, so retry inside the script. Keep the loop within the 300 s [step timeout](#timeouts-and-implicit-setup). Mark a step that is allowed to fail with `continue_on_error: true`. The run is still reported as failed if it does.
+[`retry`](#steps--retry) isn't applied by the runner yet, so retry inside the script. Keep the loop within the 300 s [step timeout](#timeouts-and-implicit-setup). Mark a step that is allowed to fail with `continue_on_error: true`. The run is still reported as failed if it does.
 
 ```yaml workflow.yml
 name: Plan with a module mirror
