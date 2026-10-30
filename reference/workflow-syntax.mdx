@@ -10,14 +10,14 @@ Connect the [Bentra MCP server](/ai/mcp-server) to Claude, Cursor or another age
 > Create a job in the Platform workspace that runs `terraform plan` for acme/infra every night at 2am UTC and fails if the plan has changes.
 </Tip>
 
-A workflow is a YAML file listing the steps a runner executes. Each step is a bash script. Steps run in order, in one workspace that holds the workflow's files.
+A workflow is a YAML file listing the steps a runner executes. Each step is a bash script, or a [GitHub Actions workflow](#github-actions-steps) that the runner triggers and waits for. Steps run in order, in one workspace that holds the workflow's files.
 
 ## About YAML syntax for workflows
 
 - Workflows live at `.bento/workflow/workflow.yml` in the repository (VCS workflows) or in the uploaded file set (local workflows).
 - The runner parses the file with `yaml.safe_load`. Bentra itself only checks that the file exists and is a YAML mapping before a version can be cut. Everything else is validated by the runner when a run starts.
 - Local workflow file sets are limited to 256 KB per file, 2 MB in total, 100 files, and a path depth of 10.
-- Bentra workflows are **not** GitHub Actions. There is no `on`, `jobs`, `runs-on`, `needs`, `uses`, or `${{ }}` expression syntax. Triggers, approvals, schedules, and runner selection are configured in the Bentra UI. See [Configured outside the YAML](#configured-outside-the-yaml).
+- Bentra workflows are **not** GitHub Actions. There is no `on`, `jobs`, `runs-on`, `needs`, `uses`, or `${{ }}` expression syntax. Triggers, approvals, schedules, and runner selection are configured in the Bentra UI. See [Configured outside the YAML](#configured-outside-the-yaml). To run an existing GitHub Actions workflow, including reusable ones, use a [`github_workflow_dispatch` step](#github-actions-steps).
 
 ### Example: a complete workflow
 
@@ -107,7 +107,7 @@ Steps run one at a time, in order. By default the first failing step stops the r
 
 ## `steps[*].run`
 
-**Required in practice.** The bash script to execute. It runs as:
+**Required in practice.** The bash script to execute. A step has either `run` or [`github_workflow_dispatch`](#github-actions-steps), not both. It runs as:
 
 ```text
 bash --noprofile --norc -eo pipefail -c "<run>"
@@ -168,6 +168,120 @@ steps:
 
 `retry` (both top-level and per step) is accepted in the YAML and appears in some older examples, but the runner doesn't apply it. A failing step is not retried.
 </Warning>
+
+---
+
+## GitHub Actions steps
+
+A `github_workflow_dispatch` step triggers a GitHub Actions workflow, waits for its run, and passes only when the run concludes `success`. GitHub runs the work, on GitHub-hosted or your own runners. The GitHub workflow can call [reusable workflows](https://docs.github.com/en/actions/sharing-automations/reusing-workflows) and use GitHub secrets, environments and OIDC as usual.
+
+<Info>
+Needs runner **0.11.0+**, and a workflow whose source is a GitHub repository: the step uses the workflow's own GitHub connector. The connector needs **Actions: Read and write** (see [Connectors](/reference/connectors#github-app-recommended)).
+</Info>
+
+```yaml
+steps:
+  - name: Validate request
+    run: ./check.sh
+
+  - name: Deploy
+    github_workflow_dispatch:
+      repo: acme/platform
+      workflow: deploy.yml
+      ref: main
+      inputs: bentra.form_payload
+```
+
+| Key | Required | Value |
+|---|---|---|
+| `repo` | Yes | The repository holding the GitHub workflow, as `owner/name`. It must belong to the connector's owner. |
+| `workflow` | Yes | The workflow file name in `.github/workflows/`, such as `deploy.yml`, or its numeric id. The workflow must have an `on: workflow_dispatch` trigger. |
+| `ref` | Yes | The branch or tag to run the workflow from. |
+| `inputs` | No | What to send: `bentra.form_payload` or a list of form field ids. See [Sending inputs](#sending-inputs). Omit it to send nothing. |
+| `wait` | No | Default `true`: the step waits for the GitHub run. With `false`, the step passes as soon as GitHub accepts the dispatch. |
+| `timeout_minutes` | No | 1 to 360. How long to wait for the GitHub run. The run's overall timeout still applies. |
+
+`name` and `continue_on_error` work as they do for `run` steps. A step with an unknown key, or with both `run` and `github_workflow_dispatch`, fails the run before any step executes.
+
+### Sending inputs
+
+`inputs` takes one of two forms. Pick one per step.
+
+**`inputs: bentra.form_payload`** sends the whole form as one JSON string input, `bentra_form_payload`. Types are kept: numbers stay numbers, lists stay lists, `tags` stay objects. The GitHub workflow declares that one input and never changes when the form gains a field.
+
+```json
+{
+  "schema": 1,
+  "bentra": { "run_id": "…", "attempt_id": "…", "workflow": "provision-bucket" },
+  "form": { "environment": "production", "replicas": 3, "tags": { "owner": "platform" } }
+}
+```
+
+For a job, `form` holds the trigger's runtime variables. New keys may be added to the payload, but existing keys won't be renamed or retyped.
+
+**`inputs: [environment, region]`** sends each listed form field as a GitHub input of the same name. The GitHub workflow must declare each one. Values are formatted as for [environment variables](#form-inputs): strings as-is, numbers as written, booleans `true`/`false`, lists comma-joined. GitHub then checks each value against the input's declared `type`: a `boolean` takes `true`/`false`, and a `choice` must be one of its options. A field that wasn't submitted, such as a hidden conditional field, is left out, and GitHub uses the input's `default`.
+
+- At most 25 fields, GitHub's limit.
+- A `tags` (object) field can't be listed. Use `bentra.form_payload`.
+
+<Warning>
+**Password fields are never sent to GitHub.** They are left out of `bentra.form_payload`, and listing one in `inputs` fails the run. GitHub stores dispatch inputs with the run, readable by anyone with read access to the repository, and doesn't mask them in logs. Keep credentials in GitHub secrets, or use OIDC.
+</Warning>
+
+### The receiving GitHub workflow
+
+GitHub rejects inputs the workflow doesn't declare. For `bentra.form_payload`:
+
+```yaml .github/workflows/deploy.yml
+on:
+  workflow_dispatch:
+    inputs:
+      bentra_form_payload:
+        type: string
+        required: true
+
+jobs:
+  deploy:
+    uses: acme/shared-workflows/.github/workflows/deploy.yml@v1
+    with:
+      environment: ${{ fromJSON(inputs.bentra_form_payload).form.environment }}
+      region: ${{ fromJSON(inputs.bentra_form_payload).form.region }}
+    secrets: inherit
+```
+
+<Warning>
+Form values are user input. In the GitHub workflow, pass them to `run:` through `env:`, never with `${{ }}` inside the script, which lets a crafted value run commands:
+
+```yaml
+- name: Use the inputs
+  env:
+    BENTRA_FORM_PAYLOAD: ${{ inputs.bentra_form_payload }}
+  run: |
+    region=$(jq -r '.form.region' <<< "$BENTRA_FORM_PAYLOAD")
+    echo "Deploying to $region"
+```
+</Warning>
+
+### What you see in Bentra
+
+- As soon as GitHub accepts the dispatch, the step reports a **GitHub run** check with a link to the run.
+- While the step waits, its log shows the GitHub run's status: queued, waiting, in progress.
+- When the run finishes, a final check records its conclusion. Only `success` passes the step. `failure`, `cancelled`, `timed_out`, `skipped`, `neutral`, `action_required` and any other conclusion fail it.
+- Bentra doesn't copy the GitHub run's logs. Follow the link.
+
+### Failures and limits
+
+| Situation | Result |
+|---|---|
+| The connector can't dispatch (missing Actions permission, app not installed on the repo) | The step fails with GitHub's message |
+| The repository or workflow doesn't exist, the ref is wrong, an input isn't declared or a value doesn't match its type | The step fails with GitHub's message |
+| GitHub rate-limits the request | The runner waits and tries again |
+| The request times out, or GitHub returns a server error, while dispatching | The step fails and is **not** retried: GitHub may have started the run, and a retry could deploy twice. Check the workflow's runs on GitHub |
+| GitHub can't be reached while waiting | The runner keeps polling for up to 10 minutes, then fails the step. The GitHub run continues |
+| `timeout_minutes` passes | The runner cancels the GitHub run and the step times out |
+| The runner stops mid-run | The GitHub run continues and Bentra marks the run lost. Re-running starts a new GitHub run |
+| The Bentra run is cancelled | Not supported while it's running yet. Cancel the GitHub run on GitHub |
+| GitHub Enterprise Server that doesn't return run ids | Only `wait: false` works |
 
 ---
 
@@ -334,7 +448,7 @@ echo "::bentra-check status=warning,name=Cost,monthly=412::Above the 400 USD bud
 
 ## Timeouts and implicit setup
 
-- **Step timeout:** 300 s by default. This is set by the runner's `STEP_TIMEOUT` environment variable, not in the YAML.
+- **Step timeout:** 300 s by default. This is set by the runner's `STEP_TIMEOUT` environment variable, not in the YAML. [GitHub Actions steps](#github-actions-steps) use `timeout_minutes` instead.
 - **Run timeout:** 1800 s by default, set by the runner's `EXECUTION_TIMEOUT`.
 - **Dependency install:** before your steps, the runner adds an "Install Python dependencies" step (`pip install -r requirements.txt`) if `requirements.txt` exists in the workspace root, and an "Install Node.js dependencies" step (`npm install --production`) if `package.json` exists. If either fails, the run stops.
 
@@ -571,6 +685,52 @@ steps:
         echo "::bentra-check status=failed,name=Bucket exists::$BUCKET_NAME not found"
       fi
 ```
+
+### Trigger a GitHub Actions workflow with named inputs
+
+The form's `environment` and `release_version` fields become GitHub inputs of the same names, so an existing workflow with those inputs works unchanged. The Bentra step after it runs only if the GitHub run succeeds.
+
+```yaml .bento/workflow/workflow.yml
+name: Deploy service
+steps:
+  - name: Deploy on GitHub Actions
+    github_workflow_dispatch:
+      repo: acme/platform
+      workflow: deploy.yml
+      ref: main
+      inputs: [environment, release_version]
+      timeout_minutes: 45
+
+  - name: Announce
+    run: echo "Deployed to $ENVIRONMENT"
+```
+
+```yaml .github/workflows/deploy.yml
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options: [staging, production]
+        required: true
+      release_version:
+        type: string
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          RELEASE_VERSION: ${{ inputs.release_version }}
+        run: ./deploy.sh "$ENVIRONMENT" "$RELEASE_VERSION"
+```
+
+The `environment` form field should offer the same values as the `choice` input's options, or GitHub rejects the dispatch. For a form with many fields or nested values, send `inputs: bentra.form_payload` and see [The receiving GitHub workflow](#the-receiving-github-workflow).
 
 ### Test against two Terraform versions
 
