@@ -213,6 +213,7 @@ Built by `runners/serializers.py::build_job_payload(deployment, run)`. Canonical
   },
 
   "form_data": { "env": "prod", "region": "us-east-1" },
+  "secret_fields": ["db_password"],       // password field ids: masked, never sent to GitHub (runner 0.11.0+)
   "queued_at": "2026-04-23T21:00:00Z"
 }
 ```
@@ -265,7 +266,7 @@ The runner container is not part of this repo (lives in `bento-kubernetes-deploy
    - Configure the backend to use the `state_path`.
    - Run `terraform init`, then `plan` / `apply` / `destroy` per `iac_action`.
 7. For `generic`:
-   - Read the workflow YAML at `workflow_file_path` and execute its steps.
+   - Read the workflow YAML at `workflow_file_path` and execute its steps. A `github_workflow_dispatch` step (runner 0.11.0+, step kind `github_dispatch`) triggers a GitHub Actions workflow with a repo-scoped connector token and polls the run to completion instead of running bash.
 8. Stream stdout/stderr to the logs endpoint as it goes.
 9. POST the final status + steps to the completion endpoint.
 

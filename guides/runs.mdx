@@ -54,6 +54,7 @@ The pipeline lists your `workflow.yml` steps plus the ones Bentra adds:
 | **Set up job** | Setup | Prepares the workspace: fetches the files, reads the workflow, installs pinned tools and fetches variables and secrets. Starts as soon as a runner picks up the run. |
 | **Install Python dependencies**, **Install Node.js dependencies** | Dependency | Only when `requirements.txt` or `package.json` exists. |
 | Your steps | Workflow | In the order of `workflow.yml`. |
+| Your [GitHub Actions steps](/reference/workflow-syntax#github-actions-steps) | GitHub workflow | Triggers a GitHub Actions workflow and waits for it. Its **GitHub run** check links to the run on GitHub. |
 | **Publish datasets** | Publish datasets | Only for jobs that declare datasets. See [Job datasets](/guides/job-datasets). |
 
 For a repo-backed workflow, the steps appear a few seconds after the run starts, once the runner has read `workflow.yml`.
@@ -96,6 +97,7 @@ See [Reporting checks](/reference/workflow-syntax#reporting-checks) for the full
 - **The first failure stops the run.** Later steps are skipped.
 - **`continue_on_error: true`** lets later steps run after this step fails. The step is still shown as failed and the run still ends as **Failed**.
 - **Timeouts** always stop the run, even with `continue_on_error`.
+- **GitHub Actions steps** pass only when the GitHub run concludes `success`. See [Failures and limits](/reference/workflow-syntax#failures-and-limits).
 
 See `steps[*].run` and `steps[*].continue_on_error` in the [Workflow syntax](/reference/workflow-syntax).
 

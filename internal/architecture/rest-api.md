@@ -205,11 +205,13 @@ Fetch a short-lived VCS token for a connector. `connector_id` is `settings.VCSCo
 **Validation**:
 
 - Connector must exist and belong to the runner's authenticated org. Cross-org fetches return `404`.
+- `?job_id=<attempt id>` is required: the attempt must be RUNNING, held by the runner's pool, and its workflow's connector must be this one. Otherwise `404`.
+- Optional `?repo=<owner>/<name>` (runner 0.11.0+, `github_workflow_dispatch` steps): `400` if malformed, `403` if the owner isn't the connector's `owner`.
 
 **Behavior**:
 
 - For `auth_type = 'pat'`: reads the token from OpenBao at `VCSConnector.openbao_secret_path`.
-- For `auth_type = 'github_app'`: mints a fresh GitHub App installation token (JWT sign → installation token exchange, ~1hr TTL).
+- For `auth_type = 'github_app'`: mints a fresh GitHub App installation token (JWT sign → installation token exchange, ~1hr TTL). With `repo`, the token is minted for that one repository with `actions: write` + `metadata: read` and is not cached.
 
 **Response**:
 
