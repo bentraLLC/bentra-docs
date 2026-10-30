@@ -176,7 +176,7 @@ steps:
 A `github_workflow_dispatch` step triggers a GitHub Actions workflow, waits for its run, and passes only when the run concludes `success`. GitHub runs the work, on GitHub-hosted or your own runners. The GitHub workflow can call [reusable workflows](https://docs.github.com/en/actions/sharing-automations/reusing-workflows) and use GitHub secrets, environments and OIDC as usual.
 
 <Info>
-Needs runner **0.11.0+**, and a workflow whose source is a GitHub repository: the step uses the workflow's own GitHub connector. The connector needs **Actions: Read and write** (see [Connectors](/reference/connectors#github-app-recommended)).
+Needs runner **0.11.0+**. With an older runner, the run fails before any step executes, so it never reports success without dispatching. The workflow's source must be a GitHub repository: the step uses the workflow's own GitHub connector. The connector needs **Actions: Read and write** (see [Connectors](/reference/connectors#github-app-recommended)).
 </Info>
 
 ```yaml
