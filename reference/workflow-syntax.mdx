@@ -14,7 +14,7 @@ A workflow is a YAML file listing the steps a runner executes. Each step is a ba
 
 ## About YAML syntax for workflows
 
-- Workflows live at `.bento/workflow/workflow.yml` in the repository (VCS workflows) or in the uploaded file set (local workflows).
+- For a VCS workflow, the file lives in the workflow's [working directory](/guides/bentra-stored-workflows#working-directory-and-file-names) in the repository (empty means the repository root), named `workflow.yml`, `workflow.yaml`, `WORKFLOW.yml` or `WORKFLOW.yaml`. Keep only one of them: two in the same folder fail the sync. For a local workflow, it's `workflow.yml` at the top level of the file set.
 - The runner parses the file with `yaml.safe_load`. Bentra itself only checks that the file exists and is a YAML mapping before a version can be cut. Everything else is validated by the runner when a run starts.
 - Local workflow file sets are limited to 256 KB per file, 2 MB in total, 100 files, and a path depth of 10.
 - Bentra workflows are **not** GitHub Actions. There is no `on`, `jobs`, `runs-on`, `needs`, `uses`, or `${{ }}` expression syntax. Triggers, approvals, schedules, and runner selection are configured in the Bentra UI. See [Configured outside the YAML](#configured-outside-the-yaml). To run an existing GitHub Actions workflow, including reusable ones, use a [`github_workflow_dispatch` step](#github-actions-steps).
@@ -115,7 +115,7 @@ bash --noprofile --norc -eo pipefail -c "<run>"
 
 - `-e`: the step fails on the first failing command.
 - `-o pipefail`: a failure anywhere in a pipeline fails the step.
-- The working directory is the workspace root, which contains the workflow's files plus [`bento.env` and `bento_inputs.json`](#files-in-the-workspace).
+- The step starts in the workflow's working directory, which contains the workflow's files plus [`bento.env` and `bento_inputs.json`](#files-in-the-workspace). Relative paths in `run` are from there. For a VCS workflow the whole repository is present, so a step in `inventory/` can run `../tools/common.sh`. For a local workflow the working directory is the top of the file set.
 - Each step gets a fresh shell. Variables exported in one step are **not** visible to later steps. To pass data between steps, write it to a file in the workspace.
 - A step with an empty or missing `run` is marked **skipped**.
 
@@ -411,7 +411,7 @@ The runner's own credentials (`BENTRA_RUNNER_TOKEN`, and anything prefixed `OPEN
 
 ### Files in the workspace
 
-Both files are written before each step:
+Both files are written to the working directory before each step:
 
 - **`bento.env`**: a sourceable bash file with the form inputs and the `BENTO_*` variables. Other secrets are not included. A form input that a secret overrides is written with the secret's value.
 - **`bento_inputs.json`**: the submitted form data as typed JSON. Lists stay lists and tags stay objects.
@@ -450,7 +450,7 @@ echo "::bentra-check status=warning,name=Cost,monthly=412::Above the 400 USD bud
 
 - **Step timeout:** 300 s by default. This is set by the runner's `STEP_TIMEOUT` environment variable, not in the YAML. [GitHub Actions steps](#github-actions-steps) use `timeout_minutes` instead.
 - **Run timeout:** 1800 s by default, set by the runner's `EXECUTION_TIMEOUT`.
-- **Dependency install:** before your steps, the runner adds an "Install Python dependencies" step (`pip install -r requirements.txt`) if `requirements.txt` exists in the workspace root, and an "Install Node.js dependencies" step (`npm install --production`) if `package.json` exists. If either fails, the run stops.
+- **Dependency install:** before your steps, the runner adds an "Install Python dependencies" step (`pip install -r requirements.txt`) if `requirements.txt` exists in the working directory, and an "Install Node.js dependencies" step (`npm install --production`) if `package.json` exists there. If either fails, the run stops.
 
 ---
 
@@ -624,8 +624,8 @@ steps:
 
 A request workflow pairs `workflow.yml` with a form. Each field `id` becomes an environment variable, and the `checkboxes` list is read from `bento_inputs.json`.
 
-```yaml .bento/form/form.yml
-# .bento/form/form.yml
+```yaml form.yml
+# form.yml
 name: Create a storage bucket
 body:
   - type: input
@@ -655,7 +655,7 @@ body:
         - { value: encryption, label: Encryption at rest }
 ```
 
-```yaml .bento/workflow/workflow.yml
+```yaml workflow.yml
 name: Create a storage bucket
 steps:
   - name: Create bucket
@@ -690,7 +690,7 @@ steps:
 
 The form's `environment` and `release_version` fields become GitHub inputs of the same names, so an existing workflow with those inputs works unchanged. The Bentra step after it runs only if the GitHub run succeeds.
 
-```yaml .bento/workflow/workflow.yml
+```yaml workflow.yml
 name: Deploy service
 steps:
   - name: Deploy on GitHub Actions
@@ -768,8 +768,8 @@ These settings are made in the Bentra UI or API rather than in `workflow.yml`:
 | Setting | Where |
 |---|---|
 | Workflow type (`request` with a form, or `job`) | Workflow settings |
-| Source (VCS repository or local files), branch/tag tracking | Workflow settings. See [Connectors](/reference/connectors). |
-| Form | `.bento/form/form.yml`, found by convention. Request workflows only. |
+| Source (VCS repository or local files), branch/tag tracking, working directory | Workflow settings. See [Connectors](/reference/connectors). |
+| Form | `form.yml` (or `form.yaml`, `FORM.yml`, `FORM.yaml`) next to the workflow file. Request workflows only. |
 | Approvals, auto-deploy on approval, notifications, form visibility | Request settings |
 | Manual and API triggers | Job settings |
 | Schedules (cron and timezone) | Job settings |

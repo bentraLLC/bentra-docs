@@ -46,16 +46,36 @@ A **group** is a named set of members. You can make a group a workflow's approve
 
 ## Workflows
 
-A **workflow** is a list of bash steps in `.bento/workflow/workflow.yml`. It has one of two types:
+A **workflow** is a list of bash steps in `workflow.yml`. It has one of two types:
 
 - **Request** (shown as **Form** in the UI): people fill in a form, the request is optionally approved, then it runs.
 - **Job**: runs manually, from the API or on a schedule, with no form.
 
-Its files come from a **GitHub repository** through a connector (the workflow tracks a branch or is pinned to a tag), or are **stored in Bentra**, where you edit a draft and publish numbered **versions**. Runs use the active published version. See [Workflow syntax](/reference/workflow-syntax) and [Bentra-stored workflows](/guides/bentra-stored-workflows).
+Its files come from a **GitHub repository** through a connector (the workflow tracks a branch or is pinned to a tag), or are **stored in Bentra**, where you edit a draft and publish numbered **versions**. Runs use the active published version.
+
+A repository workflow has one path setting, its **working directory**: the folder that holds its files (empty means the repository root). Bentra finds the files there by name:
+
+| File | Accepted names |
+|---|---|
+| Workflow (required) | `workflow.yml`, `workflow.yaml`, `WORKFLOW.yml`, `WORKFLOW.yaml` |
+| Form (request workflows) | `form.yml`, `form.yaml`, `FORM.yml`, `FORM.yaml` |
+| README (optional) | `README.md`, `readme.md` |
+
+So one repository can hold several workflows, each in its own folder:
+
+```text
+inventory/workflow.yml  inventory/form.yml  inventory/README.md
+release/workflow.yml    release/form.yml
+tools/common.sh
+```
+
+Steps start in the working directory and can reach the rest of the repository, so a step in `inventory/` can run `../tools/common.sh`. If a file is missing, is there under two names, or the folder doesn't exist, the sync fails and the version published before keeps running; see [Sync errors](/guides/bentra-stored-workflows#sync-errors).
+
+See [Workflow syntax](/reference/workflow-syntax) and [Bentra-stored workflows](/guides/bentra-stored-workflows).
 
 ## Forms
 
-A request workflow's **form** is defined in `.bento/form/form.yml`. Bentra renders it, validates what people submit, and passes each answer to the steps as an environment variable. Forms appear in the **Forms** list of the workspace. See [Form syntax](/reference/form-syntax).
+A request workflow's **form** is defined in `form.yml`, next to `workflow.yml`. Bentra renders it, validates what people submit, and passes each answer to the steps as an environment variable. Forms appear in the **Forms** list of the workspace. See [Form syntax](/reference/form-syntax).
 
 ## Requests and approvals
 

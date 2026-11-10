@@ -2,7 +2,7 @@
 title: "Files and versions"
 ---
 
-Workflows stored in Bentra (`source.type` `local`) keep their files in a **draft** you edit, and immutable **versions** cut from it. Only the active version runs; editing the draft changes nothing until you publish. Repo-backed workflows read their files from the repository instead: these endpoints return `404` for them.
+Workflows stored in Bentra (`source.type` `local`) keep their files in a **draft** you edit, and immutable **versions** cut from it. Only the active version runs; editing the draft changes nothing until you publish. Repo-backed workflows have no draft: the file endpoints and `POST versions/` return `404` for them, but they have versions too, published from the repository by a sync (`GET`/`POST workflows/{id}/sync/` in [Workflows](/reference/api/workflows)). `GET versions/` lists them with their `commit_sha`, and `activate` rolls back to one, which also turns automatic sync off until the newest version is activated again.
 
 | Method | Path | Scope | MCP tool |
 |---|---|---|---|
@@ -21,22 +21,22 @@ Reads need `workflow.view`; writes need `workflow.edit`.
 
 ## Files
 
-Every workflow has `.bento/workflow/workflow.yml` (the steps); request workflows also have `.bento/form/form.yml` ([form syntax](/reference/form-syntax)). These are required and can't be deleted. Python dependencies go in `requirements.txt`.
+Every workflow has `workflow.yml` (the steps); request workflows also have `form.yml` ([form syntax](/reference/form-syntax)). Both are at the top level, are required and can't be deleted. Python dependencies go in `requirements.txt`, and a `README.md` is optional.
 
 ### `GET workflows/{id}/files/`
 
 ```json
 {"success": true, "read_only": false,
- "files": [{"path": ".bento/workflow/workflow.yml", "is_required": true},
+ "files": [{"path": "workflow.yml", "is_required": true},
            {"path": "requirements.txt", "is_required": false}]}
 ```
 
 `?version=<version_id>` lists a version's files instead (`read_only: true`).
 
-### `GET workflows/{id}/files/content/?path=.bento/workflow/workflow.yml`
+### `GET workflows/{id}/files/content/?path=workflow.yml`
 
 ```json
-{"success": true, "path": ".bento/workflow/workflow.yml", "content": "name: …", "read_only": false}
+{"success": true, "path": "workflow.yml", "content": "name: …", "read_only": false}
 ```
 
 Also takes `?version=`.
@@ -61,8 +61,8 @@ Deletes a draft file. Required files return `400`.
 
 ```json
 {"success": true, "versions": [
-  {"id": "…", "version_number": 2, "label": "add region", "created_at": "…", "created_by": "alice", "is_active": true},
-  {"id": "…", "version_number": 1, "label": "", "created_at": "…", "created_by": "alice", "is_active": false}
+  {"id": "…", "version_number": 2, "label": "add region", "created_at": "…", "created_by": "alice", "is_active": true, "commit_sha": ""},
+  {"id": "…", "version_number": 1, "label": "", "created_at": "…", "created_by": "alice", "is_active": false, "commit_sha": ""}
 ]}
 ```
 

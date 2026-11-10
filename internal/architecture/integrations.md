@@ -10,9 +10,8 @@ All workflow/form definitions live in customer GitHub repos. Bentra reads them a
 
 A Bentra workflow is bound to a `GithubRepository` with these relevant fields:
 
-- `repo_url`, `repo_branch`, `repo_working_directory`
-- `form_file_path` (default: `.bento/form/form.yml`)
-- `workflow_file_path` (default: `.bento/workflow/workflow.yml`)
+- `repo_url`, `repo_branch`
+- `working_directory` (empty = repository root): the one path setting. Bentra finds `workflow.yml` / `workflow.yaml` / `WORKFLOW.yml` / `WORKFLOW.yaml`, `form.yml` / `form.yaml` / `FORM.yml` / `FORM.yaml` (request workflows) and `README.md` / `readme.md` in it by name. Two names for the same file, a missing required file or a missing folder fail the sync.
 - `deploy_directory` (default: `.`) — the subdirectory the runner `cd`s into to run Terraform.
 
 When a workflow is created, Bentra can call `bootstrap_bento_structure()` / `create_bento_structure_pr()` to seed those two YAML files.
@@ -51,7 +50,7 @@ Key entry points used elsewhere in the codebase:
 | `get_github_token_for_connector(connector)` | runner API (`ConnectorTokenView`), workflow views | Return `(token, error)` for a specific connector. Handles PAT + App. |
 | `get_github_token_from_connectors(org)` | various | Fetch an org's default connector token. |
 | `create_workflow_repository(...)` | workflow create view | Create a repo for a new workflow (optionally from a template). |
-| `bootstrap_bento_structure(...)` / `create_bento_structure_pr(...)` | workflow create flow | Seed `.bento/form/form.yml` + `.bento/workflow/workflow.yml`. |
+| `bootstrap_bento_structure(...)` / `create_bento_structure_pr(...)` | workflow create flow | Seed `form.yml` + `workflow.yml`. |
 | `check_repository_exists(repo_name, connector)` | workflow create flow | Distinguish new-repo vs. existing-repo path. |
 | `list_user_repositories_helper(connector)` | workflow create flow | Populate the repo picker. |
 | `get_repository_content(workflow_id)` | workflow views | Show files in the Bentra UI. |

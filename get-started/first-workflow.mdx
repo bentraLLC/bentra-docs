@@ -34,6 +34,7 @@ In the workspace, open **Workflows** and click **Create Workflow**.
     - **Workflow name**: letters, numbers, spaces, hyphens and underscores.
     - **Owner**: set to you.
     - **Repository**: VCS-backed only. Pick the repository that holds the files.
+    - **Working directory**: VCS-backed only. The folder with this workflow's files, such as `inventory`. Leave it empty for the repository root.
     - **Description** and **Tags** (optional): help others find the workflow.
 
     Click **Create workflow**. You become the workflow's admin.
@@ -46,7 +47,7 @@ A VCS-backed workflow reads the repository's default branch. To read another bra
 
 A request workflow needs two files.
 
-`.bento/workflow/workflow.yml` lists the steps. Each `run` is a bash script:
+`workflow.yml` lists the steps. Each `run` is a bash script:
 
 ```yaml
 name: Say hello
@@ -57,7 +58,7 @@ steps:
       cat bento_inputs.json
 ```
 
-`.bento/form/form.yml` defines the form. Each field's `id` reaches the steps as an upper-case environment variable, so `person_name` becomes `$PERSON_NAME`:
+`form.yml` defines the form. Each field's `id` reaches the steps as an upper-case environment variable, so `person_name` becomes `$PERSON_NAME`:
 
 ```yaml
 name: Say hello
@@ -73,10 +74,36 @@ body:
 
 <Tabs>
   <Tab title="VCS-backed">
-    Commit both files to the branch the workflow tracks. Bentra reads them from there, so there's nothing to publish.
+    Commit both files to the workflow's working directory on the branch it tracks. Bentra reads them from there, so there's nothing to publish.
+
+    Bentra finds the files by name in the working directory:
+
+    | File | Accepted names |
+    |---|---|
+    | Workflow (required) | `workflow.yml`, `workflow.yaml`, `WORKFLOW.yml`, `WORKFLOW.yaml` |
+    | Form (request workflows) | `form.yml`, `form.yaml`, `FORM.yml`, `FORM.yaml` |
+    | README (optional) | `README.md`, `readme.md` |
+
+    A repository can hold several workflows, each with its own working directory:
+
+    ```text
+    inventory/workflow.yml  inventory/form.yml  inventory/README.md
+    release/workflow.yml    release/form.yml
+    tools/common.sh
+    ```
+
+    Steps start in the working directory and can reach sibling folders, so a step in `inventory/` can run `../tools/common.sh`.
+
+    If the sync fails, **Settings → Source** shows why, and the version published before keeps running:
+
+    - `No workflow.yml or workflow.yaml in the working directory 'inventory'.` Add the file to that folder, or correct **Working Directory**.
+    - `inventory/form.yml and inventory/form.yaml are both present. Keep one of them.` Delete one of the two.
+    - `The working directory 'x' isn't in the repository.` Correct **Working Directory**.
+
+    See [Working directory and file names](/guides/bentra-stored-workflows#working-directory-and-file-names).
   </Tab>
   <Tab title="Bentra-managed">
-    The workflow starts with starter files and a published version 1. Open the workflow's **Files** tab, replace the contents of both files and click **Save**. Then click **Publish version**: runs only use published versions, never the draft. See [Bentra-stored workflows](/guides/bentra-stored-workflows).
+    The workflow starts with starter files (`workflow.yml` and `form.yml` at the top level) and a published version 1. Open the workflow's **Files** tab, replace the contents of both files and click **Save**. Then click **Publish version**: runs only use published versions, never the draft. See [Bentra-stored workflows](/guides/bentra-stored-workflows).
   </Tab>
 </Tabs>
 

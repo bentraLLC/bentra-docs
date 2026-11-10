@@ -3,7 +3,7 @@ title: "Bentra-stored and repo-backed workflows"
 description: "Edit workflow files and forms in Bentra, publish versions, and choose which branch or tag a repo-backed workflow runs."
 ---
 
-A workflow's files (`.bento/workflow/workflow.yml`, and `.bento/form/form.yml` for request workflows) live in one of two places. You choose when you create the workflow, on the **Where does this workflow live?** step:
+A workflow's files (`workflow.yml`, and `form.yml` for request workflows) live in one of two places. You choose when you create the workflow, on the **Where does this workflow live?** step:
 
 | | Bentra-managed (stored in Bentra) | VCS-backed (Git repository) |
 |---|---|---|
@@ -16,7 +16,7 @@ The storage choice is fixed once the workflow exists. See the [Workflow syntax](
 
 ## Bentra-stored workflows
 
-A Bentra-stored workflow has a **draft**, the editable working copy, and **versions**, immutable snapshots published from the draft. Runs always use the **active version**. Editing the draft changes nothing until you publish.
+A Bentra-stored workflow has a **draft**, the editable working copy, and **versions**, immutable snapshots published from the draft. New requests and job runs use the **active version**. A submitted request keeps the version it was submitted against, so publishing doesn't change what an already-submitted request runs. Editing the draft changes nothing until you publish.
 
 ```mermaid
 flowchart LR
@@ -29,11 +29,11 @@ flowchart LR
 
 A new Bentra-stored workflow starts with starter files and a published v1, so it can run straight away:
 
-- `.bento/workflow/workflow.yml`: one step that prints a greeting.
+- `workflow.yml`: one step that prints a greeting.
 - `requirements.txt`: empty. Python packages listed here are installed before your steps run.
-- `.bento/form/form.yml` (request workflows only): one text input.
+- `form.yml` (request workflows only): one text input.
 
-`workflow.yml` and `form.yml` are required and can't be deleted.
+The files sit at the top level of the file set. `workflow.yml` and `form.yml` are required and can't be deleted. A `README.md` is optional.
 
 ### Edit files
 
@@ -59,7 +59,7 @@ Save every file you changed. Publishing snapshots the saved draft.
 On the **Files** tab, click **Publish version**. Add an optional **Label**, such as `add retry handling`, and confirm.
 </Step>
 <Step title="It becomes active">
-The new version gets the next number and becomes the active version immediately. The next run uses it.
+The new version gets the next number and becomes the active version immediately. New requests and job runs use it; requests already submitted keep their version until the submitter updates their answers.
 </Step>
 </Steps>
 
@@ -119,19 +119,94 @@ Configure the source in **Settings → Source**:
 |---|---|
 | **VCS Connection** | The connector Bentra uses to read the repository. |
 | **Repository** | The connected repository. Many workflows can use the same repository. |
-| **Tracking Mode** | **Branch** or **Tag**. See below. |
-| **Branch** / **Tag** | The branch to track or the tag to pin. |
-| **Workflow File Path** | Path to the workflow YAML, relative to the repository root. Default `.bento/workflow/workflow.yml`. |
-| **README Path** | Path to the README file in the repository, for example `README.md`. |
+| **Tracking Mode** | **Branch**, **Tag** or **Tag pattern**. See below. |
+| **Branch** / **Tag** | The branch to track, the tag to pin, or the tag pattern to follow. |
+| **Working Directory** | The folder that holds this workflow's files, for example `inventory`. Steps start there. Empty means the repository root. |
 
-The form's path is **Form File Path** in **Settings → Form Settings** (default `.bento/form/form.yml`).
+The working directory is the only path you set. You can also set it when you create the workflow, with the API (`source.working_directory`) or with the MCP server (`working_directory` on `create_workflow` and `update_workflow`).
 
-### Track a branch or pin a tag
+### Working directory and file names
 
-- **Track a branch** to run the latest commit. Merging to the branch changes what the next run does.
-- **Pin a tag** to run a fixed version. Nothing changes until you pin a different tag. Use this for production workflows where every change should be a deliberate release.
+Bentra finds the workflow's files by name in the working directory:
 
-Each run records the ref and commit it ran, so you can see exactly what code ran even when tracking a branch.
+| File | Accepted names | Needed |
+|---|---|---|
+| Workflow | `workflow.yml`, `workflow.yaml`, `WORKFLOW.yml`, `WORKFLOW.yaml` | Always |
+| Form | `form.yml`, `form.yaml`, `FORM.yml`, `FORM.yaml` | Request workflows. Ignored for jobs. |
+| README | `README.md`, `readme.md` | Optional |
+
+Several workflows can share one repository, each with its own working directory:
+
+```text
+inventory/
+  workflow.yml
+  form.yml
+  README.md
+release/
+  workflow.yml
+  form.yml
+tools/
+  common.sh
+```
+
+Here one workflow has the working directory `inventory` and another has `release`.
+
+Steps start in the working directory, and the run has the whole repository, so a step in `inventory/` can run `../tools/common.sh`. `bento_inputs.json` and `bento.env` are written to the working directory, and the dependency install reads `requirements.txt` or `package.json` from it.
+
+This needs runner **0.13.0** or later. Older runners are refused with **426 Upgrade Required**; see [Install a runner](/runners/install#versions).
+
+### Sync errors
+
+A sync fails if Bentra can't find the files. The version published before keeps running, and **Settings → Source** shows the error.
+
+| Error | Fix |
+|---|---|
+| `The working directory 'x' isn't in the repository.` | Correct **Working Directory**, or add the folder on the tracked branch or tag. |
+| `No workflow.yml or workflow.yaml in the working directory 'inventory'.` (or `... in the repository root.`) | Add the file to the working directory under one of the accepted names. The same applies to `form.yml` on a request workflow. |
+| `inventory/form.yml and inventory/form.yaml are both present. Keep one of them.` | Delete one of the two files. |
+
+After fixing it, push the commit or click **Sync from repo**.
+
+### Moving from .bento/ paths
+
+Earlier, Bentra read `.bento/workflow/workflow.yml` and `.bento/form/form.yml`, or other paths you set per workflow. Those path settings are gone, and a repository that still keeps its files under `.bento/` fails its next sync until they're moved. The version published before keeps running in the meantime.
+
+<Steps>
+<Step title="Move the files">
+Move the workflow file, the form file and the README into the workflow's folder, named `workflow.yml`, `form.yml` and `README.md` (or another accepted name). For a repository with one workflow, the repository root works.
+</Step>
+<Step title="Set the working directory">
+In **Settings → Source**, set **Working Directory** to that folder. Leave it empty for the repository root.
+</Step>
+<Step title="Sync">
+Push the commit, then click **Sync from repo**.
+</Step>
+</Steps>
+
+Steps now start in the working directory, so check the relative paths in your `run` scripts.
+
+Bentra-stored workflows created with files under `.bento/` aren't converted. Create the workflow again; the new one starts with `workflow.yml` and `form.yml` at the top level.
+
+### Published versions
+
+A repository workflow runs a **published version**: Bentra's own copy of the repository at one commit. It doesn't read the repository when a form opens or a run starts. Runs keep working while GitHub is unavailable, and a request runs the commit it was submitted against, even if new commits land before it's approved.
+
+Bentra publishes a new version when:
+
+- the workflow is created (v1),
+- you change its source settings,
+- you click **Sync from repo** under **Settings → Source**,
+- GitHub sends a push for the tracked branch or tag, if the connector's [push webhook](/get-started/connect-repository#set-up-the-push-webhook) is set up.
+
+A sync of an unchanged commit publishes nothing, and a failed sync leaves the current version running. **Settings → Source** shows the published version and its commit, the last sync and any error.
+
+- **Track a branch** to publish each new commit on it.
+- **Pin a tag** to publish what the tag points at. If someone moves the tag, the new commit is published and the version is labelled with the commit the tag moved from.
+- **Follow a tag pattern** such as `v*` to publish the newest release: the highest semantic version among matching tags (`v1.10.0` beats `v1.9.9`). Pre-releases like `v2.0.0-rc.1` count only if the pattern contains a `-`. Deleting the newest tag never rolls back to an older one.
+
+To roll back, activate an older version with the API or MCP (`activate_version`). Automatic syncs then stop, so the next push doesn't undo the rollback. Activating the newest version turns them back on.
+
+A snapshot holds the whole repository, not only the working directory: up to 2,000 files, 10 MB per file and 50 MB in total (20 MB as a compressed archive). Steps that download more at run time still need the network, for example Terraform registry modules, `pip install` and GitHub Actions steps.
 
 You can also change the branch or tag through the API with `PATCH workflows/{id}/` (`source.branch` or `source.tag`). See the [Workflows API](/reference/api/workflows).
 

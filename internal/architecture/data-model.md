@@ -100,7 +100,7 @@ Both support `expires_at` and `revoked_at`; both expose `is_active()`.
 : UUID pk. `workflow_type` ∈ `terraform` / `opentofu` / `generic`. `status` ∈ `active` / `pending` / `error` / `disabled`. Optional `github_repository` FK and `vcs_connector` FK. M2M to `VariableCollection` through `WorkflowVariableCollection` (ordered). Auto-generates `slug` and `workflow_url` on save.
 
 **`GithubRepository`**
-: `repo_url`, `repo_name`, `repo_branch`, `repo_working_directory`, `form_file_path` (default `.bento/form/form.yml`), `workflow_file_path` (default `.bento/workflow/workflow.yml`), `deploy_directory` (default `.`).
+: `repo_url`, `repo_name`, `repo_branch`, `working_directory` (empty = repository root; `workflow.yml`, `form.yml` and `README.md` are found in it by name), `deploy_directory` (default `.`).
 
 **`WorkflowFormSettings`**
 : 1:1 with `Workflow`. Approval settings (`require_approvers`, `approver_count`), execution settings (`auto_execute`, `manual_execution`, `execute_on_submit`), notification flags.
@@ -117,7 +117,7 @@ Both support `expires_at` and `revoked_at`; both expose `is_active()`.
 ### Forms
 
 **`Form`**
-: `workflow` FK. `name`, `description`. That's it in the DB — the actual *schema* lives in the workflow's GitHub repo at `.bento/form/form.yml`.
+: `workflow` FK. `name`, `description`. That's it in the DB — the actual *schema* lives in `form.yml` in the workflow's working directory.
 
 ### Variable Collections
 

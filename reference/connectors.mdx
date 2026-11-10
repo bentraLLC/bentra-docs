@@ -27,10 +27,40 @@ You can't remove a workspace from a connector, or delete it, while workflows the
 Bentra uses a connector to:
 
 - list repositories and branches/tags when you create a workflow
-- read `.bento/workflow/workflow.yml`, `.bento/form/form.yml` and the README
+- read the repository when a workflow syncs, and find `workflow.yml`, `form.yml` and the README in the workflow's [working directory](#repository-layout)
 - hand a token to a runner so it can clone the repository; a runner only gets it for a run its pool is executing
 - commit form edits made in Bentra to a branch and open a pull request
 - trigger GitHub Actions workflows from a [`github_workflow_dispatch`](/reference/workflow-syntax#github-actions-steps) step
+
+## Repository layout
+
+A repository workflow has one path setting, its **working directory**: the folder that holds its files. Empty means the repository root. Set it when you create the workflow or under the workflow's **Settings → Source**. Bentra finds the files there by name:
+
+| File | Accepted names | Needed |
+|---|---|---|
+| Workflow | `workflow.yml`, `workflow.yaml`, `WORKFLOW.yml`, `WORKFLOW.yaml` | Always |
+| Form | `form.yml`, `form.yaml`, `FORM.yml`, `FORM.yaml` | Request workflows. Ignored for jobs. |
+| README | `README.md`, `readme.md` | Optional |
+
+One repository, and one connector, can serve several workflows, each with its own working directory:
+
+```text
+inventory/workflow.yml  inventory/form.yml  inventory/README.md
+release/workflow.yml    release/form.yml
+tools/common.sh
+```
+
+Steps start in the working directory, and the run has the whole repository, so a step in `inventory/` can run `../tools/common.sh`.
+
+A sync fails, and the version published before keeps running, when:
+
+| Error | Fix |
+|---|---|
+| `The working directory 'x' isn't in the repository.` | Correct the working directory, or add the folder on the tracked branch or tag. |
+| `No workflow.yml or workflow.yaml in the working directory 'inventory'.` (or `... in the repository root.`) | Add the file under one of the accepted names. The same applies to `form.yml` on a request workflow. |
+| `inventory/form.yml and inventory/form.yaml are both present. Keep one of them.` | Delete one of the two files. |
+
+If your repository still uses the older per-file path settings, follow the [migration steps](/guides/bentra-stored-workflows#moving-from-bento-paths).
 
 ## GitHub App (recommended)
 

@@ -70,16 +70,14 @@ One workflow, with its workspace, runner pool and source.
     "tracking_mode": "tag",
     "branch": "",
     "tag": "v1.2.0",
-    "workflow_file_path": ".bento/workflow/workflow.yml",
-    "readme_path": "README.md",
-    "form_file_path": ".bento/form/form.yml"
+    "working_directory": "inventory"
   },
   "created_at": "2026-10-09T12:00:00+00:00",
   "updated_at": "2026-10-09T12:00:00+00:00"
 }
 ```
 
-For a local workflow, `source` is `{"type": "local"}`. `runner_pool` is `{"id", "name"}` when the workflow is pinned to a pool, otherwise `null` (the organization's default pool).
+`source.working_directory` is the folder that holds the workflow's files; `""` is the repository root. For a local workflow, `source` is `{"type": "local"}`. `runner_pool` is `{"id", "name"}` when the workflow is pinned to a pool, otherwise `null` (the organization's default pool).
 
 ## `POST workflows/`
 
@@ -105,8 +103,9 @@ Creates a workflow in a workspace you belong to. You become its admin.
 | `repository` | yes | `owner/repo`. Many workflows may use the same repository. |
 | `branch` | no | Branch to track. Default: the repository's default branch. |
 | `tag` | no | Tag to pin instead of a branch (a fixed version). Not with `branch`. |
-| `workflow_file_path` | no | Default `.bento/workflow/workflow.yml`. Relative to the repository root. |
-| `form_file_path` | no | Request workflows. Default `.bento/form/form.yml`. |
+| `working_directory` | no | The folder with the workflow's files, relative to the repository root. Default `""`, the repository root. |
+
+Bentra finds the files by name in the working directory: `workflow.yml` or `workflow.yaml` (required), `form.yml` or `form.yaml` (request workflows) and `README.md` (optional). Steps start there. See [Working directory and file names](/guides/bentra-stored-workflows#working-directory-and-file-names).
 
 <Tabs>
 <Tab title="Repo-backed job, pinned to a tag">
@@ -121,7 +120,7 @@ Creates a workflow in a workspace you belong to. You become its admin.
     "connector_id": "6c2f…",
     "repository": "acme/infra",
     "tag": "v1.2.0",
-    "workflow_file_path": "cleanup/workflow.yml"
+    "working_directory": "cleanup"
   }
 }
 ```
@@ -137,7 +136,7 @@ Creates a workflow in a workspace you belong to. You become its admin.
 }
 ```
 
-Local workflows start with starter files (`.bento/workflow/workflow.yml`, `requirements.txt`, and `.bento/form/form.yml` for request workflows) and a published v1. Edit the files, then publish a version.
+Local workflows start with starter files (`workflow.yml`, `requirements.txt`, and `form.yml` for request workflows) and a published v1. Edit the files, then publish a version.
 
 </Tab>
 </Tabs>
@@ -161,7 +160,10 @@ Changes only the fields you send.
 | `source.connector_id` | Repo-backed only. A [connector](/reference/api/organization) id, or `null` to disconnect. A workflow whose connector was deleted has none until you set one. |
 | `source.branch` | Track this branch (clears any pinned tag). |
 | `source.tag` | Pin this tag. |
-| `source.workflow_file_path`, `source.readme_path`, `source.form_file_path` | Relative to the repository root. |
+| `source.tag_pattern` | Follow the highest semantic-version tag matching a glob such as `v*` (`tracking_mode` `tag_pattern`). Pre-releases count only if the pattern contains `-`. Send one of `branch`, `tag` or `tag_pattern`. |
+| `source.working_directory` | The folder with the workflow's files, where steps start; `""` for the repository root. |
+
+Changing any `source` field queues a sync: the new settings take effect once it publishes a version (see `GET workflows/{id}/sync/`).
 
 ```json
 {"source": {"tag": "v1.3.0"}, "runner_pool_id": null}
@@ -169,7 +171,7 @@ Changes only the fields you send.
 
 **Response** `200`: `{"success": true, "workflow": {…}}`.
 
-**Errors:** `400` for a duplicate name, unknown pool or connector, a path outside the repository, `source` on a local workflow, or `form_file_path` on a job.
+**Errors:** `400` for a duplicate name, unknown pool or connector, an invalid `source.working_directory`, or `source` on a local workflow.
 
 ## `GET workflows/{id}/settings/`
 
@@ -261,12 +263,38 @@ Needs `workflow.delete`. Refused with `409` while the workflow has a `queued` or
 
 **Response:** `204 No Content`.
 
-## `GET workflows/{id}/form/`
+## `GET workflows/{id}/sync/`
 
-A request workflow's `form.yml`. For a Bentra-stored workflow it's the draft (`"source": "draft"`); for a repo-backed one it's the file at the tracked branch or pinned tag (`"source": "repository"`, with `ref`).
+A repo-backed workflow's published version and how its last sync went. `404` for Bentra-stored workflows.
 
 ```json
-{"success": true, "source": "repository", "path": ".bento/form/form.yml", "ref": "v1.2.0", "yaml": "name: …"}
+{"success": true, "sync": {
+  "state": "synced",
+  "tracked_ref": "refs/heads/main",
+  "working_directory": "infra",
+  "auto_sync": true,
+  "active_version": {"version_number": 4, "commit_sha": "9f1c…", "commit_url": "https://github.com/acme/infra/commit/9f1c…", "published_at": "…"},
+  "last_synced_at": "…",
+  "error": "",
+  "retrying": false,
+  "remote_sha": "9f1c…",
+  "newer_commit_available": false,
+  "retained_versions": 4
+}}
+```
+
+`state` is `synced`, `pending`, `syncing`, `failed` or `connection_expired` (the connector's credentials were refused). `newer_commit_available` means the tracked ref has moved since the last publish. `auto_sync` is off after an older version is activated, until the newest is activated again.
+
+## `POST workflows/{id}/sync/`
+
+Queues a sync from the repository and returns `202` with the same body. A new version is published only if the tracked ref moved or the source settings changed; requests already submitted keep their version. **Permission:** `workflow.edit`. **Scope:** `edit:workflows`.
+
+## `GET workflows/{id}/form/`
+
+A request workflow's `form.yml`. For a Bentra-stored workflow it's the draft (`"source": "draft"`); for a repo-backed one it's the form of the published version (`"source": "version"`), read without contacting the repository. `404` until the first sync publishes one.
+
+```json
+{"success": true, "source": "version", "version": 4, "commit_sha": "9f1c…", "yaml": "name: …"}
 ```
 
 ## `PUT workflows/{id}/form/`

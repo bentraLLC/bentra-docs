@@ -54,6 +54,8 @@ The agent:
 4. `add_approver(group="Platform")`.
 5. `get_workflow` and `list_approvers` to check, then summarizes.
 
+If the workflow's files are in a subfolder of the repository, name it in the prompt. The agent passes it as `working_directory` to `create_workflow`, or changes it later with `update_workflow`. Empty means the repository root. See [Working directory and file names](/guides/bentra-stored-workflows#working-directory-and-file-names).
+
 ## What stays in the UI
 
 These take or mint secrets, so the agent can't do them. It points you to the right page instead:

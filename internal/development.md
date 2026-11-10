@@ -156,7 +156,7 @@ From a fresh database:
 3. Log in at `/accounts/login/`, create an org at `/orgs/new/`.
 4. Join the org (superusers are auto-granted access; regular users need an `OrganizationMembership`).
 5. Add a VCS connector at `/orgs/{org_id}/settings/` — choose GitHub, paste a PAT or upload a GitHub App private key.
-6. Create a workflow — Bentra will seed `.bento/form/form.yml` + `.bento/workflow/workflow.yml` in the target repo.
+6. Create a workflow. A repository workflow needs `workflow.yml` (and `form.yml` for a request workflow) in its working directory; a Bentra-stored one starts with both at the top level.
 7. Submit the form → a `Request` is created → if approvers aren't required, a `Deployment` is queued immediately.
 8. Issue a `RunnerToken` in the Settings UI, deploy a runner container with that token, and watch the deployment move through `QUEUED → RUNNING → SUCCESS`.
 

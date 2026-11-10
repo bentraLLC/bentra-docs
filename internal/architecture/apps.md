@@ -122,7 +122,7 @@ Core domain: a workflow is a versioned thing linked to a GitHub repo, backed by 
 **Models**:
 
 - **`Workflow`** — UUID pk; belongs to an `Organization`; has an `owner` (User); `workflow_type` is one of `terraform`, `opentofu`, `generic`; optional `github_repository` FK; optional `vcs_connector` FK; M2M to `VariableCollection`; legacy `deployments` JSONField for quick lookup. Auto-generates `slug` and `workflow_url` on save.
-- **`GithubRepository`** — `repo_url`, `repo_name`, `repo_branch`, `repo_working_directory`, `form_file_path` (defaults to `.bento/form/form.yml`), `workflow_file_path` (defaults to `.bento/workflow/workflow.yml`), `deploy_directory`.
+- **`GithubRepository`** — `repo_url`, `repo_name`, `repo_branch`, `working_directory` (empty = repository root; `workflow.yml`, `form.yml` and `README.md` are found in it by name), `deploy_directory`.
 - **`WorkflowFormSettings`** — 1:1 with Workflow; controls approval count, auto-execute, notification flags.
 - **`WorkflowExecution`** — One record per trigger attempt; `steps` JSONField captures step-level output; retry tracking via `is_retry` / `retry_of`.
 - **`WorkflowVariable`** — Per-workflow key/value; secrets stored in OpenBao under `workflow_variables/{workflow_id}/{key}` with a `SECRET_PLACEHOLDER` in the DB.
@@ -132,7 +132,7 @@ Core domain: a workflow is a versioned thing linked to a GitHub repo, backed by 
 
 ## forms
 
-Very thin app. A `Form` belongs to an `Organization` and a `Workflow`, with `name` and `description`. The actual form *schema* lives in the workflow's GitHub repo at `.bento/form/form.yml`.
+Very thin app. A `Form` belongs to an `Organization` and a `Workflow`, with `name` and `description`. The actual form *schema* lives in `form.yml` in the workflow's working directory.
 
 ---
 
@@ -250,7 +250,7 @@ Service layer around GitHub (and future VCS providers). No models — all logic 
 - `get_github_token_from_connectors(org)` — returns a usable token for the org's default connector.
 - `get_github_token_for_connector(connector)` — returns `(token, error)` for a specific connector; PAT connectors fetch from OpenBao; App connectors mint an installation token.
 - `create_workflow_repository()` — creates a GitHub repo when a workflow is first created.
-- `bootstrap_bento_structure()` / `create_bento_structure_pr()` — seeds `.bento/form/form.yml` + `.bento/workflow/workflow.yml` into a new or existing repo.
+- `bootstrap_bento_structure()` / `create_bento_structure_pr()` — seeds `form.yml` + `workflow.yml` into a new or existing repo.
 - `check_repository_exists()` — used by the create-workflow flow to distinguish new-repo vs. existing-repo paths.
 
 `provider.py` is the start of a provider-abstraction layer — today GitHub is the only implementation.

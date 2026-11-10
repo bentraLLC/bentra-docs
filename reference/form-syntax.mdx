@@ -18,7 +18,7 @@ Most examples on this page have a **Preview** tab that shows roughly how the for
 
 ## About YAML syntax for forms
 
-- Forms live at `.bento/form/form.yml` in the workflow's repository or file set. Only **request**-type workflows have a form.
+- The form lives next to the workflow file: in the workflow's [working directory](/guides/bentra-stored-workflows#working-directory-and-file-names) in the repository, named `form.yml`, `form.yaml`, `FORM.yml` or `FORM.yaml` (keep only one of them), or as `form.yml` at the top level of a Bentra-stored workflow's file set. Only **request**-type workflows have a form; a job ignores the file.
 - The file is parsed with `yaml.safe_load` and validated against a JSON Schema. The schema is the single source of truth for the editor's IntelliSense, server validation, and AI generation.
 - Every object in the schema disallows unknown keys. A typo such as `lable:` is reported as an error with its line number, rather than being silently ignored.
 - A form must be valid before a workflow version can be cut. In the editor you can save an invalid draft only after acknowledging the errors.

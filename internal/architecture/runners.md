@@ -237,11 +237,7 @@ Built by `runners/serializers.py::build_job_payload(deployment, run)`. Canonical
 
 ### Generic-specific fields (`workflow_type = generic`)
 
-```json
-{
-  "workflow_file_path": ".bento/workflow/workflow.yml"
-}
-```
+`source.working_directory` (where steps start; "" is the workspace root) and `source.workflow_file_path` (the workflow file Bentra found by name in that folder when it published the version, as a path in the snapshot). The runner does not search for the file itself. Needs runner 0.13.0+; older runners get 426.
 
 ## Resolution Precedence
 
@@ -258,7 +254,7 @@ The runner container is not part of this repo (lives in `bento-kubernetes-deploy
 1. Reads the job payload.
 2. Fetches a VCS token via the connector endpoint.
 3. `git clone` the repo at the specified branch into a workspace.
-4. `cd` into `repo.working_directory` (or `deploy_directory` for IAC).
+4. `cd` into `repo.working_directory` (or `deploy_directory` for IAC). The snapshot holds the whole repository, so steps can reach sibling folders (`../tools/common.sh`). `bento_inputs.json`, `bento.env` and the `requirements.txt` / `package.json` install are in the working directory too.
 5. Resolves variables:
    - Non-secret → env var from `value`.
    - Secret → fetch via `openbao_path` and export as env var.
@@ -266,7 +262,7 @@ The runner container is not part of this repo (lives in `bento-kubernetes-deploy
    - Configure the backend to use the `state_path`.
    - Run `terraform init`, then `plan` / `apply` / `destroy` per `iac_action`.
 7. For `generic`:
-   - Read the workflow YAML at `workflow_file_path` and execute its steps. A `github_workflow_dispatch` step (runner 0.11.0+, step kind `github_dispatch`) triggers a GitHub Actions workflow with a repo-scoped connector token and polls the run to completion instead of running bash.
+   - Read the workflow YAML at `source.workflow_file_path` and execute its steps. A `github_workflow_dispatch` step (runner 0.11.0+, step kind `github_dispatch`) triggers a GitHub Actions workflow with a repo-scoped connector token and polls the run to completion instead of running bash.
 8. Stream stdout/stderr to the logs endpoint as it goes.
 9. POST the final status + steps to the completion endpoint.
 

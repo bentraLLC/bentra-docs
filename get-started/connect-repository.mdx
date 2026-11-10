@@ -76,6 +76,21 @@ Click the connector in **Settings → Connectors** to open its page:
 
 To manage connectors from scripts, see the [API](/reference/api/organization#patch-connectorsid).
 
+## Set up the push webhook
+
+With a push webhook, a repository workflow publishes new commits a few seconds after they're pushed. Without one, use **Sync from repo** on the workflow.
+
+<Steps>
+<Step title="Create a secret">
+On the connector's page, under **Push webhook**, click **Create secret**. Copy it: Bentra shows it only once.
+</Step>
+<Step title="Add the webhook in GitHub">
+For a GitHub App, open the app's settings and fill in **Webhook**. For a personal access token, add a webhook to the repository (or organization) under **Settings → Webhooks**. Use the **Payload URL** from the connector page, content type `application/json`, the secret, and **Just the push event**.
+</Step>
+</Steps>
+
+**Rotate secret** replaces the secret; update it in GitHub straight away, because deliveries signed with the old one are refused.
+
 ## Next
 
 Create a workflow that reads from the repository: [Create your first workflow](/get-started/first-workflow).

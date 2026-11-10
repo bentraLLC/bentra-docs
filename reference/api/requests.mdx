@@ -73,6 +73,7 @@ Requests you can see: on workflows you can view, ones you submitted, and ones yo
   "id": "…",
   "workflow_id": "…",
   "workflow_name": "Create bucket",
+  "workflow_version": 3,
   "status": "open",
   "submitted_by": "alice",
   "form_data": {"bucket_name": "logs"},
@@ -94,6 +95,8 @@ Requests you can see: on workflows you can view, ones you submitted, and ones yo
   }
 }
 ```
+
+`workflow_version` is the version the request was submitted against (updated when the submitter changes their answers). Its run executes that version, even if a newer one is published before approval. `null` for repository-backed workflows for now.
 
 `approvals[].state` is `waiting`, `approved`, `rejected` or `changes_requested`. `capabilities` says what *you* can do with the request now.
 
