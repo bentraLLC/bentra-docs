@@ -237,7 +237,7 @@ Built by `runners/serializers.py::build_job_payload(deployment, run)`. Canonical
 
 ### Generic-specific fields (`workflow_type = generic`)
 
-`source.working_directory` (where steps start; "" is the workspace root) and `source.workflow_file_path` (the workflow file Bentra found by name in that folder when it published the version, as a path in the snapshot). The runner does not search for the file itself. Needs runner 0.13.0+; older runners get 426.
+`source.working_directory` (where steps start; "" is the workspace root) and `source.workflow_file_path` (the workflow file Bentra found by name in that folder when it published the version, as a path in the snapshot). The runner does not search for the file itself. Needs runner 0.13.1+ (0.13.0 was never published); older runners get 426.
 
 ## Resolution Precedence
 
