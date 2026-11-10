@@ -43,28 +43,28 @@ A single rejection ends the request, whatever the other approvers decided. A req
 
 ## Set up approval
 
-Approval settings live on the workflow. Open the workflow, then **Settings → Request Settings**. You need the Writer or Admin role on the workflow (see [Permissions](/guides/permissions)).
+Approval settings live on the workflow. Open the workflow, then **Settings → Request Settings**. You need the Editor or Admin role on the workflow (see [Permissions](/guides/permissions)).
 
 | Setting | What it does |
 |---|---|
 | **Require Approvals** | Submissions must be approved before they run. On by default. |
-| **Required Approvals** | How many approvals a request needs, from 1 to 5. Any designated approvers count. |
+| **Required Approvals** | How many approvals a request needs, from 1 to 5. Every approval counts, from designated approvers and from [anyone else who can decide](#who-can-do-what-on-a-request). |
 | **Auto-deploy on Approval** | Start the run as soon as the last required approval arrives. On by default. |
 
 With **Require Approvals** off, a request runs as soon as it's submitted. If **Auto-deploy on Approval** is also off, it stays **Open** until someone selects **Start run**.
 
 <Warning>
-If **Required Approvals** is higher than the number of designated approvers, requests can never be approved. With **Require Approvals** on and no approvers at all, requests stay **Open**.
+If **Required Approvals** is higher than the number of designated approvers, requests need approvals from [people who can decide without being listed](#who-can-do-what-on-a-request), such as the workflow's Admins, to reach the count. With **Require Approvals** on and no approvers at all, the workflow's Admins get the submission email and can approve.
 </Warning>
 
 ### Designated approvers
 
 Under **Designated Approvers**, select **Add Approver** and choose **User** or **Group**.
 
-- **Users** are any members of the organization, including requesters.
-- **Groups** add every direct member of the group. Members of nested groups aren't included. You can't add a group that has no members.
+- **Users** are members of the workflow's workspace, plus the organization's requesters, who decide from the request portal.
+- **Groups** add every direct member of the group. Members of nested groups aren't included. The group must have access to the workspace, and you can't add a group that has no members.
 
-Bentra stores the group, not a copy of its members. Each request takes the group's members at the moment it's submitted, so people who join the group approve requests submitted after they joined, and people who leave stop being approvers on new requests.
+Bentra stores the group, not a copy of its members, so whoever is in the group can approve, including on requests submitted before they joined or before the group was added. People who leave the group stop being approvers.
 
 The list on the page is the **effective** list: direct approvers first, then group members marked **via** their group. Someone who is both a direct approver and in an approver group appears once, as direct. Remove the group to take all its members off the list; remove a direct approver and, if they're also in an approver group, they stay on through the group.
 
@@ -74,8 +74,8 @@ To manage approvers from code, see [Workflow access](/reference/api/workflow-acc
 
 | Action | Who |
 |---|---|
-| **Approve**, **Reject**, **Request Changes** | Designated approvers only, while the request is **Open**. Organization owners and admins can't decide unless they're designated approvers. |
-| **Start run** | Designated approvers and anyone who can run the workflow (Writer or Admin), once the request is ready and not started. |
+| **Approve**, **Reject**, **Request Changes** | Designated approvers, while the request is **Open**. The workflow's Admins, the workspace's owners and organization owners and admins can also decide on any request. |
+| **Start run** | Designated approvers and the workflow's Editors and Admins, once the request is ready and not started. |
 | Update details | The submitter, while the request is **Open** or **Changes Requested**. |
 | **Cancel** | The submitter, while the request is **Open**, **Changes Requested** or **Approved** and not yet running. |
 | Comment | Anyone who can see the request. |
@@ -86,7 +86,9 @@ Reject and Request Changes need a note explaining why. Approve takes an optional
 Bentra doesn't stop a designated approver from approving a request they submitted themselves, and that approval counts. To make sure someone else always reviews, set **Required Approvals** to 2 or more.
 </Note>
 
-In the app, the request page needs at least the Reader role on the workflow. Approvers without a role on the workflow can decide from the request portal's **Approvals** page (on plans that include the portal) or through the API.
+Workflow Admins, workspace owners and organization owners and admins aren't listed as approvers anywhere in the app, even though they can decide. This is intentional: the approver list shows only the people expected to act.
+
+In the app, any member of the workflow's workspace can open the request page. Requesters and other approvers outside the workspace decide from the request portal's **Approvals** page (on plans that include the portal) or through the API.
 
 ## Request changes and resubmit
 
@@ -108,7 +110,7 @@ Some automation needs to run a request workflow without waiting for people. A re
 
 This needs both:
 
-- the **Skip approval** permission on the workflow, which comes with the workflow Admin role and with the organization owner and admin roles;
+- the **Skip approval** permission on the workflow, which comes with the workflow Editor and Admin roles (so workspace owners have it too) and with the organization owner and admin roles;
 - an API token with the `skip:workflow_approval` scope. See [API tokens](/guides/api-tokens).
 
 There's no way to skip approval from the form. Bentra records the bypass: the run page shows **approval bypassed** instead of who approved it. See [`POST workflows/{id}/submit/`](/reference/api/requests#post-workflowsidsubmit).
@@ -119,7 +121,7 @@ Open the workflow, then **Settings → Notifications**. Each toggle is on by def
 
 | Toggle | Who gets the email |
 |---|---|
-| **On Submission** | The request's designated approvers, when a request that needs approval is submitted or updated. |
+| **On Submission** | The request's designated approvers, when a request that needs approval is submitted or updated. With no approvers set, the workflow's Admins. |
 | **On Approval** | The submitter, when the request has enough approvals. |
 | **On Rejection** | The submitter. |
 | **On Completion** | The submitter, when the run succeeds. |

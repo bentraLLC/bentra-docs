@@ -35,9 +35,9 @@ The **Workflows** list has **All**, **Active**, **Paused** and **Archived** tabs
 
 | Change | Permission | Workflow roles that have it |
 |---|---|---|
-| Active ↔ Paused | **Edit** | Admin, Writer |
-| Archive, restore | **Delete** | Admin |
-| Delete permanently | **Delete** | Admin |
+| Active ↔ Paused | **Edit** | Admin, Editor |
+| Archive, restore | **Delete** | Admin, Editor |
+| Delete permanently | **Delete** | Admin, Editor |
 
 See [Permissions](/guides/permissions) for how roles are granted.
 
@@ -93,7 +93,8 @@ For a request workflow, **Settings → Form Settings** controls who can find and
 
 - **Listed in Forms section**: shown in the Forms list. An unlisted form still works for anyone with its direct link. Use this to share a form with a few people without advertising it.
 - **Show in request portal**: lists the form in the organization's request portal. See [Request portal](/guides/request-portal).
-- **Workspaces**: **This workspace only**, **Selected workspaces** or **All workspaces in the org**. With **Selected workspaces**, add each workspace under **Visible In Workspaces** with **Viewer** (can view and submit the form) or **Editor** (can also edit the workflow) access.
+- **Workspaces**: **This workspace only**, **Selected workspaces** or **All workspaces in the org**. With **Selected workspaces**, add each workspace under **Visible In Workspaces**.
+  Members of those workspaces can submit the form and see the workflow's overview, runs, logs and requests, including runs submitted by other people. Avoid printing sensitive values to logs on a shared workflow. They can't change anything: settings, variables, files and actions such as approving or cancelling stay in the workspace where the workflow was created, shown as its **Home** label.
 
 The workflow's own **Form** tab is always available to its members while the workflow is Active, whatever these settings say. Turning the listing off hides the form from others while your team keeps working on it.
 

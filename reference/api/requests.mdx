@@ -148,7 +148,7 @@ The submitter cancels a request that hasn't started running. `409` otherwise.
 
 ## `POST requests/{id}/approve/`
 
-As a designated approver. `notes` is optional.
+As a designated approver, an Admin of the workflow, an owner of its workspace, or an organization owner or admin. `notes` is optional.
 
 ```json
 {
@@ -166,13 +166,13 @@ The last required approval starts the run (when `auto_deploy_on_approval` is on)
 
 ## `POST requests/{id}/reject/` and `POST requests/{id}/request-changes/`
 
-As a designated approver. `notes` (the reason, or what to change) is required.
+As anyone who can approve. `notes` (the reason, or what to change) is required.
 
 ```json
 {"notes": "Use the eu-west-1 region."}
 ```
 
-**Errors** for all decisions: `403` if you're not a designated approver; `409` if the request isn't open.
+**Errors** for all decisions: `403` if you're not a designated approver, an Admin of the workflow, an owner of its workspace, or an organization owner or admin; `409` if the request isn't open.
 
 ## `POST requests/{id}/start/`
 

@@ -24,7 +24,7 @@ Secret values are encrypted with a key unique to your organization and are **nev
 | `POST` | `workflows/{id}/variable-collections/` | `edit:variables` | `attach_collection` |
 | `DELETE` | `workflows/{id}/variable-collections/{collection_id}/` | `edit:variables` | `detach_collection` |
 
-**Permissions:** reading collections needs `org.view_variable_collections`. Owners and admins (`org.manage_variable_collections`) can create and change any collection. Members (`org.create_variable_collections`) can create collections available in a workspace they belong to, except the default workspace, and change the collections they maintain, directly or through a group. A workflow's variables and attached collections need `workflow.manage_variables`.
+**Permissions:** reading collections needs `org.view_variable_collections`. Owners and admins (`org.manage_variable_collections`) can create and change any collection. Members (`org.create_variable_collections`) can create collections available in any workspace they belong to, including the default workspace, and change the collections they maintain, directly or through a group. A workflow's variables and attached collections need `workflow.manage_variables`.
 
 ---
 
@@ -73,7 +73,7 @@ The collection plus `variables`.
 
 ### `POST variable-collections/`
 
-`{"name": "AWS prod", "description": "…", "workspaces": ["platform"]}` → `201`. `workspaces` are the ones that can attach it; members need at least one, and only non-default workspaces they belong to. Owners and admins can send `"visibility": "all_workspaces"` instead. You become its maintainer. `403` if you can't create collections there. `502` if secret storage is unavailable.
+`{"name": "AWS prod", "description": "…", "workspaces": ["platform"]}` → `201`. `workspaces` are the ones that can attach it; members need at least one, and only workspaces they belong to. Owners and admins can send `"visibility": "all_workspaces"` instead. You become its maintainer. `403` if you can't create collections there. `502` if secret storage is unavailable.
 
 ### `PATCH variable-collections/{id}/`
 
@@ -87,7 +87,7 @@ Deletes the collection, its variables and their secrets, and detaches it from wo
 
 `{"visibility": "selected_workspaces", "workspaces": ["data", "ml"]}`, every field optional.
 
-- `workspaces` replaces the list of workspaces that can attach it. Members can add only non-default workspaces they belong to; workspaces they can't add stay on the list when they save.
+- `workspaces` replaces the list of workspaces that can attach it. Members can add only workspaces they belong to; workspaces they can't add stay on the list when they save.
 - `visibility` (`selected_workspaces` or `all_workspaces`) is owners and admins only.
 - Returns `409` with `blocking_workflows` (`slug`, `name`, `workspace`) when a workflow in a workspace that would lose access still has the collection attached. Nothing changes.
 

@@ -140,11 +140,11 @@ Workspaces are addressed by slug. Organization admins (`org.manage_workspaces`) 
 
 ### Workspace members
 
-**Permission:** `workspace.manage_members` on that workspace. Workspace roles: `owner`, `admin`, `member`. Requesters can't join workspaces.
+**Permission:** `workspace.manage_members` on that workspace: its owners, and organization owners and admins. Workspace roles: `owner`, `member`. Requesters can't join workspaces.
 
 - `GET workspaces/{slug}/members/` → `{"success": true, "members": [{"id", "user_id", "username", "email", "role"}]}`
-- `POST workspaces/{slug}/members/` with `{"user": "bob", "role": "member"}` → `201`, or `409` if already a member. With `{"group": "Platform", "role": "member"}` it adds each of the group's members and returns `{"added": 3, "skipped": 1}` (already members and requesters are skipped).
-- `PATCH workspaces/{slug}/members/{id}/` with `{"role": "admin"}`.
+- `POST workspaces/{slug}/members/` with `{"user": "bob", "role": "member"}` → `201`, or `409` if already a member. With `{"group": "Platform", "role": "member"}` it gives the group access to the workspace and returns `201` with `{"success": true, "group": {"id", "name", "role"}}`. Access follows the group's membership; group members aren't listed under `members`.
+- `PATCH workspaces/{slug}/members/{id}/` with `{"role": "owner"}`.
 - `DELETE workspaces/{slug}/members/{id}/` → `204`. They stay in the organization.
 
 ---
@@ -153,7 +153,7 @@ Workspaces are addressed by slug. Organization admins (`org.manage_workspaces`) 
 
 Groups collect organization members. A group can be a workflow's [approver](/reference/api/workflow-access#approvers), hold a [workflow role](/reference/api/workflow-access#roles), and be given access to workspaces.
 
-Who can manage a group: organization admins (`org.manage_groups`) and the group's own owners. Only organization admins can create groups and grant them workspace access.
+Who can manage a group: organization admins (`org.manage_groups`) and the group's own owners. Only organization admins can create groups and grant them workspace access through `groups/{id}/workspaces/`. Workspace owners can add a group to their workspace through [`workspaces/{slug}/members/`](#workspace-members).
 
 ### `GET groups/` and `GET groups/{id}/`
 

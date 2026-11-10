@@ -46,7 +46,7 @@ Rename a connector or change which workspaces can use it. Allowed for owners and
 {"name": "Platform GitHub", "visibility": "selected_workspaces", "workspaces": ["data", "ml"]}
 ```
 
-- `workspaces` replaces the list of workspaces that can use it. Members can add only non-default workspaces they belong to; workspaces they can't add stay on the list when they save.
+- `workspaces` replaces the list of workspaces that can use it. Members can add only workspaces they belong to; workspaces they can't add stay on the list when they save.
 - `visibility` (`selected_workspaces` or `all_workspaces`) is owners and admins only. The workspace list is kept while it's `all_workspaces`.
 - `409` with `blocking_workflows` (`slug`, `name`, `workspace`) when a workflow that uses the connector would lose it. Nothing changes; switch those workflows to another connector first.
 
