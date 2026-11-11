@@ -1,0 +1,94 @@
+---
+title: "Use modules in workflows"
+description: "Call a module action from a workflow step, pass inputs, choose a connection and read outputs."
+---
+
+A workflow step either runs a script (`run`) or calls a module action (`module`).
+
+```yaml
+name: "Provision workspace"
+steps:
+  - id: workspace
+    name: Create Terraform workspace
+    module:
+      name: terraform-cloud
+      version: "1.2.0"
+      action: create_workspace
+      connection: terraform-production
+      inputs:
+        name: ${{ inputs.workspace_name }}
+
+  - name: Start Terraform run
+    module:
+      name: terraform-cloud
+      version: "1.2.0"
+      action: start_run
+      connection: terraform-production
+      inputs:
+        workspace_id: ${{ steps.workspace.outputs.workspace_id }}
+```
+
+## Find a module and its actions
+
+Open **Modules** and choose a module. The **Actions** tab lists each action with its inputs and outputs, and **Copy step** gives you a step to paste into `workflow.yml`.
+
+## Step fields
+
+| Field | Required | Meaning |
+|---|---|---|
+| `module.name` | yes | The module's name in the registry |
+| `module.version` | yes | An exact published version, in quotes. No ranges and no `latest` |
+| `module.action` | yes | The action to run |
+| `module.connection` | if the module needs one | The name of a connection available in the workflow's workspace |
+| `module.inputs` | if the action requires inputs | Values for the action's inputs |
+| `id` | to read outputs later | A name for the step: lowercase letters, digits and underscores |
+| `timeout_minutes` | no | Stop the action after this long (1 to 1440) |
+| `continue_on_error` | no | Keep going if the step fails; the run still ends failed |
+
+## Inputs and expressions
+
+Input values can be written out or filled in when the run happens:
+
+| Expression | Value |
+|---|---|
+| `${{ inputs.<field> }}` | A form answer, or a variable given when a job is triggered |
+| `${{ vars.<NAME> }}` | A workflow or collection variable |
+| `${{ steps.<id>.outputs.<name> }}` | An output of an earlier module step with that `id` |
+
+An input that is exactly one expression keeps its type, so a number stays a number. Inside a longer string the value becomes text:
+
+```yaml
+inputs:
+  replicas: ${{ inputs.replicas }}
+  name: "${{ inputs.team }}-${{ inputs.environment }}"
+```
+
+Expressions work only inside `module.inputs`.
+
+## Outputs in script steps
+
+A `run` step can read what earlier module steps returned from the JSON file at `$BENTRA_STEP_OUTPUTS`, keyed by step `id`:
+
+```yaml
+  - name: Report
+    run: |
+      jq -r '.workspace.workspace_id' "$BENTRA_STEP_OUTPUTS"
+```
+
+## What Bentra checks when you publish the workflow
+
+Publishing a workflow version (or syncing a repository workflow) fails, naming the step and line, when:
+
+- the module or version doesn't exist, or the version was revoked;
+- the action doesn't exist in that version;
+- a required input is missing, or a written-out value has the wrong type;
+- an expression isn't one of the three forms, or refers to a step that doesn't come earlier;
+- the connection doesn't exist, belongs to another module, or isn't available in the workflow's workspace.
+
+A deprecated version is allowed, with a warning.
+
+## Versions stay fixed
+
+A workflow version runs exactly the module versions it names. Publishing a newer module version changes nothing until you edit the workflow to use it. Each run records the module versions and package checksums it used.
+
+To move a workflow to a new module version, change `version` in `workflow.yml` and publish the workflow.

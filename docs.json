@@ -87,6 +87,18 @@
             ]
           },
           {
+            "group": "Modules",
+            "pages": [
+              "modules/overview",
+              "modules/create-a-module",
+              "modules/building-actions",
+              "modules/publishing",
+              "modules/connections",
+              "modules/use-in-workflows",
+              "runners/modules"
+            ]
+          },
+          {
             "group": "Account",
             "pages": [
               "plans",
@@ -105,7 +117,8 @@
             "group": "Syntax",
             "pages": [
               "reference/workflow-syntax",
-              "reference/form-syntax"
+              "reference/form-syntax",
+              "reference/module-syntax"
             ]
           }
         ]

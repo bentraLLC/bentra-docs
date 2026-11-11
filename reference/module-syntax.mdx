@@ -1,0 +1,148 @@
+---
+title: "module.yaml syntax"
+description: "Every field of a module's manifest: metadata, runtime, dependencies, connection and actions."
+---
+
+Each module has a `module.yaml` (or `module.yml`) at the top of its folder. Bentra validates it when you register the module, check for changes and publish.
+
+```yaml
+apiVersion: bentra/v1
+kind: Module
+
+metadata:
+  name: terraform-cloud
+  display_name: Terraform Cloud
+  description: Manage Terraform Cloud workspaces and runs.
+  category: infrastructure
+  icon: cloud
+  docs: README.md
+
+runtime:
+  language: python
+  version: ">=3.11"
+
+dependencies:
+  file: requirements.txt
+
+connection:
+  required: true
+  fields:
+    token: {type: string, secret: true, required: true, title: API token}
+    organization: {type: string, required: true}
+    base_url: {type: string, default: "https://app.terraform.io"}
+
+defaults:
+  timeout_seconds: 300
+
+actions:
+  - name: create_workspace
+    description: Create a Terraform Cloud workspace.
+    entrypoint: actions/create_workspace.py
+    timeout_seconds: 120
+    inputs:
+      type: object
+      properties:
+        name: {type: string}
+      required: [name]
+    outputs:
+      type: object
+      properties:
+        workspace_id: {type: string}
+```
+
+Unknown fields are errors, so a typo is caught. For your own notes, use keys starting with `x-`.
+
+## Top level
+
+| Field | Required | Value |
+|---|---|---|
+| `apiVersion` | yes | `bentra/v1` |
+| `kind` | yes | `Module` |
+| `metadata` | yes | See below |
+| `runtime` | yes | See below |
+| `actions` | yes | One or more actions |
+| `dependencies` | no | Packages to install |
+| `connection` | no | The credentials and settings the module needs |
+| `defaults` | no | `timeout_seconds` for actions that don't set one |
+
+The version number isn't in the manifest. You choose it when you publish.
+
+## metadata
+
+| Field | Required | Value |
+|---|---|---|
+| `name` | yes | What workflows reference. Lowercase letters, digits and hyphens, starting with a letter, 2 to 63 characters. Unique in your organization; can't change after registering |
+| `description` | yes | One or two sentences, up to 500 characters |
+| `display_name` | no | The name shown in the registry |
+| `category` | no | `infrastructure`, `cloud`, `data`, `deployment`, `security`, `monitoring`, `notifications`, `internal` or `other` |
+| `icon` | no | An icon name, such as `cloud` |
+| `docs` | no | Path to a Markdown file shown on the module's page. `README.md` is used when present |
+
+## runtime
+
+| Field | Required | Value |
+|---|---|---|
+| `language` | yes | `python`, `bash`, `node` or `binary` |
+| `version` | for `python` and `node` | `"3.12"` (any 3.12.x) or `">=3.11"` (that version or newer) |
+| `platforms` | for `binary` | Platforms you ship a program for: `linux-amd64`, `linux-arm64`, `darwin-amd64`, `darwin-arm64`, `windows-amd64`, `windows-arm64` |
+
+## dependencies
+
+| Field | Value |
+|---|---|
+| `file` | Python: a requirements file. Node: `package.json`, with `package-lock.json` beside it |
+
+Only `python` and `node` modules can declare dependencies.
+
+## connection
+
+| Field | Required | Value |
+|---|---|---|
+| `fields` | yes | One entry per field, keyed by its name (lowercase letters, digits, underscores) |
+| `required` | no | `false` lets a step call the module without a connection. Default `true` |
+
+Each field:
+
+| Field | Required | Value |
+|---|---|---|
+| `type` | yes | `string`, `number` or `boolean` |
+| `secret` | no | `true` for credentials: encrypted, never shown again, masked in logs |
+| `required` | no | `true` if a run can't start without it |
+| `default` | no | Used when the connection doesn't set the field. Not allowed on secret fields |
+| `title`, `description` | no | Shown on the connection form |
+
+## actions
+
+| Field | Required | Value |
+|---|---|---|
+| `name` | yes | Lowercase letters, digits and underscores, starting with a letter. Unique in the module |
+| `description` | yes | What the action does |
+| `entrypoint` | yes | Path to the file to run, inside the module's folder. For `binary`, the program's name under `bin/<platform>/` |
+| `timeout_seconds` | no | 1 to 86400 |
+| `inputs` | no | JSON Schema for the inputs |
+| `outputs` | no | JSON Schema for the outputs |
+
+`inputs` and `outputs` are [JSON Schema](https://json-schema.org/) (draft 2020-12) and must have `type: object`. References must be local (`#/$defs/...`). Add `x-bentra-secret: true` to an output property to mask its value in logs.
+
+```yaml
+inputs:
+  type: object
+  properties:
+    name:
+      type: string
+      description: Name of the workspace.
+    auto_apply:
+      type: boolean
+      default: false
+    tags:
+      type: array
+      items: {type: string}
+  required: [name]
+  additionalProperties: false
+```
+
+With `additionalProperties: false`, a workflow that passes an input the action doesn't know is rejected when it's published.
+
+## Changes to this format
+
+`bentra/v1` only ever gains optional fields, so a manifest that is valid today stays valid. A version you published is never checked again against a newer format.

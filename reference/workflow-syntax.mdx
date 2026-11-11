@@ -285,6 +285,38 @@ Form values are user input. In the GitHub workflow, pass them to `run:` through 
 
 ---
 
+## Module steps
+
+A step can call an action of a published [module](/modules/overview) instead of running a script. It has `module` in place of `run`.
+
+```yaml
+steps:
+  - id: workspace
+    name: Create Terraform workspace
+    timeout_minutes: 10
+    module:
+      name: terraform-cloud
+      version: "1.2.0"
+      action: create_workspace
+      connection: terraform-production
+      inputs:
+        name: ${{ inputs.workspace_name }}
+```
+
+| Field | Required | Value |
+|---|---|---|
+| `steps[*].id` | to read outputs later | Lowercase letters, digits and underscores, starting with a letter. Unique in the workflow |
+| `steps[*].module.name` | yes | The module's name in the registry |
+| `steps[*].module.version` | yes | An exact published version, in quotes |
+| `steps[*].module.action` | yes | The action to run |
+| `steps[*].module.connection` | if the module needs one | A connection available in the workflow's workspace |
+| `steps[*].module.inputs` | if the action requires inputs | Values for the action's inputs |
+| `steps[*].timeout_minutes` | no | 1 to 1440 |
+
+Inside `module.inputs`, `${{ inputs.<field> }}`, `${{ vars.<NAME> }}` and `${{ steps.<id>.outputs.<name> }}` are filled in when the run happens. A script step reads earlier module outputs from the JSON file at `$BENTRA_STEP_OUTPUTS`.
+
+See [Use modules in workflows](/modules/use-in-workflows). Module steps need runner 0.14.0 or later.
+
 ## `outputs`
 
 **Optional.** Declares data the run publishes.

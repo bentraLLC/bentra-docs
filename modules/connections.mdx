@@ -1,0 +1,72 @@
+---
+title: "Connections"
+description: "Give a module's actions credentials and settings, and choose which workspaces can use them."
+---
+
+A connection holds the values a module needs to reach the system it manages: an API token, an account name, a base URL. The module declares which fields exist; a connection fills them in.
+
+One module can have many connections, for example `terraform-production` and `terraform-development`. A workflow step chooses one by name.
+
+## Declare the fields
+
+In `module.yaml`:
+
+```yaml
+connection:
+  fields:
+    token:
+      type: string
+      secret: true
+      required: true
+      title: API token
+    organization:
+      type: string
+      required: true
+    base_url:
+      type: string
+      default: "https://app.terraform.io"
+```
+
+Field types are `string`, `number` and `boolean`. Mark credentials `secret: true`. A module that needs no credentials leaves `connection` out.
+
+## Create a connection
+
+<Steps>
+<Step title="Open Connections">
+Go to **Modules → Connections** and click **New connection**.
+</Step>
+<Step title="Choose the module">
+Pick the module. The form shows the fields it declares.
+</Step>
+<Step title="Name it">
+Enter a **Name**, such as `terraform-production`. Workflow steps use this name, and it can't be changed later.
+</Step>
+<Step title="Choose where it's available">
+Pick the workspace whose workflows may use it. You can add more workspaces afterwards.
+</Step>
+<Step title="Fill in the fields and create">
+Enter the values and click **Create connection**.
+</Step>
+</Steps>
+
+## Secrets
+
+Secret fields are encrypted when you save and are never shown again, in the app, the API or the MCP server. To change one, type a new value; leave it blank to keep the stored one.
+
+During a run, the runner receives a connection's values just before the step that uses it, and only if that workflow version names the connection. Secret values are masked in logs.
+
+## Sharing
+
+A connection works like a connector or variable collection:
+
+- Its **maintainers** can change and delete it. The person who creates it is the first maintainer.
+- It is **available in** the workspaces you choose. Workflows there can name it but can't change it. Only organization owners and admins can make one available in every workspace.
+- Members see the connections they maintain or can use.
+
+Being able to see a module doesn't give access to its connections.
+
+A connection can't be deleted, or removed from a workspace, while a workflow there uses it. Bentra names the workflows in the way.
+
+## Rotate a credential
+
+Open the connection, enter the new secret and save. The next step that runs uses it. Nothing needs republishing.

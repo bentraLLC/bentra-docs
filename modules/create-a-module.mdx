@@ -1,0 +1,159 @@
+---
+title: "Create a module"
+description: "Lay out a module in a repository, declare its actions in module.yaml, and register it."
+---
+
+A module is a folder in a repository Bentra can reach through a [connector](/reference/connectors). One repository can hold many modules, each in its own folder.
+
+```text
+platform-automation/
+├── terraform-cloud/
+│   ├── module.yaml
+│   ├── requirements.txt
+│   ├── README.md
+│   └── actions/
+│       ├── create_workspace.py
+│       └── start_run.py
+└── databricks/
+    ├── module.yaml
+    └── actions/
+        └── run_job.sh
+```
+
+Everything a module needs must be inside its folder. Only that folder is packaged when you publish.
+
+## A complete example
+
+`terraform-cloud/module.yaml`:
+
+```yaml
+apiVersion: bentra/v1
+kind: Module
+
+metadata:
+  name: terraform-cloud
+  display_name: Terraform Cloud
+  description: Manage Terraform Cloud workspaces and runs.
+  category: infrastructure
+
+runtime:
+  language: python
+  version: ">=3.11"
+
+dependencies:
+  file: requirements.txt
+
+connection:
+  fields:
+    token:
+      type: string
+      secret: true
+      required: true
+      title: API token
+    organization:
+      type: string
+      required: true
+    base_url:
+      type: string
+      default: "https://app.terraform.io"
+
+actions:
+  - name: create_workspace
+    description: Create a Terraform Cloud workspace.
+    entrypoint: actions/create_workspace.py
+    inputs:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the new workspace.
+      required: [name]
+    outputs:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+```
+
+`terraform-cloud/requirements.txt`:
+
+```text
+requests==2.33.0
+```
+
+`terraform-cloud/actions/create_workspace.py`:
+
+```python
+import json
+import os
+import sys
+
+import requests
+
+with open(os.environ["BENTRA_INPUT_FILE"]) as f:
+    inputs = json.load(f)
+with open(os.environ["BENTRA_CONNECTION_FILE"]) as f:
+    connection = json.load(f)
+
+response = requests.post(
+    f"{connection['base_url']}/api/v2/organizations/{connection['organization']}/workspaces",
+    headers={
+        "Authorization": f"Bearer {connection['token']}",
+        "Content-Type": "application/vnd.api+json",
+    },
+    json={"data": {"type": "workspaces", "attributes": {"name": inputs["name"]}}},
+    timeout=30,
+)
+if response.status_code != 201:
+    with open(os.environ["BENTRA_OUTPUT_FILE"], "w") as f:
+        json.dump({"error": {"code": "create_failed", "message": response.text[:500]}}, f)
+    sys.exit(1)
+
+workspace_id = response.json()["data"]["id"]
+print(f"Created workspace {workspace_id}")
+with open(os.environ["BENTRA_OUTPUT_FILE"], "w") as f:
+    json.dump({"workspace_id": workspace_id}, f)
+```
+
+[Build actions](/modules/building-actions) explains the files the action reads and writes. [module.yaml syntax](/reference/module-syntax) lists every field.
+
+## Register the module
+
+<Steps>
+<Step title="Open the wizard">
+Go to **Modules** and click **Register module**.
+</Step>
+<Step title="Choose the source">
+Pick the connector, then the repository and the branch or tag. Click **Find modules**.
+</Step>
+<Step title="Choose the module">
+Bentra lists every folder that has a `module.yaml`. Pick one, or enter a folder. Click **Review**.
+</Step>
+<Step title="Review and register">
+Bentra shows the module's name, runtime and actions. If something is wrong it lists each problem with its file, line and a suggested fix. When the module is valid, click **Register module**.
+</Step>
+</Steps>
+
+The module is now in the registry, with no version yet. Workflows can use it once you [publish a version](/modules/publishing).
+
+The module takes its name from `metadata.name`. That name is what workflows reference, it must be unique in your organization, and it can't be changed later.
+
+## After you change the code
+
+Bentra doesn't watch your branch. On the module's page, click **Check for changes** to read the source again. The **Source** tab then shows:
+
+| | Meaning |
+|---|---|
+| **Latest commit seen** | The commit the branch pointed at when Bentra last looked |
+| **Last validated commit** | The commit Bentra last checked, and whether it was valid |
+| **Latest published** | The newest version and the commit it was built from |
+
+Checking for changes never publishes anything.
+
+## Change where a module is read from
+
+On the **Source** tab, maintainers can change the connector, repository, branch or tag, and folder. The `metadata.name` at the new location must still be the module's name. Versions you already published keep the source they were built from.
+
+## Who can do what
+
+Every member of the organization can see the registry. The person who registers a module becomes its maintainer and can add others. Maintainers and organization owners and admins can change, publish, archive and delete it. See [Permissions](/guides/permissions).

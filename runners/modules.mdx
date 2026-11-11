@@ -1,0 +1,78 @@
+---
+title: "Modules on runners"
+description: "What a runner needs to run module actions: runtimes, the package cache, dependencies and the security boundary."
+---
+
+Module actions run on your runners, like every other workflow step. Module steps need runner **0.14.0** or later.
+
+## Runtimes
+
+A module declares the language it needs. The runner must have it installed.
+
+| Module language | Runner needs |
+|---|---|
+| `python` | A Python matching the module's version (`"3.12"` means any 3.12; `">=3.11"` means that or newer) |
+| `node` | A matching Node.js, and `npm` when the module has dependencies |
+| `bash` | Bash |
+| `binary` | Nothing: the module ships a program for the runner's platform, such as `linux-amd64` |
+
+The Bentra runner image includes Python 3.12, Node.js 22 and Bash. For other versions, build your own image from it.
+
+Each runner reports its platform and runtimes to Bentra. If a run needs a runtime the runner doesn't have, it fails in the **Prepare modules** step, before any of your steps run, with a message such as:
+
+```text
+Module databricks 1.0.0 needs node >=20. This runner has python 3.12.7, bash 5.2.21.
+```
+
+Keep the runners in one pool alike. Bentra doesn't pick a runner by its runtimes.
+
+## Prepare modules
+
+A run with module steps starts with a **Prepare modules** step. For each module version the workflow uses, the runner:
+
+1. asks Bentra whether the version may still run (a revoked version stops here);
+2. downloads the package, or reuses its cached copy;
+3. checks the package's size and SHA-256 checksum against what Bentra recorded;
+4. installs the module's dependencies if they aren't installed yet.
+
+The runner never reads your Git repository to run a module.
+
+## Cache and dependencies
+
+Packages are cached by checksum in `BENTRA_MODULE_CACHE` (default `/workspace/modules`). A cached package is checked again every time it's used.
+
+Dependencies are installed once per module version into that version's own folder: a virtual environment for Python, `node_modules` for Node. They are never installed into the runner's own Python.
+
+Runners that start fresh for every job have an empty cache, so each run downloads and installs again. Mount a volume at the cache path to keep it.
+
+Dependencies are downloaded from your package index when first installed. Pin them so every runner installs the same thing.
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `BENTRA_MODULE_CACHE` | `/workspace/modules` | Where packages and their dependencies are kept |
+| `BENTRA_MODULE_PREPARE_TIMEOUT` | `900` | Seconds allowed for installing one module's dependencies |
+| `STEP_TIMEOUT` | `300` | Longest any step, including a module action, may run |
+
+## Security
+
+Module code is code your organization wrote and published, and it runs with the runner's access. Bentra does **not** sandbox it.
+
+What Bentra does:
+
+- runs exactly the package that was published, verified by checksum;
+- gives an action only its inputs and the one connection its step names;
+- passes credentials in a file only the runner's user can read, and deletes it when the action ends;
+- starts the action with a minimal environment, without the runner's token or the workflow's variables;
+- masks connection secrets in logs;
+- stops an action and everything it started when it times out.
+
+What it doesn't do:
+
+- An action runs as the same operating-system user as the runner. It can read files that user can read and use any network access and cloud identity the runner has.
+- An action isn't isolated from other steps of the same run.
+
+So treat **who can publish a module** as who can run code on your runners:
+
+- Limit a module's maintainers to people you'd trust with the runner.
+- Run runners with the least access they need: a dedicated service account, a narrow cloud role, and a network policy that allows only what your workflows reach.
+- Use separate runner pools for workflows with different levels of trust.

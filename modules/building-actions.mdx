@@ -1,0 +1,140 @@
+---
+title: "Build actions"
+description: "How Bentra runs an action: the files it reads and writes, errors, logging, credentials and supported languages."
+---
+
+An action is a program. When a workflow step calls it, the runner starts it as one process, gives it its inputs as a JSON file, and reads its outputs from another. The contract is the same for every language.
+
+## What the action receives
+
+The runner sets these environment variables. Each names a file or folder.
+
+| Variable | Content |
+|---|---|
+| `BENTRA_INPUT_FILE` | JSON object with the step's inputs |
+| `BENTRA_OUTPUT_FILE` | Where the action writes a JSON object of outputs |
+| `BENTRA_CONNECTION_FILE` | JSON object with the connection's fields. Not set when the step has no connection |
+| `BENTRA_CONTEXT_FILE` | Run, workflow and step ids, and the module name, version and action |
+| `BENTRA_MODULE_DIR` | The module's package, to read files you shipped with it |
+| `BENTRA_TEMP_DIR` | Scratch space, deleted when the action ends |
+
+The action starts in an empty scratch folder, not in the module's folder. Use `BENTRA_MODULE_DIR` to find your own files.
+
+<Note>
+An action doesn't receive the workflow's variables, secrets or form answers. It gets only what the step passes as inputs and what the connection holds. Its environment contains `PATH`, locale, proxy and certificate settings, and the variables above.
+</Note>
+
+## Outputs
+
+Write one JSON object to `BENTRA_OUTPUT_FILE`. It must match the action's `outputs` schema and be at most 1 MB.
+
+```json
+{"workspace_id": "ws-8fK2", "created": true}
+```
+
+Later steps read these values with `${{ steps.<id>.outputs.<name> }}`.
+
+To keep an output out of the logs, mark it in the schema:
+
+```yaml
+outputs:
+  type: object
+  properties:
+    session_token:
+      type: string
+      x-bentra-secret: true
+```
+
+## Success and failure
+
+- Exit code `0` means success. Any other exit code fails the step.
+- To explain a failure, write an `error` object before exiting:
+
+```json
+{"error": {"code": "not_found", "message": "No workspace named demo"}}
+```
+
+The message appears in the run's log.
+
+## Logging
+
+Anything the action prints to stdout or stderr becomes log lines on the run page. Connection secrets and secret outputs are replaced with `***`. Still, don't print credentials.
+
+## Credentials
+
+Read credentials only from `BENTRA_CONNECTION_FILE`. The file is readable by the runner's user alone and is deleted when the action exits. Never write credentials into the module's repository.
+
+## Timeouts
+
+An action is stopped when it runs longer than its limit, along with every process it started. The limit is the first of these that is set: the step's `timeout_minutes`, the action's `timeout_seconds`, the module's `defaults.timeout_seconds`. It can't exceed the runner's own step timeout.
+
+## Languages
+
+Set `runtime.language` in `module.yaml`.
+
+<Tabs>
+<Tab title="Python">
+```yaml
+runtime:
+  language: python
+  version: ">=3.11"
+dependencies:
+  file: requirements.txt
+```
+Entrypoints are `.py` files. Packages in the requirements file are installed into a virtual environment that belongs to this module version. Pin them (`requests==2.33.0`) so every install is the same.
+</Tab>
+<Tab title="Bash">
+```yaml
+runtime:
+  language: bash
+```
+Entrypoints are run with `bash`. Bash modules can't declare dependencies: use tools the runner already has, or ship what you need in the folder.
+
+```bash
+name=$(jq -r .name "$BENTRA_INPUT_FILE")
+echo "Hello $name"
+jq -n --arg greeting "Hello $name" '{greeting: $greeting}' > "$BENTRA_OUTPUT_FILE"
+```
+</Tab>
+<Tab title="Node.js">
+```yaml
+runtime:
+  language: node
+  version: ">=20"
+dependencies:
+  file: package.json
+```
+Entrypoints are `.js`, `.mjs` or `.cjs` files. Commit `package-lock.json` beside `package.json`; packages are installed with `npm ci`.
+
+```javascript
+const fs = require("fs");
+const inputs = JSON.parse(fs.readFileSync(process.env.BENTRA_INPUT_FILE, "utf8"));
+fs.writeFileSync(process.env.BENTRA_OUTPUT_FILE, JSON.stringify({ greeting: `Hello ${inputs.name}` }));
+```
+</Tab>
+<Tab title="Compiled (Go, Rust, …)">
+```yaml
+runtime:
+  language: binary
+  platforms: [linux-amd64, linux-arm64]
+actions:
+  - name: deploy
+    description: Deploy a release.
+    entrypoint: deploy
+```
+Build your program for each platform and commit the executables as `bin/<platform>/<entrypoint>`, for example `bin/linux-amd64/deploy`. They must be marked executable in Git.
+</Tab>
+</Tabs>
+
+A runner can only run a module whose runtime it has. See [Modules on runners](/runners/modules).
+
+## Test an action locally
+
+The contract is plain files, so you can run an action on your own machine:
+
+```bash
+export BENTRA_INPUT_FILE=$(mktemp) BENTRA_OUTPUT_FILE=$(mktemp) BENTRA_CONNECTION_FILE=$(mktemp)
+echo '{"name": "demo"}' > "$BENTRA_INPUT_FILE"
+echo '{"token": "…", "organization": "acme", "base_url": "https://app.terraform.io"}' > "$BENTRA_CONNECTION_FILE"
+python actions/create_workspace.py && cat "$BENTRA_OUTPUT_FILE"
+```

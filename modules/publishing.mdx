@@ -1,0 +1,81 @@
+---
+title: "Publish versions"
+description: "Validate a module, publish an immutable version, and deprecate or revoke versions later."
+---
+
+A version is a snapshot of the module's folder at one commit, stored by Bentra. Workflows run versions, never your branch.
+
+## Publish a version
+
+<Steps>
+<Step title="Open the module">
+Go to **Modules**, open the module and click **Publish new version**.
+</Step>
+<Step title="Review the source">
+The page shows the commit that will be published and what changed since the last version: new actions, removed actions, and actions whose inputs or outputs changed. Click **Check again** if you pushed since the last check.
+</Step>
+<Step title="Choose the version number">
+Bentra suggests the next number from the changes. Edit it if you want a different one.
+</Step>
+<Step title="Publish">
+Click **Publish version** and confirm. Bentra downloads the commit, checks the module, packages its folder and records the version. This usually takes a few seconds.
+</Step>
+</Steps>
+
+**Validate only** runs the same checks without publishing anything.
+
+If the branch moved after you opened the page, the publication stops and asks you to review the new commit, so you never publish code you haven't seen.
+
+## Version numbers
+
+Versions are `MAJOR.MINOR.PATCH`, such as `1.4.2`, optionally with a pre-release like `2.0.0-rc.1`. There is no `v` prefix.
+
+| Change | Raise |
+|---|---|
+| You removed an action, or added a required input | MAJOR |
+| You added an action or an optional input | MINOR |
+| You fixed something without changing inputs or outputs | PATCH |
+
+The first version can be any number; `0.1.0` and `1.0.0` are both common. You can publish a patch to an older line (`1.0.1` after `2.0.0`). The registry shows the highest version that isn't a pre-release as **latest**.
+
+## What gets checked
+
+Publishing fails, and lists each problem with its file and line, when:
+
+- `module.yaml` is missing, isn't valid YAML, or doesn't match the [schema](/reference/module-syntax).
+- The name in the manifest differs from the module's name.
+- Two actions share a name, or an entrypoint is missing or points outside the folder.
+- A Python entrypoint has a syntax error.
+- An input or output schema isn't valid JSON Schema.
+- The requirements file uses editable installs, local paths, other requirement files, or URLs containing credentials.
+- A Node module has no lockfile.
+- The folder contains symlinks, or is larger than the size limit.
+
+Bentra warns, without stopping, about unpinned requirements and files that look like secrets (`.env`, private keys). Remove real secrets before publishing: a published version can't be edited.
+
+Your code is never run during these checks.
+
+## Published versions don't change
+
+Once published, a version's code, manifest and package checksum are fixed. You can't overwrite `1.2.0` or publish it twice. Each version records the repository, commit, who published it and when, on the module's **Versions** tab.
+
+## Deprecate or revoke a version
+
+On the **Versions** tab:
+
+| Action | Effect |
+|---|---|
+| **Deprecate** | Workflows that use the version keep running. Publishing a workflow that uses it shows a warning. Can be undone with **Restore** |
+| **Revoke** | Workflows can no longer be published with the version, and runs of workflows that already use it fail with your message. Permanent |
+
+Revoke a version when it leaked a credential or does harm. For an ordinary bug, publish a fix and deprecate the old version.
+
+## Archive or delete a module
+
+**Archive** (on the **Source** tab) hides a module from the registry. Workflows that already use its versions keep running.
+
+A module can only be deleted when no workflow version uses any of its versions and it has no connections.
+
+## If the repository becomes unreachable
+
+Published versions are stored in Bentra and keep working. The module shows **Source unreachable**, and you can't publish again until the connector or repository is fixed.
