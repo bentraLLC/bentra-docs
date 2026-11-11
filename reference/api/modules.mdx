@@ -1,0 +1,156 @@
+---
+title: "Modules"
+---
+
+[Modules](/modules/overview) are reusable packages of actions your organization publishes for its workflows. These endpoints cover the registry, publishing versions, and the connections modules run with.
+
+Registering a module, refreshing it or changing its source **never publishes a version**. Only `POST modules/{id}/publications/` does, and a published version can't be changed.
+
+| Method | Path | Scope | MCP tool |
+|---|---|---|---|
+| `GET` | `modules/?q=&category=&state=&status=` | `read:modules` | `list_modules` |
+| `GET` | `modules/{id}/` | `read:modules` | `get_module` |
+| `GET` | `modules/repositories/?connector_id=&q=&page=` | `read:modules` | |
+| `GET` | `modules/refs/?connector_id=&repository=` | `read:modules` | |
+| `POST` | `modules/discover/` | `manage:modules` | `discover_modules` |
+| `POST` | `modules/` | `manage:modules` | `register_module` |
+| `PATCH` | `modules/{id}/` | `manage:modules` | `update_module` |
+| `DELETE` | `modules/{id}/` | `manage:modules` | `delete_module` |
+| `GET` | `modules/{id}/source/` | `read:modules` | `get_module` |
+| `PATCH` | `modules/{id}/source/` | `manage:modules` | `update_module_source` |
+| `POST` | `modules/{id}/refresh/` | `manage:modules` | `refresh_module` |
+| `POST` | `modules/{id}/maintainers/` | `manage:modules` | |
+| `DELETE` | `modules/{id}/maintainers/{maintainer_id}/` | `manage:modules` | |
+| `POST` | `modules/{id}/publications/` | `publish:modules` | `publish_module_version`, `validate_module` |
+| `GET` | `modules/{id}/publications/` | `read:modules` | `list_module_publications` |
+| `GET` | `modules/{id}/publications/{publication_id}/` | `read:modules` | `get_module_publication` |
+| `GET` | `modules/{id}/versions/` | `read:modules` | `list_module_versions` |
+| `GET` | `modules/{id}/versions/{version}/` | `read:modules` | `get_module_version` |
+| `GET` | `modules/{id}/versions/{version}/actions/` | `read:modules` | |
+| `GET` | `modules/{id}/versions/{version}/actions/{action}/` | `read:modules` | `get_module_action` |
+| `POST` | `modules/{id}/versions/{version}/deprecate/` | `publish:modules` | `set_module_version_status` |
+| `POST` | `modules/{id}/versions/{version}/undeprecate/` | `publish:modules` | `set_module_version_status` |
+| `POST` | `modules/{id}/versions/{version}/revoke/` | `publish:modules` | `set_module_version_status` |
+| `GET` | `module-connections/?module=&workspace=` | `read:modules` | `list_module_connections` |
+| `GET` | `module-connections/{id}/` | `read:modules` | `get_module_connection` |
+| `GET` | `module-connections/{id}/validate/?version=` | `read:modules` | `validate_module_connection` |
+| `POST` | `module-connections/` | `manage:module_connections` | `create_module_connection` |
+| `PATCH` | `module-connections/{id}/` | `manage:module_connections` | `update_module_connection` |
+| `DELETE` | `module-connections/{id}/` | `manage:module_connections` | `delete_module_connection` |
+| `POST` | `module-connections/{id}/maintainers/` | `manage:module_connections` | |
+| `DELETE` | `module-connections/{id}/maintainers/{maintainer_id}/` | `manage:module_connections` | |
+| `GET` | `schemas/module/` | `read:modules` | resource `bentra://schemas/module` |
+
+**Permissions:** every member can read the registry (`org.view_modules`) and register modules (`org.create_modules`). A module's maintainers, and owners and admins (`org.manage_modules`), can change, publish, archive and delete it. Connections follow the rules for [variable collections](/reference/api/variables): maintainers manage them and workspaces they're shared with can use them.
+
+---
+
+## A module
+
+```json
+{
+  "id": "…",
+  "name": "terraform-cloud",
+  "display_name": "Terraform Cloud",
+  "description": "Manage Terraform Cloud workspaces and runs.",
+  "category": "infrastructure",
+  "status": "active",
+  "latest_version": {"version": "1.2.0", "status": "published", "sha256": "…", "published_at": "…"},
+  "source": {
+    "connector_id": "…",
+    "repository": "acme/platform-automation",
+    "ref": "main",
+    "ref_type": "branch",
+    "working_directory": "terraform-cloud",
+    "source_sha": "9f2c…",
+    "validated_sha": "9f2c…",
+    "validation_state": "valid",
+    "issues": [],
+    "unpublished_changes": false
+  },
+  "can_manage": true
+}
+```
+
+`name` comes from the module's `module.yaml` and never changes. `latest_version` is `null` until a version is published. `source.validation_state` is `valid`, `invalid`, `unreachable` or `unknown`.
+
+Reading a module never contacts the repository. `source` shows what the last refresh saw.
+
+## Register a module
+
+```http
+POST modules/discover/
+{"connector_id": "…", "repository": "acme/platform-automation", "ref": "main"}
+```
+
+returns every folder holding a `module.yaml`. Add `working_directory` to see that folder's manifest and `issues` instead.
+
+```http
+POST modules/
+{"connector_id": "…", "repository": "acme/platform-automation", "ref": "main",
+ "ref_type": "branch", "working_directory": "terraform-cloud"}
+```
+
+returns `201` with the module, or `422` with `issues` when the source isn't valid.
+
+## Issues
+
+Validation problems come back as a list:
+
+```json
+{"code": "entrypoint_missing", "message": "actions/wait_for_run.py does not exist in the module directory.",
+ "file": "module.yaml", "line": 31, "field": "actions[2].entrypoint",
+ "hint": "Add the file or fix the path.", "severity": "error"}
+```
+
+`severity` is `error` or `warning`. Warnings don't block publishing.
+
+## Publish a version
+
+```http
+POST modules/{id}/publications/
+{"version": "1.2.0", "expected_sha": "9f2c…", "release_notes": "Adds wait_for_run"}
+```
+
+returns `202` with a publication. Poll it until `status` is `published` or `failed`:
+
+```json
+{"id": "…", "status": "failed", "requested_version": "1.2.0", "error_kind": "invalid",
+ "commit_sha": "9f2c…", "issues": [{"code": "syntax_error", "file": "actions/start_run.py", "line": 12, "…": "…"}]}
+```
+
+| Field | Notes |
+|---|---|
+| `version` | `MAJOR.MINOR.PATCH`, optionally with a pre-release such as `2.0.0-rc.1`. Required. |
+| `expected_sha` | The commit you reviewed. The publication fails with `source_moved` if the branch has moved. |
+| `release_notes` | Up to 5000 characters. |
+| `dry_run` | `true` runs every check and publishes nothing. The publication ends `validated`. |
+
+`409` when the version already exists or another publication of the module is in progress.
+
+## Connections
+
+```json
+{
+  "id": "…",
+  "name": "terraform-production",
+  "module": {"id": "…", "name": "terraform-cloud"},
+  "config": {"organization": "acme"},
+  "secrets": [{"field": "token", "is_set": true}],
+  "complete": true,
+  "missing": [],
+  "visibility": "selected_workspaces",
+  "shared_with": ["platform"]
+}
+```
+
+| Field | Notes |
+|---|---|
+| `module_id` | The module the connection is for. Required on create. |
+| `name` | What workflow steps reference. Lowercase letters, digits and hyphens. Can't be changed. |
+| `config` | Values for the module's non-secret fields. `null` clears one. |
+| `secrets` | Values for secret fields. Write-only: never returned. A field left out keeps its stored value; `null` clears it. |
+| `workspaces` | Slugs of the workspaces whose workflows can use it (the full list). |
+| `visibility` | `selected_workspaces` or `all_workspaces` (owners and admins). |
+
+Changing or deleting a connection returns `409` with `blocking_workflows` when a workflow that uses it would lose it.

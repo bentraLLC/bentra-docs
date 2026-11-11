@@ -137,6 +137,7 @@
               "reference/api/workflow-access",
               "reference/api/files",
               "reference/api/variables",
+              "reference/api/modules",
               "reference/api/requests",
               "reference/api/runs",
               "reference/api/datasets",
