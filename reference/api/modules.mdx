@@ -2,9 +2,9 @@
 title: "Modules"
 ---
 
-[Modules](/modules/overview) are reusable packages of actions your organization publishes for its workflows. These endpoints cover the registry, publishing versions, and the connections modules run with.
+[Modules](/modules/overview) are reusable packages of actions your organization releases for its workflows. These endpoints cover the registry, releases and versions, and the connections modules run with.
 
-Registering a module, refreshing it or changing its source **never publishes a version**. Only `POST modules/{id}/publications/` does, and a published version can't be changed.
+**Versions come from `version` in the module's `module.yaml`.** Registering a module, refreshing it (`POST modules/{id}/refresh/`), a push to its branch or tag and Bentra's regular check all read the source, and each one releases the version `module.yaml` declares if Bentra hasn't released it yet. No endpoint takes a version to release, and a released version can't be changed. See [Versions and releases](/modules/publishing).
 
 | Method | Path | Scope | MCP tool |
 |---|---|---|---|
@@ -21,13 +21,15 @@ Registering a module, refreshing it or changing its source **never publishes a v
 | `POST` | `modules/{id}/refresh/` | `manage:modules` | `refresh_module` |
 | `POST` | `modules/{id}/maintainers/` | `manage:modules` | |
 | `DELETE` | `modules/{id}/maintainers/{maintainer_id}/` | `manage:modules` | |
-| `POST` | `modules/{id}/publications/` | `publish:modules` | `publish_module_version`, `validate_module` |
+| `POST` | `modules/{id}/publications/` (`{"dry_run": true}` only: validate) | `publish:modules` | `validate_module` |
 | `GET` | `modules/{id}/publications/` | `read:modules` | `list_module_publications` |
 | `GET` | `modules/{id}/publications/{publication_id}/` | `read:modules` | `get_module_publication` |
 | `GET` | `modules/{id}/versions/` | `read:modules` | `list_module_versions` |
 | `GET` | `modules/{id}/versions/{version}/` | `read:modules` | `get_module_version` |
 | `GET` | `modules/{id}/versions/{version}/actions/` | `read:modules` | |
 | `GET` | `modules/{id}/versions/{version}/actions/{action}/` | `read:modules` | `get_module_action` |
+| `POST` | `modules/{id}/versions/{version}/activate/` | `publish:modules` | `set_active_module_version` |
+| `POST` | `modules/{id}/follow-newest/` | `publish:modules` | `set_active_module_version` |
 | `POST` | `modules/{id}/versions/{version}/deprecate/` | `publish:modules` | `set_module_version_status` |
 | `POST` | `modules/{id}/versions/{version}/undeprecate/` | `publish:modules` | `set_module_version_status` |
 | `POST` | `modules/{id}/versions/{version}/revoke/` | `publish:modules` | `set_module_version_status` |
@@ -41,7 +43,7 @@ Registering a module, refreshing it or changing its source **never publishes a v
 | `DELETE` | `module-connections/{id}/maintainers/{maintainer_id}/` | `manage:module_connections` | |
 | `GET` | `schemas/module/` | `read:modules` | resource `bentra://schemas/module` |
 
-**Permissions:** every member can read the registry (`org.view_modules`) and register modules (`org.create_modules`). A module's maintainers, and owners and admins (`org.manage_modules`), can change, publish, archive and delete it. Connections follow the rules for [variable collections](/reference/api/variables): maintainers manage them and workspaces they're shared with can use them.
+**Permissions:** every member can read the registry (`org.view_modules`) and register modules (`org.create_modules`). A module's maintainers, and owners and admins (`org.manage_modules`), can change its source, validate it, deprecate or revoke versions, choose the active version, archive and delete it. Releases come from the repository: anyone who can push to the module's branch or tag can release it. Connections follow the rules for [variable collections](/reference/api/variables): maintainers manage them and workspaces they're shared with can use them.
 
 ---
 
@@ -55,7 +57,8 @@ Registering a module, refreshing it or changing its source **never publishes a v
   "description": "Check that URLs answer with the status you expect.",
   "category": "monitoring",
   "status": "active",
-  "latest_version": {"version": "1.2.0", "status": "published", "sha256": "…", "published_at": "…"},
+  "active_version": {"version": "1.2.0", "status": "published", "sha256": "…", "published_at": "…"},
+  "active_version_pinned": false,
   "source": {
     "connector_id": "…",
     "repository": "acme/automation",
@@ -66,14 +69,15 @@ Registering a module, refreshing it or changing its source **never publishes a v
     "validated_sha": "9f2c…",
     "validation_state": "valid",
     "issues": [],
-    "unpublished_changes": false,
+    "version": "1.2.0",
+    "version_released": true,
     "readme": "# HTTP check\n…"
   },
   "can_manage": true
 }
 ```
 
-`name` comes from the module's `module.yaml` and never changes. `latest_version` is `null` until a version is published. `source.validation_state` is `valid`, `invalid`, `unreachable` or `unknown`.
+`name` comes from the module's `module.yaml` and never changes. `active_version` is the version the registry shows and new workflow steps use: the newest release unless a maintainer pinned one (`active_version_pinned`); `null` until the first release finishes. `source.version` is what `module.yaml` declared at the last check and `source.version_released` whether Bentra has released it. `source.validation_state` is `valid`, `invalid`, `unreachable` or `unknown`.
 
 Reading a module never contacts the repository. `source` shows what the last refresh saw.
 
@@ -120,30 +124,42 @@ Validation problems come back as a list:
  "hint": "Add the file or fix the path.", "severity": "error"}
 ```
 
-`severity` is `error` or `warning`. Warnings don't block publishing.
+`severity` is `error` or `warning`. Warnings don't block a release. `version_not_bumped` (a warning) means the module's files changed but `version` didn't, so nothing was released.
 
-## Publish a version
+## Releases
 
-```http
-POST modules/{id}/publications/
-{"version": "1.2.0", "expected_sha": "9f2c…", "release_notes": "Adds wait_for_run"}
-```
-
-returns `202` with a publication. Poll it until `status` is `published` or `failed`:
+Each release or validation is a publication. List them (newest first) with `GET modules/{id}/publications/`:
 
 ```json
-{"id": "…", "status": "failed", "requested_version": "1.2.0", "error_kind": "invalid",
- "commit_sha": "9f2c…", "issues": [{"code": "syntax_error", "file": "actions/check_many.py", "line": 12, "…": "…"}]}
+{"id": "…", "status": "published", "requested_version": "1.2.0", "trigger": "push",
+ "dry_run": false, "commit_sha": "9f2c…", "version": "1.2.0", "issues": [],
+ "requested_by": null, "created_at": "…", "finished_at": "…"}
 ```
 
 | Field | Notes |
 |---|---|
-| `version` | `MAJOR.MINOR.PATCH`, optionally with a pre-release such as `2.0.0-rc.1`. Required. |
-| `expected_sha` | The commit you reviewed. The publication fails with `source_moved` if the branch has moved. |
-| `release_notes` | Up to 5000 characters. |
-| `dry_run` | `true` runs every check and publishes nothing. The publication ends `validated`. |
+| `status` | `pending`, `running`, `published`, `validated` (a validation that passed) or `failed` |
+| `trigger` | `register`, `refresh` (Check for changes), `push`, `poll` (Bentra's regular check) or `validate` |
+| `requested_version` | The version `module.yaml` declared at `commit_sha` |
+| `error_kind` | On failure: `invalid` (with `issues`), `source_moved` (`module.yaml` no longer said that version at the commit), `version_exists`, `auth`, `not_found` or `unavailable` |
 
-`409` when the version already exists or another publication of the module is in progress.
+**Validate** runs every release check on the current source and releases nothing:
+
+```http
+POST modules/{id}/publications/
+{"dry_run": true}
+```
+
+returns `202`; poll `GET modules/{id}/publications/{publication_id}/` until it is `validated` or `failed`. Sending a `version` is a `400`: releases come from `module.yaml`. `409` while another release or validation of the module is running.
+
+## Active version
+
+```http
+POST modules/{id}/versions/1.1.0/activate/     # make 1.1.0 active, and keep it through later releases
+POST modules/{id}/follow-newest/               # follow the newest release again
+```
+
+Both return the module. Workflows keep the exact versions they pin.
 
 ## Connections
 

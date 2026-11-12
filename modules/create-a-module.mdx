@@ -36,6 +36,7 @@ For complete modules in Python, Bash, Node.js and Go that you can copy, see [Exa
 ```yaml
 apiVersion: bentra/v1
 kind: Module
+version: 1.0.0             # bump to release a new version (strict semver)
 metadata:
   name: http-check
   display_name: HTTP check
@@ -164,28 +165,28 @@ Bentra reads that folder and shows the module (name, description, category, runt
 </Step>
 </Steps>
 
-The module is now in the registry, with no version yet. Workflows can use it once you [publish a version](/modules/publishing).
+The module is now in the registry, and Bentra releases the `version` in its `module.yaml`. Workflows can use it once that release finishes, usually within seconds. To release later versions, bump `version` and push: see [Versions and releases](/modules/publishing).
 
 - **Name.** The module takes its name from `metadata.name`. That name is what workflows reference, it must be unique in your organization, and it can't be changed later.
-- **Details.** The display name, description, category and icon shown in Bentra come from `module.yaml` and can only be changed there. Bentra picks up changes when you check for changes or publish.
+- **Details.** The display name, description, category and icon shown in Bentra come from `module.yaml` and can only be changed there. Bentra picks up changes whenever it reads the source.
 - **README.** A `README.md` in the working directory, in any letter case (`readme.md`, `README.MD`), is shown on the module's page. Point `metadata.docs` at another Markdown file to use that instead.
 
 ## After you change the code
 
-Bentra doesn't watch your branch. On the module's page, click **Check for changes** to read the source again. The **Source** tab then shows:
+Bentra reads the source again on a push (when the connection has a webhook), on a regular check, or when you click **Check for changes**. If `version` changed, it releases it; if only files changed, it warns that the version wasn't bumped. The **Source** tab shows:
 
 | | Meaning |
 |---|---|
 | **Latest commit seen** | The commit the branch pointed at when Bentra last looked |
 | **Last validated commit** | The commit Bentra last checked, and whether it was valid |
-| **Latest published** | The newest version and the commit it was built from |
+| **Active version** | The version the registry shows and new steps use |
 
-Checking for changes never publishes anything.
+Checking for changes releases a version only when `version` in `module.yaml` is one Bentra hasn't released.
 
 ## Change where a module is read from
 
-On the **Source** tab, maintainers can change the connection, repository, branch or tag, and working directory. The `metadata.name` at the new location must still be the module's name. Versions you already published keep the source they were built from.
+On the **Source** tab, maintainers can change the connection, repository, branch or tag, and working directory. The `metadata.name` at the new location must still be the module's name. Versions already released keep the source they were built from.
 
 ## Who can do what
 
-Every member of the organization can see the registry. The person who registers a module becomes its maintainer and can add others. Maintainers and organization owners and admins can change, publish, archive and delete it. See [Permissions](/guides/permissions).
+Every member of the organization can see the registry. The person who registers a module becomes its maintainer and can add others. Maintainers and organization owners and admins can change its source, validate, deprecate or revoke versions, choose the active version, archive and delete it. Releasing happens through the repository: anyone who can push to the module's branch or tag can release it. See [Permissions](/guides/permissions).

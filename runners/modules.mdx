@@ -55,11 +55,11 @@ Dependencies are downloaded from your package index when first installed. Pin th
 
 ## Security
 
-Module code is code your organization wrote and published, and it runs with the runner's access. Bentra does **not** sandbox it.
+Module code is code your organization wrote and released, and it runs with the runner's access. Bentra does **not** sandbox it.
 
 What Bentra does:
 
-- runs exactly the package that was published, verified by checksum;
+- runs exactly the package that was released, verified by checksum;
 - gives an action only its inputs and the one connection its step names;
 - passes credentials in a file only the runner's user can read, and deletes it when the action ends;
 - starts the action with a minimal environment, without the runner's token or the workflow's variables;
@@ -71,8 +71,9 @@ What it doesn't do:
 - An action runs as the same operating-system user as the runner. It can read files that user can read and use any network access and cloud identity the runner has.
 - An action isn't isolated from other steps of the same run.
 
-So treat **who can publish a module** as who can run code on your runners:
+So treat **who can release a module** as who can run code on your runners. A module is released by bumping `version` in its `module.yaml` on the branch or tag Bentra follows, so:
 
-- Limit a module's maintainers to people you'd trust with the runner.
+- Protect that branch (required reviews, restricted pushes) like code that runs in production.
+- Limit a module's maintainers, who can revoke versions and change the active version, to people you'd trust with the runner.
 - Run runners with the least access they need: a dedicated service account, a narrow cloud role, and a network policy that allows only what your workflows reach.
 - Use separate runner pools for workflows with different levels of trust.

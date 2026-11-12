@@ -27,10 +27,10 @@ acme/automation
 That means:
 
 - Entrypoints, the dependency file and `metadata.docs` are paths **inside** the working directory. `../` is refused.
-- An action can't import or read code from a parent folder: it isn't in the published package.
+- An action can't import or read code from a parent folder: it isn't in the released package.
 - Symlinks are refused rather than followed.
 - A bad or huge file elsewhere in the repository never affects the module.
-- **Check for changes** reports unpublished changes only when something inside the working directory changed.
+- Bentra's `version_not_bumped` warning appears only when something inside the working directory changed.
 
 ## Recommended layouts
 
@@ -99,4 +99,4 @@ Because each module sees only its own folder, shared code has to travel with it:
 
 ## Branches and tags
 
-Each module follows one branch or tag. Bentra doesn't watch it: click **Check for changes** (or call `refresh_module`) after you push. Published versions keep the commit they were built from, so you can change the branch, repository or working directory without affecting workflows that pin a version.
+Each module follows one branch or tag, which is where Bentra reads its `module.yaml`. The module's version is `version` in that file, not the branch or tag name, so many modules in one repository can version independently. Bentra reads the branch on a push (with a webhook), on a regular check, or when you click **Check for changes**, and releases a version it hasn't released yet. Released versions keep the commit they were built from, so you can change the branch, repository or working directory without affecting workflows that pin a version.

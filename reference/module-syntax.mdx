@@ -3,11 +3,13 @@ title: "module.yaml syntax"
 description: "Every field of a module's manifest: metadata, runtime, dependencies, connection and actions."
 ---
 
-Each module has a `module.yaml` (or `module.yml`, not both) at the top of its working directory. Bentra validates it when you register the module, check for changes and publish. Keys are snake_case; unknown keys are rejected, except ones starting with `x-`. The same schema, with descriptions and an example, is served at `GET /orgs/{org}/api/v1/schemas/module/` and as the MCP resource `bentra://schemas/module`.
+Each module has a `module.yaml` (or `module.yml`, not both) at the top of its working directory. Bentra validates it whenever it reads the source and again when it builds a release. Keys are snake_case; unknown keys are rejected, except ones starting with `x-`. The same schema, with descriptions and an example, is served at `GET /orgs/{org}/api/v1/schemas/module/` and as the MCP resource `bentra://schemas/module`.
 
 ```yaml
 apiVersion: bentra/v1
 kind: Module
+version: 1.2.0
+release_notes: Adds expected_status to check_url
 
 metadata:
   name: http-check
@@ -57,6 +59,8 @@ Unknown fields are errors, so a typo is caught. For your own notes, use keys sta
 |---|---|---|
 | `apiVersion` | yes | `bentra/v1` |
 | `kind` | yes | `Module` |
+| `version` | yes | The module's version, `MAJOR.MINOR.PATCH` or a pre-release like `1.3.0-rc.1`, no `v`. Bump it to release: see [Versions and releases](/modules/publishing) |
+| `release_notes` | no | What changed in this version, up to 5,000 characters. Stored with the release |
 | `metadata` | yes | See below |
 | `runtime` | yes | See below |
 | `actions` | yes | One or more actions |
@@ -64,7 +68,7 @@ Unknown fields are errors, so a typo is caught. For your own notes, use keys sta
 | `connection` | no | The credentials and settings the module needs |
 | `defaults` | no | `timeout_seconds` for actions that don't set one |
 
-The version number isn't in the manifest. You choose it when you publish.
+Bentra releases each `version` it hasn't released yet. Changing files without bumping `version` releases nothing.
 
 ## metadata
 
@@ -142,8 +146,8 @@ inputs:
   additionalProperties: false
 ```
 
-With `additionalProperties: false`, a workflow that passes an input the action doesn't know is rejected when it's published.
+With `additionalProperties: false`, a workflow that passes an input the action doesn't know is rejected when the workflow is published.
 
 ## Changes to this format
 
-`bentra/v1` only ever gains optional fields, so a manifest that is valid today stays valid. A version you published is never checked again against a newer format.
+A released version is never checked again against a newer format. `version` became required in `bentra/v1` when releases moved into `module.yaml`.

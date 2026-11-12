@@ -54,6 +54,7 @@ bentra/modules/http-check/
 ```yaml module.yaml
 apiVersion: bentra/v1
 kind: Module
+version: 1.0.0             # bump to release a new version (strict semver)
 metadata:
   name: http-check
   display_name: HTTP check
@@ -242,6 +243,7 @@ bentra/modules/json-tools/
 ```yaml module.yaml
 apiVersion: bentra/v1
 kind: Module
+version: 1.0.0             # bump to release a new version (strict semver)
 metadata:
   name: json-tools
   display_name: JSON tools
@@ -327,6 +329,7 @@ bentra/modules/text-tools/
 ```yaml module.yaml
 apiVersion: bentra/v1
 kind: Module
+version: 1.0.0             # bump to release a new version (strict semver)
 metadata:
   name: text-tools
   display_name: Text tools
@@ -414,6 +417,7 @@ bentra/modules/sha-tool/
 ```yaml module.yaml
 apiVersion: bentra/v1
 kind: Module
+version: 1.0.0             # bump to release a new version (strict semver)
 metadata:
   name: sha-tool
   display_name: SHA tool
@@ -557,8 +561,11 @@ steps:
 <Step title="Register each module">
 **Modules → Register module**: your connection, the repository, `main`, and the working directory, for example `bentra/modules/http-check`.
 </Step>
-<Step title="Publish 1.0.0">
-On each module's page, click **Publish new version** and enter `1.0.0`.
+<Step title="Watch 1.0.0 release">
+Registering releases the `version: 1.0.0` each `module.yaml` declares. The module's **Versions** tab shows it within seconds.
+</Step>
+<Step title="Release 1.0.1">
+Change something in a module, set `version: 1.0.1` in its `module.yaml` and push. Bentra releases it (click **Check for changes** if the connection has no webhook).
 </Step>
 <Step title="Run the demo">
 Create a job workflow from the repository with the working directory `bentra/workflows/module-demo` and run it.

@@ -1,34 +1,50 @@
 ---
-title: "Publish versions"
-description: "Validate a module, publish an immutable version, and deprecate or revoke versions later."
+title: "Versions and releases"
+description: "A module's version lives in its module.yaml. Bump it, and Bentra releases that version."
 ---
 
-A version is a snapshot of the module's folder at one commit, stored by Bentra. Workflows run versions, never your branch.
+A module's version is a line in its own `module.yaml`:
 
-## Publish a version
+```yaml
+apiVersion: bentra/v1
+kind: Module
+version: 1.2.0
+release_notes: Adds pagination to check_many   # optional
+metadata:
+  name: http-check
+  ...
+```
 
-<Steps>
-<Step title="Open the module">
-Go to **Modules**, open the module and click **Publish new version**.
-</Step>
-<Step title="Review the source">
-The page shows the commit that will be published and what changed since the last version: new actions, removed actions, and actions whose inputs or outputs changed. Click **Check again** if you pushed since the last check.
-</Step>
-<Step title="Choose the version number">
-Bentra suggests the next number from the changes. Edit it if you want a different one.
-</Step>
-<Step title="Publish">
-Click **Publish version** and confirm. Bentra downloads the commit, checks the module, packages its folder and records the version. This usually takes a few seconds.
-</Step>
-</Steps>
+**To release a new version, bump `version` and push.** Bentra sees a version it hasn't released yet on the module's branch or tag, checks the module, packages its folder at that commit and records the release. Nothing else in Bentra asks for a version number.
 
-**Validate only** runs the same checks without publishing anything.
+<Note>
+Why the version lives in the module: one repository often holds many modules, each changing at its own pace. A repository-wide tag or branch can't say which version of which module it is, but a line inside the module's own folder can.
+</Note>
 
-If the branch moved after you opened the page, the publication stops and asks you to review the new commit, so you never publish code you haven't seen.
+## When Bentra releases
+
+Bentra reads `module.yaml` from the branch or tag the module follows (its **Source**). It releases a new version when it reads one it hasn't released:
+
+| When | How |
+|---|---|
+| You register the module | The version in `module.yaml` is released straight away |
+| You click **Check for changes** | On the module's page, or `refresh_module` from an agent |
+| You push to the branch or tag | When the connection has a [webhook](/reference/connectors), Bentra checks within seconds |
+| On a schedule | Bentra checks every module's branch or tag regularly, so a push is picked up even without a webhook |
+
+The release is built from the exact commit where Bentra read the new version, so a later push can't slip into it. The module's **Versions** tab shows each release with what triggered it.
+
+### Changed files, same version
+
+If the module's files change but `version` doesn't, **nothing is released**. The module shows a warning: *Files changed since version 1.2.0 was released, but module.yaml still says 1.2.0.* Bump the version to release the changes.
+
+### Who can release
+
+Anyone who can push to the module's branch or tag can release it. Protect that branch the way you protect code that runs in production, for example with required reviews. In Bentra, maintainers can still deprecate or revoke versions and choose the active version.
 
 ## Version numbers
 
-Versions are `MAJOR.MINOR.PATCH`, such as `1.4.2`, optionally with a pre-release like `2.0.0-rc.1`. There is no `v` prefix.
+`version` is `MAJOR.MINOR.PATCH`, such as `1.4.2`, optionally with a pre-release like `2.0.0-rc.1`. There is no `v` prefix. Quote it if YAML could read it as a number.
 
 | Change | Raise |
 |---|---|
@@ -36,13 +52,21 @@ Versions are `MAJOR.MINOR.PATCH`, such as `1.4.2`, optionally with a pre-release
 | You added an action or an optional input | MINOR |
 | You fixed something without changing inputs or outputs | PATCH |
 
-The first version can be any number; `0.1.0` and `1.0.0` are both common. You can publish a patch to an older line (`1.0.1` after `2.0.0`). The registry shows the highest version that isn't a pre-release as **latest**.
+The first version can be any number; `0.1.0` and `1.0.0` are both common. You can release a patch to an older line (`1.0.1` after `2.0.0`).
+
+## The active version
+
+Each module has an **active version**: the one the registry shows and that **Add module step** inserts into new workflow steps. By default it follows the newest release that isn't a pre-release or revoked.
+
+On the **Versions** tab, a maintainer can click **Make active** on another version, for example to keep `1.4.0` as the default while `2.0.0` settles. It then stays active through later releases until they click **Follow newest**.
+
+Workflows are not affected by the active version: each workflow step pins an exact version and keeps running it until someone changes the step. See [Use in workflows](/modules/use-in-workflows).
 
 ## What gets checked
 
-Publishing fails, and lists each problem with its file and line, when:
+Bentra checks the module when it reads the source and again when it builds the release. A release fails, listing each problem with its file and line, when:
 
-- `module.yaml` is missing, isn't valid YAML, or doesn't match the [schema](/reference/module-syntax).
+- `module.yaml` is missing, isn't valid YAML, or doesn't match the [schema](/reference/module-syntax), including a missing or malformed `version`.
 - The name in the manifest differs from the module's name.
 - Two actions share a name, or an entrypoint is missing or points outside the folder.
 - A Python entrypoint has a syntax error.
@@ -51,13 +75,15 @@ Publishing fails, and lists each problem with its file and line, when:
 - A Node module has no lockfile.
 - The folder contains symlinks, or is larger than the size limit.
 
-Bentra warns, without stopping, about unpinned requirements and files that look like secrets (`.env`, private keys). Remove real secrets before publishing: a published version can't be edited.
+Bentra warns, without stopping, about unpinned requirements and files that look like secrets (`.env`, private keys). Remove real secrets before releasing: a released version can't be edited.
+
+Click **Validate** on the module's page (or `validate_module`) to run every check on the current source without releasing anything.
 
 Your code is never run during these checks.
 
-## Published versions don't change
+## Released versions don't change
 
-Once published, a version's code, manifest and package checksum are fixed. You can't overwrite `1.2.0` or publish it twice. Each version records the repository, commit, who published it and when, on the module's **Versions** tab.
+Once released, a version's code, manifest and package checksum are fixed. Bentra won't release `1.2.0` twice. Each version records the repository, commit, release notes, what triggered it and when.
 
 ## Deprecate or revoke a version
 
@@ -66,16 +92,16 @@ On the **Versions** tab:
 | Action | Effect |
 |---|---|
 | **Deprecate** | Workflows that use the version keep running. Publishing a workflow that uses it shows a warning. Can be undone with **Restore** |
-| **Revoke** | Workflows can no longer be published with the version, and runs of workflows that already use it fail with your message. Permanent |
+| **Revoke** | Workflows can no longer be published with the version, and runs of workflows that already use it fail with your message. If it was the active version, the newest release becomes active. Permanent |
 
-Revoke a version when it leaked a credential or does harm. For an ordinary bug, publish a fix and deprecate the old version.
+Revoke a version when it leaked a credential or does harm. For an ordinary bug, release a fix and deprecate the old version.
 
 ## Archive or delete a module
 
-**Archive** (on the **Source** tab) hides a module from the registry. Workflows that already use its versions keep running.
+**Archive** (on the **Source** tab) hides a module from the registry and stops new releases. Workflows that already use its versions keep running.
 
 A module can only be deleted when no workflow version uses any of its versions and it has no connections.
 
 ## If the repository becomes unreachable
 
-Published versions are stored in Bentra and keep working. The module shows **Source unreachable**, and you can't publish again until the connector or repository is fixed.
+Released versions are stored in Bentra and keep working. The module shows **Source unreachable**, and nothing new is released until the connection or repository is fixed.

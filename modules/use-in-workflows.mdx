@@ -36,7 +36,7 @@ Open **Modules** and choose a module. The **Actions** tab lists each action with
 | Field | Required | Meaning |
 |---|---|---|
 | `module.name` | yes | The module's name in the registry |
-| `module.version` | yes | An exact published version, in quotes. No ranges and no `latest` |
+| `module.version` | yes | An exact released version, in quotes. No ranges and no `latest`. **Add module step** fills in the module's active version |
 | `module.action` | yes | The action to run |
 | `module.connection` | if the module needs one | The name of a connection available in the workflow's workspace |
 | `module.inputs` | if the action requires inputs | Values for the action's inputs |
@@ -88,6 +88,6 @@ A deprecated version is allowed, with a warning.
 
 ## Versions stay fixed
 
-A workflow version runs exactly the module versions it names. Publishing a newer module version changes nothing until you edit the workflow to use it. Each run records the module versions and package checksums it used.
+A workflow version runs exactly the module versions it names. A newer module release changes nothing until you edit the workflow to use it. Each run records the module versions and package checksums it used.
 
 To move a workflow to a new module version, change `version` in `workflow.yml` and publish the workflow.

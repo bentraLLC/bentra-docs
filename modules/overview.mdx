@@ -1,9 +1,9 @@
 ---
 title: "Modules"
-description: "Package reusable actions once, publish them as versions, and call them from any workflow."
+description: "Package reusable actions once, release them as versions from module.yaml, and call them from any workflow."
 ---
 
-A module is a package of **actions** that your organization writes and publishes for its own workflows. An `http-check` module might offer `check_url` and `check_many`. A workflow step calls an action by name instead of repeating the script behind it.
+A module is a package of **actions** that your organization writes and releases for its own workflows. An `http-check` module might offer `check_url` and `check_many`. A workflow step calls an action by name instead of repeating the script behind it.
 
 Modules live in your organization's private registry. Nothing is shared outside it, and Bentra doesn't ship integrations of its own: you build the ones you need, in the language you prefer.
 
@@ -13,7 +13,7 @@ Modules live in your organization's private registry. Nothing is shared outside 
 |---|---|
 | **Module** | A folder in one of your repositories with a `module.yaml` and the code for its actions |
 | **Action** | One operation the module offers, with declared inputs and outputs |
-| **Version** | A published release of the module, such as `1.2.0`. It never changes |
+| **Version** | A release of the module, such as `1.2.0`, set by `version` in its `module.yaml`. It never changes |
 | **Connection** | Credentials and settings a module runs with, such as "production" |
 | **Registry** | The **Modules** page: every module your organization has registered |
 
@@ -24,10 +24,10 @@ Modules live in your organization's private registry. Nothing is shared outside 
 Add a folder with a `module.yaml` and your action scripts to a repository: that folder is the module's working directory, and it is all Bentra sees. See [Create a module](/modules/create-a-module), copy one of the [examples](/modules/examples), or have a coding agent write it with [Build modules with an agent](/modules/build-with-an-agent).
 </Step>
 <Step title="Register it">
-In **Modules → Register module**, point Bentra at the repository, branch and folder. Bentra checks the module and adds it to the registry.
+In **Modules → Register module**, point Bentra at the repository, branch or tag, and folder. Bentra checks the module, adds it to the registry and releases the `version` its `module.yaml` declares.
 </Step>
-<Step title="Publish a version">
-Choose **Publish new version** and give it a number. Bentra packages the folder as it is at that moment. See [Publish versions](/modules/publishing).
+<Step title="Release new versions">
+Bump `version` in `module.yaml` and push. Bentra releases it from the commit where it saw the new version. See [Versions and releases](/modules/publishing).
 </Step>
 <Step title="Add a connection">
 If the module needs credentials, create a connection and share it with the workspaces that will use it. See [Connections](/modules/connections).
@@ -39,12 +39,12 @@ Add a `module` step to a workflow, naming the module, the exact version and the 
 
 ## What to rely on
 
-- **Git is where you edit.** Bentra reads your repository only when you register, check for changes or publish. Opening a page never reads it.
-- **Publishing is always deliberate.** Pushing to the branch, registering a module or checking for changes never publishes a version. Only **Publish new version** does.
-- **A version never changes.** To fix or add anything, publish another version.
+- **Git is where you edit, and where you version.** The module's version is `version` in its `module.yaml`. Bentra reads the repository when you register, check for changes, push (with a webhook) or on a regular check. Opening a page never reads it.
+- **A release happens when the version changes.** Changing files without bumping `version` releases nothing, and Bentra warns you.
+- **A version never changes.** To fix or add anything, release another version.
 - **Workflows pin exact versions.** A workflow keeps running the version it names until someone edits the workflow.
 - **Modules hold no credentials.** Connections do, and their secrets are encrypted and never shown again.
 
 <Warning>
-Module actions run on your runner as the runner's user, like the bash steps in a workflow. Bentra verifies that the package is the one that was published and controls who can publish, but it does not sandbox the code. See [Modules on runners](/runners/modules).
+Module actions run on your runner as the runner's user, like the bash steps in a workflow. Bentra verifies that the package is the one that was released, but it does not sandbox the code, and anyone who can push to the module's branch can release it. See [Modules on runners](/runners/modules).
 </Warning>
