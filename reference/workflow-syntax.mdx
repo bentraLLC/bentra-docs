@@ -291,16 +291,16 @@ A step can call an action of a published [module](/modules/overview) instead of 
 
 ```yaml
 steps:
-  - id: workspace
-    name: Create Terraform workspace
+  - id: check
+    name: Check the endpoint
     timeout_minutes: 10
     module:
-      name: terraform-cloud
-      version: "1.2.0"
-      action: create_workspace
-      connection: terraform-production
+      name: http-check
+      version: "1.0.0"
+      action: check_url
+      connection: production
       inputs:
-        name: ${{ inputs.workspace_name }}
+        url: ${{ inputs.endpoint_url }}
 ```
 
 | Field | Required | Value |

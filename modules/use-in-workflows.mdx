@@ -6,26 +6,25 @@ description: "Call a module action from a workflow step, pass inputs, choose a c
 A workflow step either runs a script (`run`) or calls a module action (`module`).
 
 ```yaml
-name: "Provision workspace"
+name: "Check and record a service"
 steps:
-  - id: workspace
-    name: Create Terraform workspace
+  - id: service
+    name: Make a service name
     module:
-      name: terraform-cloud
-      version: "1.2.0"
-      action: create_workspace
-      connection: terraform-production
+      name: text-tools
+      version: "1.0.0"
+      action: slugify
       inputs:
-        name: ${{ inputs.workspace_name }}
+        text: ${{ inputs.service_name }}
 
-  - name: Start Terraform run
+  - name: Check its endpoint
     module:
-      name: terraform-cloud
-      version: "1.2.0"
-      action: start_run
-      connection: terraform-production
+      name: http-check
+      version: "1.0.0"
+      action: check_url
+      connection: production
       inputs:
-        workspace_id: ${{ steps.workspace.outputs.workspace_id }}
+        url: https://${{ steps.service.outputs.slug }}.example.com/health
 ```
 
 ## Find a module and its actions
@@ -72,7 +71,7 @@ A `run` step can read what earlier module steps returned from the JSON file at `
 ```yaml
   - name: Report
     run: |
-      jq -r '.workspace.workspace_id' "$BENTRA_STEP_OUTPUTS"
+      jq -r '.service.slug' "$BENTRA_STEP_OUTPUTS"
 ```
 
 ## What Bentra checks when you publish the workflow

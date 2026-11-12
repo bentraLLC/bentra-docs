@@ -3,7 +3,7 @@ title: "Modules"
 description: "Package reusable actions once, publish them as versions, and call them from any workflow."
 ---
 
-A module is a package of **actions** that your organization writes and publishes for its own workflows. A Terraform Cloud module might offer `create_workspace`, `start_run` and `wait_for_run`. A workflow step calls an action by name instead of repeating the script behind it.
+A module is a package of **actions** that your organization writes and publishes for its own workflows. An `http-check` module might offer `check_url` and `check_many`. A workflow step calls an action by name instead of repeating the script behind it.
 
 Modules live in your organization's private registry. Nothing is shared outside it, and Bentra doesn't ship integrations of its own: you build the ones you need, in the language you prefer.
 
@@ -14,7 +14,7 @@ Modules live in your organization's private registry. Nothing is shared outside 
 | **Module** | A folder in one of your repositories with a `module.yaml` and the code for its actions |
 | **Action** | One operation the module offers, with declared inputs and outputs |
 | **Version** | A published release of the module, such as `1.2.0`. It never changes |
-| **Connection** | Credentials and settings a module runs with, such as "Terraform Cloud production" |
+| **Connection** | Credentials and settings a module runs with, such as "production" |
 | **Registry** | The **Modules** page: every module your organization has registered |
 
 ## How a module gets to a workflow

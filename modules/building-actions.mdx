@@ -30,7 +30,7 @@ An action doesn't receive the workflow's variables, secrets or form answers. It 
 Write one JSON object to `BENTRA_OUTPUT_FILE`. It must match the action's `outputs` schema and be at most 1 MB.
 
 ```json
-{"workspace_id": "ws-8fK2", "created": true}
+{"status": 200, "ok": true, "elapsed_ms": 141}
 ```
 
 Later steps read these values with `${{ steps.<id>.outputs.<name> }}`.
@@ -52,7 +52,7 @@ outputs:
 - To explain a failure, write an `error` object before exiting:
 
 ```json
-{"error": {"code": "not_found", "message": "No workspace named demo"}}
+{"error": {"code": "not_found", "message": "No item named demo"}}
 ```
 
 The message appears in the run's log.
@@ -134,14 +134,14 @@ A runner can only run a module whose runtime it has. See [Modules on runners](/r
 The contract is plain files, so you can run an action on your own machine. The [example repository](https://github.com/bentraLLC/bentra-module-examples) has `scripts/run-action.sh`, which sets up the files and variables the way a runner does, installs the module's dependencies in a scratch folder and prints the outputs. Copy it into your repository:
 
 ```bash
-scripts/run-action.sh bentra/modules/terraform-cloud create_workspace tests/create_workspace.json tests/connection.json
+scripts/run-action.sh path/to/module my_action path/to/module/tests/my_action.json path/to/module/tests/connection.json
 ```
 
 Or by hand:
 
 ```bash
 export BENTRA_INPUT_FILE=$(mktemp) BENTRA_OUTPUT_FILE=$(mktemp) BENTRA_CONNECTION_FILE=$(mktemp)
-echo '{"name": "demo"}' > "$BENTRA_INPUT_FILE"
-echo '{"token": "…", "organization": "acme", "base_url": "https://app.terraform.io"}' > "$BENTRA_CONNECTION_FILE"
-python actions/create_workspace.py && cat "$BENTRA_OUTPUT_FILE"
+echo '{"url": "https://example.com"}' > "$BENTRA_INPUT_FILE"
+echo '{"token": "…"}' > "$BENTRA_CONNECTION_FILE"
+python actions/check_url.py && cat "$BENTRA_OUTPUT_FILE"
 ```

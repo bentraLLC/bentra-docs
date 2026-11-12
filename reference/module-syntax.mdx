@@ -10,11 +10,11 @@ apiVersion: bentra/v1
 kind: Module
 
 metadata:
-  name: terraform-cloud
-  display_name: Terraform Cloud
-  description: Manage Terraform Cloud workspaces and runs.
-  category: infrastructure
-  icon: cloud
+  name: http-check
+  display_name: HTTP check
+  description: Check that URLs answer with the status you expect.
+  category: monitoring
+  icon: activity
   docs: README.md
 
 runtime:
@@ -28,26 +28,25 @@ connection:
   required: true
   fields:
     token: {type: string, secret: true, required: true, title: API token}
-    organization: {type: string, required: true}
-    base_url: {type: string, default: "https://app.terraform.io"}
+    base_url: {type: string, default: "https://api.example.com"}
 
 defaults:
   timeout_seconds: 300
 
 actions:
-  - name: create_workspace
-    description: Create a Terraform Cloud workspace.
-    entrypoint: actions/create_workspace.py
+  - name: check_url
+    description: Request one URL and report its status.
+    entrypoint: actions/check_url.py
     timeout_seconds: 120
     inputs:
       type: object
       properties:
-        name: {type: string}
-      required: [name]
+        url: {type: string}
+      required: [url]
     outputs:
       type: object
       properties:
-        workspace_id: {type: string}
+        status: {type: integer}
 ```
 
 Unknown fields are errors, so a typo is caught. For your own notes, use keys starting with `x-`.

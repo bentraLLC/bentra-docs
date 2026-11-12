@@ -6,21 +6,21 @@ description: "Put a module in its own folder of a repository, declare its action
 A module is one folder in a repository Bentra can reach through a [connector](/reference/connectors). That folder is the module's **working directory**: it holds `module.yaml`, the action code and an optional README. One repository can hold many modules, each in its own folder.
 
 ```text
-platform-automation/
+automation/
 ├── .github/
 └── bentra/
     └── modules/
-        ├── terraform-cloud/          ← working directory: bentra/modules/terraform-cloud
+        ├── http-check/               ← working directory: bentra/modules/http-check
         │   ├── module.yaml
         │   ├── README.md
         │   ├── requirements.txt
         │   └── actions/
-        │       ├── create_workspace.py
-        │       └── start_run.py
-        └── databricks/               ← working directory: bentra/modules/databricks
+        │       ├── check_url.py
+        │       └── check_many.py
+        └── json-tools/               ← working directory: bentra/modules/json-tools
             ├── module.yaml
             └── actions/
-                └── run_job.sh
+                └── merge.sh
 ```
 
 <Warning>
@@ -31,96 +31,119 @@ For complete modules in Python, Bash, Node.js and Go that you can copy, see [Exa
 
 ## A complete example
 
-`bentra/modules/terraform-cloud/module.yaml`:
+`bentra/modules/http-check/module.yaml`:
 
 ```yaml
 apiVersion: bentra/v1
 kind: Module
-
 metadata:
-  name: terraform-cloud
-  display_name: Terraform Cloud
-  description: Manage Terraform Cloud workspaces and runs.
-  category: infrastructure
-
+  name: http-check
+  display_name: HTTP check
+  description: Check that URLs answer with the status you expect.
+  category: monitoring
+  icon: activity
 runtime:
   language: python
   version: ">=3.11"
-
 dependencies:
   file: requirements.txt
-
 connection:
+  required: false            # steps may omit the connection for public URLs
   fields:
     token:
       type: string
       secret: true
-      required: true
-      title: API token
-    organization:
-      type: string
-      required: true
-    base_url:
-      type: string
-      default: "https://app.terraform.io"
-
+      title: Bearer token
+      description: 'Sent as "Authorization: Bearer <token>" when set.'
+    timeout_seconds:
+      type: number
+      default: 30
+defaults:
+  timeout_seconds: 120
 actions:
-  - name: create_workspace
-    description: Create a Terraform Cloud workspace.
-    entrypoint: actions/create_workspace.py
+  - name: check_url
+    description: Request one URL and report its status and response time.
+    entrypoint: actions/check_url.py
     inputs:
       type: object
       properties:
-        name:
-          type: string
-          description: Name of the new workspace.
-      required: [name]
+        url: {type: string, description: "The URL to request."}
+        expected_status: {type: integer, default: 200}
+      required: [url]
+      additionalProperties: false
     outputs:
       type: object
       properties:
-        workspace_id:
-          type: string
+        status: {type: integer}
+        ok: {type: boolean}
+        elapsed_ms: {type: integer}
+      required: [status, ok, elapsed_ms]
+  - name: check_many
+    description: Request several URLs and report which ones failed.
+    entrypoint: actions/check_many.py
+    inputs:
+      type: object
+      properties:
+        urls: {type: array, items: {type: string}, minItems: 1}
+        expected_status: {type: integer, default: 200}
+      required: [urls]
+      additionalProperties: false
+    outputs:
+      type: object
+      properties:
+        checked: {type: integer}
+        failed: {type: array, items: {type: string}}
+      required: [checked, failed]
 ```
 
-`bentra/modules/terraform-cloud/requirements.txt`:
+`bentra/modules/http-check/requirements.txt`:
 
 ```text
-requests==2.33.0
+requests==2.32.5
 ```
 
-`bentra/modules/terraform-cloud/actions/create_workspace.py`:
+`bentra/modules/http-check/actions/check_url.py`:
 
 ```python
 import json
 import os
 import sys
+import time
 
 import requests
 
 with open(os.environ["BENTRA_INPUT_FILE"]) as f:
     inputs = json.load(f)
-with open(os.environ["BENTRA_CONNECTION_FILE"]) as f:
-    connection = json.load(f)
 
-response = requests.post(
-    f"{connection['base_url']}/api/v2/organizations/{connection['organization']}/workspaces",
-    headers={
-        "Authorization": f"Bearer {connection['token']}",
-        "Content-Type": "application/vnd.api+json",
-    },
-    json={"data": {"type": "workspaces", "attributes": {"name": inputs["name"]}}},
-    timeout=30,
-)
-if response.status_code != 201:
+# The connection is optional (required: false), so its file may not exist.
+connection = {}
+if os.environ.get("BENTRA_CONNECTION_FILE"):
+    with open(os.environ["BENTRA_CONNECTION_FILE"]) as f:
+        connection = json.load(f)
+
+headers = {}
+if connection.get("token"):
+    headers["Authorization"] = f"Bearer {connection['token']}"
+
+expected = inputs.get("expected_status", 200)
+started = time.monotonic()
+try:
+    response = requests.get(inputs["url"], headers=headers,
+                            timeout=connection.get("timeout_seconds", 30))
+except requests.RequestException as exc:
     with open(os.environ["BENTRA_OUTPUT_FILE"], "w") as f:
-        json.dump({"error": {"code": "create_failed", "message": response.text[:500]}}, f)
+        json.dump({"error": {"code": "request_failed", "message": str(exc)}}, f)
     sys.exit(1)
 
-workspace_id = response.json()["data"]["id"]
-print(f"Created workspace {workspace_id}")
+elapsed_ms = int((time.monotonic() - started) * 1000)
+ok = response.status_code == expected
+print(f"{inputs['url']} answered {response.status_code} in {elapsed_ms} ms")
 with open(os.environ["BENTRA_OUTPUT_FILE"], "w") as f:
-    json.dump({"workspace_id": workspace_id}, f)
+    json.dump({"status": response.status_code, "ok": ok, "elapsed_ms": elapsed_ms}, f)
+sys.exit(0 if ok else 1)
 ```
+
+This is a shortened `check_url`. The full module, with a second action and a shared helper, is in [Examples](/modules/examples#http-check-python).
 
 [Build actions](/modules/building-actions) explains the files the action reads and writes. [module.yaml syntax](/reference/module-syntax) lists every field.
 
@@ -134,7 +157,7 @@ Go to **Modules** and click **Register module**.
 Pick the VCS connection Bentra reads the repository through. Click **Next**.
 </Step>
 <Step title="Choose the source">
-Pick the repository and the branch or tag, then type the **working directory**: the folder that holds `module.yaml`, for example `bentra/modules/terraform-cloud`. Leave it empty if the module is the whole repository. Click **Review**.
+Pick the repository: the list shows the 100 most recently updated, and search finds any repository the connection can see. Choose **Branch** or **Tag**, then pick one from the list (the default branch is preselected). Then type the **working directory**: the folder that holds `module.yaml`, for example `path/to/module`. Leave it empty if the module is the whole repository. Click **Review**.
 </Step>
 <Step title="Review and register">
 Bentra reads that folder and shows the module (name, description, category, runtime, commit), each action with its inputs and outputs, and the README. If something is wrong it lists each problem with its file, line and a suggested fix: fix it in the repository and review again. When the module is valid, click **Register module**.

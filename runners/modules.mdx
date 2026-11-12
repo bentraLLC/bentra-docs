@@ -21,7 +21,7 @@ The Bentra runner image includes Python 3.12, Node.js 22 and Bash. For other ver
 Each runner reports its platform and runtimes to Bentra. If a run needs a runtime the runner doesn't have, it fails in the **Prepare modules** step, before any of your steps run, with a message such as:
 
 ```text
-Module databricks 1.0.0 needs node >=20. This runner has python 3.12.7, bash 5.2.21.
+Module text-tools 1.0.0 needs node >=20. This runner has python 3.12.7, bash 5.2.21.
 ```
 
 Keep the runners in one pool alike. Bentra doesn't pick a runner by its runtimes.

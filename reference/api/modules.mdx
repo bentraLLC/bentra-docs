@@ -10,8 +10,8 @@ Registering a module, refreshing it or changing its source **never publishes a v
 |---|---|---|---|
 | `GET` | `modules/?q=&category=&state=&status=` | `read:modules` | `list_modules` |
 | `GET` | `modules/{id}/` | `read:modules` | `get_module` |
-| `GET` | `modules/repositories/?connector_id=&q=&page=` | `read:modules` | |
-| `GET` | `modules/refs/?connector_id=&repository=` | `read:modules` | |
+| `GET` | `modules/repositories/?connector_id=&q=` (the 100 most recently updated, or the first 100 matching `q`) | `read:modules` | |
+| `GET` | `modules/refs/?connector_id=&repository=&kind=branch\|tag&q=` (`{default_branch, refs, truncated}`) | `read:modules` | |
 | `POST` | `modules/inspect/` | `manage:modules` | `inspect_module_source` |
 | `POST` | `modules/` | `manage:modules` | `register_module` |
 | `PATCH` | `modules/{id}/` (`status` only: archive or restore) | `manage:modules` | `update_module` |
@@ -50,24 +50,24 @@ Registering a module, refreshing it or changing its source **never publishes a v
 ```json
 {
   "id": "…",
-  "name": "terraform-cloud",
-  "display_name": "Terraform Cloud",
-  "description": "Manage Terraform Cloud workspaces and runs.",
-  "category": "infrastructure",
+  "name": "http-check",
+  "display_name": "HTTP check",
+  "description": "Check that URLs answer with the status you expect.",
+  "category": "monitoring",
   "status": "active",
   "latest_version": {"version": "1.2.0", "status": "published", "sha256": "…", "published_at": "…"},
   "source": {
     "connector_id": "…",
-    "repository": "acme/platform-automation",
+    "repository": "acme/automation",
     "ref": "main",
     "ref_type": "branch",
-    "working_directory": "bentra/modules/terraform-cloud",
+    "working_directory": "bentra/modules/http-check",
     "source_sha": "9f2c…",
     "validated_sha": "9f2c…",
     "validation_state": "valid",
     "issues": [],
     "unpublished_changes": false,
-    "readme": "# Terraform Cloud\n…"
+    "readme": "# HTTP check\n…"
   },
   "can_manage": true
 }
@@ -83,8 +83,8 @@ Bentra reads only the module's working directory and what is nested in it.
 
 ```http
 POST modules/inspect/
-{"connector_id": "…", "repository": "acme/platform-automation", "ref": "main",
- "ref_type": "branch", "working_directory": "bentra/modules/terraform-cloud"}
+{"connector_id": "…", "repository": "acme/automation", "ref": "main",
+ "ref_type": "branch", "working_directory": "bentra/modules/http-check"}
 ```
 
 returns what that folder holds, without registering anything:
@@ -92,11 +92,11 @@ returns what that folder holds, without registering anything:
 ```json
 {"commit_sha": "9f2c…", "registered_as": null,
  "inspection": {"valid": true, "manifest_file": "module.yaml", "manifest": {…},
-                "actions": [{"name": "create_workspace", "description": "…",
-                             "inputs": [{"name": "name", "type": "string", "required": true, "description": "…"}],
-                             "outputs": [{"name": "workspace_id", "type": "string", "required": false, "description": ""}]}],
-                "readme": "# Terraform Cloud…", "readme_html": "<h1>…</h1>",
-                "file_count": 4, "files": ["README.md", "actions/create_workspace.py", "module.yaml", "requirements.txt"],
+                "actions": [{"name": "check_url", "description": "…",
+                             "inputs": [{"name": "url", "type": "string", "required": true, "description": "…"}],
+                             "outputs": [{"name": "status", "type": "integer", "required": false, "description": ""}]}],
+                "readme": "# HTTP check…", "readme_html": "<h1>…</h1>",
+                "file_count": 4, "files": ["README.md", "actions/check_url.py", "module.yaml", "requirements.txt"],
                 "issues": []}}
 ```
 
@@ -104,8 +104,8 @@ returns what that folder holds, without registering anything:
 
 ```http
 POST modules/
-{"connector_id": "…", "repository": "acme/platform-automation", "ref": "main",
- "ref_type": "branch", "working_directory": "bentra/modules/terraform-cloud"}
+{"connector_id": "…", "repository": "acme/automation", "ref": "main",
+ "ref_type": "branch", "working_directory": "bentra/modules/http-check"}
 ```
 
 returns `201` with the module, or `422` with `issues` when the source isn't valid. The name, display name, description, category and icon come from `module.yaml`; sending any of them is a `400`. The module's `source.readme` holds the README Bentra last read.
@@ -133,7 +133,7 @@ returns `202` with a publication. Poll it until `status` is `published` or `fail
 
 ```json
 {"id": "…", "status": "failed", "requested_version": "1.2.0", "error_kind": "invalid",
- "commit_sha": "9f2c…", "issues": [{"code": "syntax_error", "file": "actions/start_run.py", "line": 12, "…": "…"}]}
+ "commit_sha": "9f2c…", "issues": [{"code": "syntax_error", "file": "actions/check_many.py", "line": 12, "…": "…"}]}
 ```
 
 | Field | Notes |
@@ -150,9 +150,9 @@ returns `202` with a publication. Poll it until `status` is `published` or `fail
 ```json
 {
   "id": "…",
-  "name": "terraform-production",
-  "module": {"id": "…", "name": "terraform-cloud"},
-  "config": {"organization": "acme"},
+  "name": "production",
+  "module": {"id": "…", "name": "http-check"},
+  "config": {"timeout_seconds": 30},
   "secrets": [{"field": "token", "is_set": true}],
   "complete": true,
   "missing": [],

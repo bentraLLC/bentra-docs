@@ -5,7 +5,7 @@ description: "Give a module's actions credentials and settings, and choose which
 
 A connection holds the values a module needs to reach the system it manages: an API token, an account name, a base URL. The module declares which fields exist; a connection fills them in.
 
-One module can have many connections, for example `terraform-production` and `terraform-development`. A workflow step chooses one by name.
+One module can have many connections, for example `production` and `staging`. A workflow step chooses one by name.
 
 ## Declare the fields
 
@@ -19,12 +19,9 @@ connection:
       secret: true
       required: true
       title: API token
-    organization:
-      type: string
-      required: true
     base_url:
       type: string
-      default: "https://app.terraform.io"
+      default: "https://api.example.com"
 ```
 
 Field types are `string`, `number` and `boolean`. Mark credentials `secret: true`. A module that needs no credentials leaves `connection` out.
@@ -39,7 +36,7 @@ Go to **Modules → Connections** and click **New connection**.
 Pick the module. The form shows the fields it declares.
 </Step>
 <Step title="Name it">
-Enter a **Name**, such as `terraform-production`. Workflow steps use this name, and it can't be changed later.
+Enter a **Name**, such as `production`. Workflow steps use this name, and it can't be changed later.
 </Step>
 <Step title="Choose where it's available">
 Pick the workspace whose workflows may use it. You can add more workspaces afterwards.

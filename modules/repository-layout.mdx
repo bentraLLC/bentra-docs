@@ -10,18 +10,18 @@ A module is one folder of a repository: its **working directory**. You type it w
 Bentra lists, reads and packages **only the working directory and what is nested in it**. Everything else in the repository doesn't exist for the module.
 
 ```text
-acme/platform-automation
+acme/automation
 ├── .github/                         ✗ not visible to any module
 ├── .bentra/                         ✗
-├── terraform/                       ✗
+├── infra/                           ✗
 └── bentra/
     └── modules/
-        └── terraform-cloud/         ✓ working directory: bentra/modules/terraform-cloud
+        └── http-check/              ✓ working directory: bentra/modules/http-check
             ├── module.yaml          ✓ found by name
             ├── README.md            ✓ shown in Bentra (any letter case)
             ├── requirements.txt     ✓
             └── actions/
-                └── create_workspace.py  ✓
+                └── check_url.py     ✓
 ```
 
 That means:
@@ -44,40 +44,40 @@ your-repo/
 ├── src/
 └── bentra/
     ├── modules/
-    │   ├── terraform-cloud/
+    │   ├── http-check/
     │   │   ├── module.yaml
     │   │   ├── README.md
     │   │   ├── requirements.txt
     │   │   ├── actions/
     │   │   └── tests/          # sample inputs for local runs
-    │   └── slack-notify/
+    │   └── json-tools/
     │       ├── module.yaml
     │       └── actions/
     └── workflows/
-        └── provision-workspace/
+        └── check-services/
             └── workflow.yml    # calls the modules
 ```
 
-Register each module with its folder, for example `bentra/modules/terraform-cloud`.
+Register each module with its folder, for example `bentra/modules/http-check`.
 </Tab>
 <Tab title="A repository of modules">
 A repository that only holds modules can drop the `bentra/` prefix:
 
 ```text
 platform-modules/
-├── terraform-cloud/
+├── http-check/
 │   └── module.yaml
-└── databricks/
+└── json-tools/
     └── module.yaml
 ```
 
-Working directories: `terraform-cloud`, `databricks`.
+Working directories: `http-check`, `json-tools`.
 </Tab>
 <Tab title="One module per repository">
 The whole repository is the module:
 
 ```text
-terraform-cloud-module/
+example-module/
 ├── module.yaml
 ├── README.md
 └── actions/
