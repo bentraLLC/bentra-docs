@@ -54,7 +54,7 @@ Request-portal branding is on [Organization](/reference/api/organization#request
 
 ### `DELETE organization/`
 
-`{"confirm": "Acme"}` (or `?confirm=Acme`): the organization's exact name. **Owners only.** Deletes the organization and everything in it (workspaces, workflows, runs, requests, secrets; its encryption key is destroyed). Can't be undone. `204` on success, `400` if the name doesn't match, `403` for non-owners. On a one-organization plan (Free, Team) the account goes with it, so the owner can create a new organization.
+`{"confirm": "Acme"}` in the body: the organization's exact name. **Owners only.** Delete every workflow first (a workflow with open requests can't be deleted until they're closed); the rest (workspaces, connectors, runner pools, modules, variable collections, runs, secrets; its encryption key is destroyed) goes with it. Can't be undone. `204` on success, `400` if the name doesn't match, `403` for non-owners, `409` `org_not_empty` with `contents` (counts of what it still holds) while workflows remain. On a one-organization plan (Free, Team) the account goes with it, so the owner can create a new organization.
 
 ---
 
