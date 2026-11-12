@@ -1,30 +1,37 @@
 ---
 title: "Create a module"
-description: "Lay out a module in a repository, declare its actions in module.yaml, and register it."
+description: "Put a module in its own folder of a repository, declare its actions in module.yaml, and register it."
 ---
 
-A module is a folder in a repository Bentra can reach through a [connector](/reference/connectors). One repository can hold many modules, each in its own folder.
+A module is one folder in a repository Bentra can reach through a [connector](/reference/connectors). That folder is the module's **working directory**: it holds `module.yaml`, the action code and an optional README. One repository can hold many modules, each in its own folder.
 
 ```text
 platform-automation/
-├── terraform-cloud/
-│   ├── module.yaml
-│   ├── requirements.txt
-│   ├── README.md
-│   └── actions/
-│       ├── create_workspace.py
-│       └── start_run.py
-└── databricks/
-    ├── module.yaml
-    └── actions/
-        └── run_job.sh
+├── .github/
+└── bentra/
+    └── modules/
+        ├── terraform-cloud/          ← working directory: bentra/modules/terraform-cloud
+        │   ├── module.yaml
+        │   ├── README.md
+        │   ├── requirements.txt
+        │   └── actions/
+        │       ├── create_workspace.py
+        │       └── start_run.py
+        └── databricks/               ← working directory: bentra/modules/databricks
+            ├── module.yaml
+            └── actions/
+                └── run_job.sh
 ```
 
-Everything a module needs must be inside its folder. Only that folder is packaged when you publish.
+<Warning>
+Bentra reads only the working directory and what is nested in it. Files outside it don't exist for the module: an action can't import `../lib`, and a symlink is refused. [Repository layout](/modules/repository-layout) shows how to share code between modules.
+</Warning>
+
+For complete modules in Python, Bash, Node.js and Go that you can copy, see [Examples](/modules/examples). If an agent writes your modules, give it the context in [Build modules with an agent](/modules/build-with-an-agent).
 
 ## A complete example
 
-`terraform-cloud/module.yaml`:
+`bentra/modules/terraform-cloud/module.yaml`:
 
 ```yaml
 apiVersion: bentra/v1
@@ -75,13 +82,13 @@ actions:
           type: string
 ```
 
-`terraform-cloud/requirements.txt`:
+`bentra/modules/terraform-cloud/requirements.txt`:
 
 ```text
 requests==2.33.0
 ```
 
-`terraform-cloud/actions/create_workspace.py`:
+`bentra/modules/terraform-cloud/actions/create_workspace.py`:
 
 ```python
 import json
@@ -123,20 +130,22 @@ with open(os.environ["BENTRA_OUTPUT_FILE"], "w") as f:
 <Step title="Open the wizard">
 Go to **Modules** and click **Register module**.
 </Step>
-<Step title="Choose the source">
-Pick the connector, then the repository and the branch or tag. Click **Find modules**.
+<Step title="Choose the connection">
+Pick the VCS connection Bentra reads the repository through. Click **Next**.
 </Step>
-<Step title="Choose the module">
-Bentra lists every folder that has a `module.yaml`. Pick one, or enter a folder. Click **Review**.
+<Step title="Choose the source">
+Pick the repository and the branch or tag, then type the **working directory**: the folder that holds `module.yaml`, for example `bentra/modules/terraform-cloud`. Leave it empty if the module is the whole repository. Click **Review**.
 </Step>
 <Step title="Review and register">
-Bentra shows the module's name, runtime and actions. If something is wrong it lists each problem with its file, line and a suggested fix. When the module is valid, click **Register module**.
+Bentra reads that folder and shows the module (name, description, category, runtime, commit), each action with its inputs and outputs, and the README. If something is wrong it lists each problem with its file, line and a suggested fix: fix it in the repository and review again. When the module is valid, click **Register module**.
 </Step>
 </Steps>
 
 The module is now in the registry, with no version yet. Workflows can use it once you [publish a version](/modules/publishing).
 
-The module takes its name from `metadata.name`. That name is what workflows reference, it must be unique in your organization, and it can't be changed later.
+- **Name.** The module takes its name from `metadata.name`. That name is what workflows reference, it must be unique in your organization, and it can't be changed later.
+- **Details.** The display name, description, category and icon shown in Bentra come from `module.yaml` and can only be changed there. Bentra picks up changes when you check for changes or publish.
+- **README.** A `README.md` in the working directory, in any letter case (`readme.md`, `README.MD`), is shown on the module's page. Point `metadata.docs` at another Markdown file to use that instead.
 
 ## After you change the code
 
@@ -152,7 +161,7 @@ Checking for changes never publishes anything.
 
 ## Change where a module is read from
 
-On the **Source** tab, maintainers can change the connector, repository, branch or tag, and folder. The `metadata.name` at the new location must still be the module's name. Versions you already published keep the source they were built from.
+On the **Source** tab, maintainers can change the connection, repository, branch or tag, and working directory. The `metadata.name` at the new location must still be the module's name. Versions you already published keep the source they were built from.
 
 ## Who can do what
 

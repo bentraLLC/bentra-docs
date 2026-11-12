@@ -91,7 +91,10 @@
             "pages": [
               "modules/overview",
               "modules/create-a-module",
+              "modules/repository-layout",
               "modules/building-actions",
+              "modules/examples",
+              "modules/build-with-an-agent",
               "modules/publishing",
               "modules/connections",
               "modules/use-in-workflows",

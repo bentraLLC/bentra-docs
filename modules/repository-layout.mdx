@@ -1,0 +1,102 @@
+---
+title: "Repository layout"
+description: "Where modules live in a repository, what Bentra can see, and how to share code between modules."
+---
+
+A module is one folder of a repository: its **working directory**. You type it when you register the module, and you can change it later on the module's **Source** tab.
+
+## What Bentra sees
+
+Bentra lists, reads and packages **only the working directory and what is nested in it**. Everything else in the repository doesn't exist for the module.
+
+```text
+acme/platform-automation
+├── .github/                         ✗ not visible to any module
+├── .bentra/                         ✗
+├── terraform/                       ✗
+└── bentra/
+    └── modules/
+        └── terraform-cloud/         ✓ working directory: bentra/modules/terraform-cloud
+            ├── module.yaml          ✓ found by name
+            ├── README.md            ✓ shown in Bentra (any letter case)
+            ├── requirements.txt     ✓
+            └── actions/
+                └── create_workspace.py  ✓
+```
+
+That means:
+
+- Entrypoints, the dependency file and `metadata.docs` are paths **inside** the working directory. `../` is refused.
+- An action can't import or read code from a parent folder: it isn't in the published package.
+- Symlinks are refused rather than followed.
+- A bad or huge file elsewhere in the repository never affects the module.
+- **Check for changes** reports unpublished changes only when something inside the working directory changed.
+
+## Recommended layouts
+
+<Tabs>
+<Tab title="Modules next to your code">
+Keep Bentra content under one `bentra/` folder, one folder per module:
+
+```text
+your-repo/
+├── .github/
+├── src/
+└── bentra/
+    ├── modules/
+    │   ├── terraform-cloud/
+    │   │   ├── module.yaml
+    │   │   ├── README.md
+    │   │   ├── requirements.txt
+    │   │   ├── actions/
+    │   │   └── tests/          # sample inputs for local runs
+    │   └── slack-notify/
+    │       ├── module.yaml
+    │       └── actions/
+    └── workflows/
+        └── provision-workspace/
+            └── workflow.yml    # calls the modules
+```
+
+Register each module with its folder, for example `bentra/modules/terraform-cloud`.
+</Tab>
+<Tab title="A repository of modules">
+A repository that only holds modules can drop the `bentra/` prefix:
+
+```text
+platform-modules/
+├── terraform-cloud/
+│   └── module.yaml
+└── databricks/
+    └── module.yaml
+```
+
+Working directories: `terraform-cloud`, `databricks`.
+</Tab>
+<Tab title="One module per repository">
+The whole repository is the module:
+
+```text
+terraform-cloud-module/
+├── module.yaml
+├── README.md
+└── actions/
+```
+
+Leave the working directory empty.
+</Tab>
+</Tabs>
+
+Name the folder after `metadata.name` so people and agents can find a module from its name.
+
+## Sharing code between modules
+
+Because each module sees only its own folder, shared code has to travel with it:
+
+- **Copy it in.** Keep a small helper (for example `actions/_bentra.py` that reads inputs and writes outputs) in each module. This is the simplest option and keeps every module self-contained.
+- **Publish a package.** Put larger shared code in a Python or npm package and list it, pinned, in each module's dependency file.
+- **Make it one module.** If two modules always change together, they may be one module with more actions.
+
+## Branches and tags
+
+Each module follows one branch or tag. Bentra doesn't watch it: click **Check for changes** (or call `refresh_module`) after you push. Published versions keep the commit they were built from, so you can change the branch, repository or working directory without affecting workflows that pin a version.

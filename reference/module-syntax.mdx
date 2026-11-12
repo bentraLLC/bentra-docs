@@ -3,7 +3,7 @@ title: "module.yaml syntax"
 description: "Every field of a module's manifest: metadata, runtime, dependencies, connection and actions."
 ---
 
-Each module has a `module.yaml` (or `module.yml`) at the top of its folder. Bentra validates it when you register the module, check for changes and publish.
+Each module has a `module.yaml` (or `module.yml`, not both) at the top of its working directory. Bentra validates it when you register the module, check for changes and publish. Keys are snake_case; unknown keys are rejected, except ones starting with `x-`. The same schema, with descriptions and an example, is served at `GET /orgs/{org}/api/v1/schemas/module/` and as the MCP resource `bentra://schemas/module`.
 
 ```yaml
 apiVersion: bentra/v1
@@ -69,6 +69,8 @@ The version number isn't in the manifest. You choose it when you publish.
 
 ## metadata
 
+The registry shows these exactly as written; they can't be edited in Bentra. Change them here and check for changes.
+
 | Field | Required | Value |
 |---|---|---|
 | `name` | yes | What workflows reference. Lowercase letters, digits and hyphens, starting with a letter, 2 to 63 characters. Unique in your organization; can't change after registering |
@@ -76,7 +78,7 @@ The version number isn't in the manifest. You choose it when you publish.
 | `display_name` | no | The name shown in the registry |
 | `category` | no | `infrastructure`, `cloud`, `data`, `deployment`, `security`, `monitoring`, `notifications`, `internal` or `other` |
 | `icon` | no | An icon name, such as `cloud` |
-| `docs` | no | Path to a Markdown file shown on the module's page. `README.md` is used when present |
+| `docs` | no | Path to a Markdown file in the working directory, shown on the module's page. Without it, `README.md` at the top of the working directory is used, in any letter case |
 
 ## runtime
 

@@ -12,9 +12,9 @@ Registering a module, refreshing it or changing its source **never publishes a v
 | `GET` | `modules/{id}/` | `read:modules` | `get_module` |
 | `GET` | `modules/repositories/?connector_id=&q=&page=` | `read:modules` | |
 | `GET` | `modules/refs/?connector_id=&repository=` | `read:modules` | |
-| `POST` | `modules/discover/` | `manage:modules` | `discover_modules` |
+| `POST` | `modules/inspect/` | `manage:modules` | `inspect_module_source` |
 | `POST` | `modules/` | `manage:modules` | `register_module` |
-| `PATCH` | `modules/{id}/` | `manage:modules` | `update_module` |
+| `PATCH` | `modules/{id}/` (`status` only: archive or restore) | `manage:modules` | `update_module` |
 | `DELETE` | `modules/{id}/` | `manage:modules` | `delete_module` |
 | `GET` | `modules/{id}/source/` | `read:modules` | `get_module` |
 | `PATCH` | `modules/{id}/source/` | `manage:modules` | `update_module_source` |
@@ -61,12 +61,13 @@ Registering a module, refreshing it or changing its source **never publishes a v
     "repository": "acme/platform-automation",
     "ref": "main",
     "ref_type": "branch",
-    "working_directory": "terraform-cloud",
+    "working_directory": "bentra/modules/terraform-cloud",
     "source_sha": "9f2c…",
     "validated_sha": "9f2c…",
     "validation_state": "valid",
     "issues": [],
-    "unpublished_changes": false
+    "unpublished_changes": false,
+    "readme": "# Terraform Cloud\n…"
   },
   "can_manage": true
 }
@@ -78,20 +79,36 @@ Reading a module never contacts the repository. `source` shows what the last ref
 
 ## Register a module
 
+Bentra reads only the module's working directory and what is nested in it.
+
 ```http
-POST modules/discover/
-{"connector_id": "…", "repository": "acme/platform-automation", "ref": "main"}
+POST modules/inspect/
+{"connector_id": "…", "repository": "acme/platform-automation", "ref": "main",
+ "ref_type": "branch", "working_directory": "bentra/modules/terraform-cloud"}
 ```
 
-returns every folder holding a `module.yaml`. Add `working_directory` to see that folder's manifest and `issues` instead.
+returns what that folder holds, without registering anything:
+
+```json
+{"commit_sha": "9f2c…", "registered_as": null,
+ "inspection": {"valid": true, "manifest_file": "module.yaml", "manifest": {…},
+                "actions": [{"name": "create_workspace", "description": "…",
+                             "inputs": [{"name": "name", "type": "string", "required": true, "description": "…"}],
+                             "outputs": [{"name": "workspace_id", "type": "string", "required": false, "description": ""}]}],
+                "readme": "# Terraform Cloud…", "readme_html": "<h1>…</h1>",
+                "file_count": 4, "files": ["README.md", "actions/create_workspace.py", "module.yaml", "requirements.txt"],
+                "issues": []}}
+```
+
+`registered_as` names the module already registered from this folder. `files` lists at most 200 paths.
 
 ```http
 POST modules/
 {"connector_id": "…", "repository": "acme/platform-automation", "ref": "main",
- "ref_type": "branch", "working_directory": "terraform-cloud"}
+ "ref_type": "branch", "working_directory": "bentra/modules/terraform-cloud"}
 ```
 
-returns `201` with the module, or `422` with `issues` when the source isn't valid.
+returns `201` with the module, or `422` with `issues` when the source isn't valid. The name, display name, description, category and icon come from `module.yaml`; sending any of them is a `400`. The module's `source.readme` holds the README Bentra last read.
 
 ## Issues
 

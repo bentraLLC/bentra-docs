@@ -1,0 +1,566 @@
+---
+title: "Examples"
+description: "Complete modules in Python, Bash, Node.js and Go, and a workflow that chains them."
+---
+
+Every module below is complete and runs as shown. They live in the [bentra-module-examples repository](https://github.com/bentraLLC/bentra-module-examples): copy a folder to start your own, or register them directly to try modules out.
+
+| Module | Runtime | Shows |
+|---|---|---|
+| [`http-check`](#http-check-python) | Python | pinned dependencies, an optional connection with a secret, two actions sharing a helper, structured errors |
+| [`json-tools`](#json-tools-bash) | Bash | no dependencies or connection, object inputs and outputs |
+| [`text-tools`](#text-tools-node-js) | Node.js | `package.json` with a lockfile, CommonJS |
+| [`sha-tool`](#sha-tool-go-binary) | Go | a prebuilt binary per platform |
+
+```text
+bentra-module-examples/
+├── AGENTS.md                     # context for coding agents: see Build modules with an agent
+├── scripts/run-action.sh         # run an action locally the way a runner does
+└── bentra/
+    ├── modules/
+    │   ├── http-check/           # working directory: bentra/modules/http-check
+    │   ├── json-tools/
+    │   ├── text-tools/
+    │   └── sha-tool/
+    └── workflows/
+        └── module-demo/workflow.yml
+```
+
+Each module has a `tests/` folder with sample inputs. Run any action locally:
+
+```bash
+pip install pyyaml
+scripts/run-action.sh bentra/modules/json-tools merge bentra/modules/json-tools/tests/merge.json
+```
+
+## http-check (Python)
+
+Checks that URLs answer with the expected status. The connection is optional (`required: false`), so the action handles `BENTRA_CONNECTION_FILE` being unset. Both actions share a small helper, `actions/_bentra.py`, that reads and writes the contract files: copy it into your own Python modules.
+
+```text
+bentra/modules/http-check/
+├── module.yaml
+├── README.md
+├── requirements.txt
+├── actions/
+│   ├── _bentra.py
+│   ├── check_url.py
+│   └── check_many.py
+└── tests/
+    └── check_url.json
+```
+
+<CodeGroup>
+```yaml module.yaml
+apiVersion: bentra/v1
+kind: Module
+metadata:
+  name: http-check
+  display_name: HTTP check
+  description: Check that URLs answer with the status you expect.
+  category: monitoring
+  icon: activity
+runtime:
+  language: python
+  version: ">=3.11"
+dependencies:
+  file: requirements.txt
+connection:
+  required: false            # steps may omit the connection for public URLs
+  fields:
+    token:
+      type: string
+      secret: true
+      title: Bearer token
+      description: 'Sent as "Authorization: Bearer <token>" when set.'
+    timeout_seconds:
+      type: number
+      default: 30
+defaults:
+  timeout_seconds: 120
+actions:
+  - name: check_url
+    description: Request one URL and report its status and response time.
+    entrypoint: actions/check_url.py
+    inputs:
+      type: object
+      properties:
+        url: {type: string, description: "The URL to request."}
+        expected_status: {type: integer, default: 200}
+      required: [url]
+      additionalProperties: false
+    outputs:
+      type: object
+      properties:
+        status: {type: integer}
+        ok: {type: boolean}
+        elapsed_ms: {type: integer}
+      required: [status, ok, elapsed_ms]
+  - name: check_many
+    description: Request several URLs and report which ones failed.
+    entrypoint: actions/check_many.py
+    inputs:
+      type: object
+      properties:
+        urls: {type: array, items: {type: string}, minItems: 1}
+        expected_status: {type: integer, default: 200}
+      required: [urls]
+      additionalProperties: false
+    outputs:
+      type: object
+      properties:
+        checked: {type: integer}
+        failed: {type: array, items: {type: string}}
+      required: [checked, failed]
+```
+```python actions/check_url.py
+"""check_url: request one URL and report its status."""
+import time
+
+import requests
+
+import _bentra
+
+
+def session() -> tuple[requests.Session, float]:
+    conn = _bentra.connection()
+    s = requests.Session()
+    if conn.get("token"):
+        s.headers["Authorization"] = f"Bearer {conn['token']}"
+    return s, float(conn.get("timeout_seconds") or 30)
+
+
+def check(s: requests.Session, url: str, timeout: float) -> tuple[int, int]:
+    started = time.monotonic()
+    try:
+        response = s.get(url, timeout=timeout, allow_redirects=True)
+    except requests.RequestException as exc:
+        _bentra.fail("request_failed", f"{url} could not be reached: {exc.__class__.__name__}",
+                     url=url)
+    return response.status_code, int((time.monotonic() - started) * 1000)
+
+
+def main() -> None:
+    params = _bentra.inputs()
+    expected = params.get("expected_status", 200)
+    s, timeout = session()
+    status, elapsed_ms = check(s, params["url"], timeout)
+    ok = status == expected
+    print(f"{params['url']} answered {status} in {elapsed_ms} ms (expected {expected})")
+    _bentra.write_outputs({"status": status, "ok": ok, "elapsed_ms": elapsed_ms})
+    if not ok:
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()
+```
+```python actions/check_many.py
+"""check_many: request several URLs; fail the step if any of them answers wrongly."""
+import _bentra
+from check_url import check, session
+
+
+def main() -> None:
+    params = _bentra.inputs()
+    expected = params.get("expected_status", 200)
+    s, timeout = session()
+    failed = []
+    for url in params["urls"]:
+        status, elapsed_ms = check(s, url, timeout)
+        print(f"{url}: {status} in {elapsed_ms} ms")
+        if status != expected:
+            failed.append(url)
+    _bentra.write_outputs({"checked": len(params["urls"]), "failed": failed})
+    if failed:
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()
+```
+```python actions/_bentra.py
+"""Helpers for the Bentra action contract: read inputs, connection and context, write outputs."""
+import json
+import os
+import sys
+
+
+def _load(variable: str) -> dict:
+    path = os.environ.get(variable)
+    if not path:
+        return {}
+    with open(path, encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def inputs() -> dict:
+    return _load("BENTRA_INPUT_FILE")
+
+
+def connection() -> dict:
+    """The step's connection fields; {} when the step names no connection."""
+    return _load("BENTRA_CONNECTION_FILE")
+
+
+def context() -> dict:
+    return _load("BENTRA_CONTEXT_FILE")
+
+
+def write_outputs(outputs: dict) -> None:
+    with open(os.environ["BENTRA_OUTPUT_FILE"], "w", encoding="utf-8") as handle:
+        json.dump(outputs, handle)
+
+
+def fail(code: str, message: str, **details) -> None:
+    """Record a structured error and stop the step."""
+    with open(os.environ["BENTRA_OUTPUT_FILE"], "w", encoding="utf-8") as handle:
+        json.dump({"error": {"code": code, "message": message, "details": details}}, handle)
+    print(f"error: {message}", file=sys.stderr)
+    sys.exit(1)
+```
+```text requirements.txt
+requests==2.32.5
+```
+</CodeGroup>
+
+## json-tools (Bash)
+
+Merges JSON objects and picks fields out of them with `jq`, which every runner has. No `dependencies` and no `connection` block.
+
+```text
+bentra/modules/json-tools/
+├── module.yaml
+├── README.md
+├── actions/
+│   ├── merge.sh
+│   └── pick.sh
+└── tests/
+```
+
+<CodeGroup>
+```yaml module.yaml
+apiVersion: bentra/v1
+kind: Module
+metadata:
+  name: json-tools
+  display_name: JSON tools
+  description: Merge JSON objects and pick fields out of them. Bash and jq, no credentials.
+  category: other
+  icon: braces
+runtime:
+  language: bash               # no connection block: this module needs no credentials
+actions:
+  - name: merge
+    description: Deep-merge two JSON objects; values in overlay win.
+    entrypoint: actions/merge.sh
+    inputs:
+      type: object
+      properties:
+        base: {type: object}
+        overlay: {type: object}
+      required: [base, overlay]
+      additionalProperties: false
+    outputs:
+      type: object
+      properties:
+        result: {type: object}
+      required: [result]
+  - name: pick
+    description: Keep only the listed top-level keys of a JSON object.
+    entrypoint: actions/pick.sh
+    inputs:
+      type: object
+      properties:
+        object: {type: object}
+        keys: {type: array, items: {type: string}, minItems: 1}
+      required: [object, keys]
+      additionalProperties: false
+    outputs:
+      type: object
+      properties:
+        result: {type: object}
+        missing: {type: array, items: {type: string}}
+      required: [result, missing]
+```
+```bash actions/merge.sh
+#!/usr/bin/env bash
+# merge: deep-merge .overlay into .base. Reads $BENTRA_INPUT_FILE, writes $BENTRA_OUTPUT_FILE.
+set -euo pipefail
+
+jq '{result: (.base * .overlay)}' "$BENTRA_INPUT_FILE" > "$BENTRA_OUTPUT_FILE"
+echo "merged $(jq '.overlay | keys | length' "$BENTRA_INPUT_FILE") key(s) into base"
+```
+```bash actions/pick.sh
+#!/usr/bin/env bash
+# pick: keep only .keys of .object; report keys that weren't there.
+set -euo pipefail
+
+jq '{
+  result: (.object as $o | reduce .keys[] as $k ({}; if $o | has($k) then . + {($k): $o[$k]} else . end)),
+  missing: [.keys[] as $k | select(.object | has($k) | not) | $k]
+}' "$BENTRA_INPUT_FILE" > "$BENTRA_OUTPUT_FILE"
+
+missing=$(jq -r '.missing | join(", ")' "$BENTRA_OUTPUT_FILE")
+if [[ -n "$missing" ]]; then
+  echo "not in the object: $missing" >&2
+fi
+```
+</CodeGroup>
+
+## text-tools (Node.js)
+
+Turns names into slugs with the `slugify` npm package. Commit `package-lock.json` next to `package.json`: the runner installs with `npm ci`. Write entrypoints as CommonJS (`require`).
+
+```text
+bentra/modules/text-tools/
+├── module.yaml
+├── README.md
+├── package.json
+├── package-lock.json
+├── actions/
+│   └── slugify.js
+└── tests/
+```
+
+<CodeGroup>
+```yaml module.yaml
+apiVersion: bentra/v1
+kind: Module
+metadata:
+  name: text-tools
+  display_name: Text tools
+  description: Turn names into URL- and resource-safe slugs. Node.js with an npm dependency.
+  category: other
+  icon: type
+runtime:
+  language: node
+  version: ">=20"
+dependencies:
+  file: package.json           # package-lock.json must sit next to it (npm ci)
+actions:
+  - name: slugify
+    description: Turn text into a lowercase slug, e.g. for bucket or namespace names.
+    entrypoint: actions/slugify.js
+    inputs:
+      type: object
+      properties:
+        text: {type: string, minLength: 1}
+        max_length: {type: integer, minimum: 1, default: 63}
+      required: [text]
+      additionalProperties: false
+    outputs:
+      type: object
+      properties:
+        slug: {type: string}
+      required: [slug]
+```
+```javascript actions/slugify.js
+// slugify: CommonJS (require). Bentra installs dependencies with `npm ci` and points NODE_PATH
+// at them, which `require` honours and ES module `import` does not.
+'use strict';
+
+const fs = require('fs');
+const slugify = require('slugify');
+
+const inputs = JSON.parse(fs.readFileSync(process.env.BENTRA_INPUT_FILE, 'utf8'));
+const maxLength = inputs.max_length || 63;
+
+let slug = slugify(inputs.text, { lower: true, strict: true }).slice(0, maxLength);
+slug = slug.replace(/-+$/, '');
+if (!slug) {
+    fs.writeFileSync(process.env.BENTRA_OUTPUT_FILE, JSON.stringify({
+        error: { code: 'empty_slug', message: 'The text has no letters or digits to keep.' },
+    }));
+    console.error('The text has no letters or digits to keep.');
+    process.exit(1);
+}
+
+console.log(`slug: ${slug}`);
+fs.writeFileSync(process.env.BENTRA_OUTPUT_FILE, JSON.stringify({ slug }));
+```
+```json package.json
+{
+  "name": "text-tools",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Bentra example module: text helpers.",
+  "dependencies": {
+    "slugify": "1.6.6"
+  }
+}
+```
+</CodeGroup>
+
+## sha-tool (Go binary)
+
+Any compiled language works the same way: build a static binary for each runner platform and commit it under `bin/<os>-<arch>/`. The runner runs the one for its own platform.
+
+```text
+bentra/modules/sha-tool/
+├── module.yaml
+├── README.md
+├── Makefile
+├── src/
+│   ├── go.mod
+│   └── main.go
+├── bin/
+│   ├── linux-amd64/sha-tool      # built with `make build`, committed, executable
+│   └── linux-arm64/sha-tool
+└── tests/
+```
+
+<CodeGroup>
+```yaml module.yaml
+apiVersion: bentra/v1
+kind: Module
+metadata:
+  name: sha-tool
+  display_name: SHA tool
+  description: Hash text with SHA-256. A prebuilt Go binary, shipped for each runner platform.
+  category: security
+  icon: hash
+runtime:
+  language: binary
+  platforms: [linux-amd64, linux-arm64]   # the runner runs bin/<platform>/<entrypoint>
+actions:
+  - name: sha256
+    description: SHA-256 of a text, as hex.
+    entrypoint: sha-tool                  # bin/linux-amd64/sha-tool, bin/linux-arm64/sha-tool
+    inputs:
+      type: object
+      properties:
+        text: {type: string}
+      required: [text]
+      additionalProperties: false
+    outputs:
+      type: object
+      properties:
+        sha256: {type: string, pattern: "^[0-9a-f]{64}$"}
+        bytes: {type: integer}
+      required: [sha256, bytes]
+```
+```go src/main.go
+// sha-tool: a Bentra module action as a static Go binary. It reads the step's inputs from
+// $BENTRA_INPUT_FILE and writes one JSON object to $BENTRA_OUTPUT_FILE.
+package main
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"os"
+)
+
+type input struct {
+	Text string `json:"text"`
+}
+
+type output struct {
+	SHA256 string `json:"sha256"`
+	Bytes  int    `json:"bytes"`
+}
+
+func main() {
+	raw, err := os.ReadFile(os.Getenv("BENTRA_INPUT_FILE"))
+	if err != nil {
+		fail("read inputs: %v", err)
+	}
+	var in input
+	if err := json.Unmarshal(raw, &in); err != nil {
+		fail("parse inputs: %v", err)
+	}
+	sum := sha256.Sum256([]byte(in.Text))
+	out, _ := json.Marshal(output{SHA256: hex.EncodeToString(sum[:]), Bytes: len(in.Text)})
+	if err := os.WriteFile(os.Getenv("BENTRA_OUTPUT_FILE"), out, 0o600); err != nil {
+		fail("write outputs: %v", err)
+	}
+	fmt.Printf("hashed %d bytes\n", len(in.Text))
+}
+
+func fail(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, format+"\n", args...)
+	os.Exit(1)
+}
+```
+```makefile Makefile
+# Build the binaries the runner executes. Commit bin/: Bentra packages what is in the repository.
+PLATFORMS := linux-amd64 linux-arm64
+
+.PHONY: build
+build: $(PLATFORMS:%=bin/%/sha-tool)
+
+bin/%/sha-tool: src/main.go src/go.mod
+	cd src && CGO_ENABLED=0 GOOS=$(word 1,$(subst -, ,$*)) GOARCH=$(word 2,$(subst -, ,$*)) \
+		go build -trimpath -ldflags="-s -w -buildid=" -o ../$@ .
+```
+</CodeGroup>
+
+## A workflow that uses them
+
+`bentra/workflows/module-demo/workflow.yml` calls all four modules. A step with an `id` can pass its outputs to later steps with `${{ steps.<id>.outputs.<key> }}`, and script steps read them from `$BENTRA_STEP_OUTPUTS`.
+
+```yaml workflow.yml
+# A job that chains three example modules. Register the workflow with the working directory
+# bentra/workflows/module-demo; register each module with its own folder under bentra/modules/.
+name: Module demo
+steps:
+  - id: name
+    name: Make a slug
+    module:
+      name: text-tools
+      version: "1.0.0"                 # exact and quoted: a workflow pins one version
+      action: slugify
+      inputs:
+        text: Payments API (EU West)
+
+  - id: config
+    name: Build the config
+    module:
+      name: json-tools
+      version: "1.0.0"
+      action: merge
+      inputs:
+        base: {env: dev, region: eu-west-1}
+        overlay:
+          service: ${{ steps.name.outputs.slug }}   # an earlier step's output keeps its type
+
+  - id: hash
+    name: Hash the service name
+    module:
+      name: sha-tool
+      version: "1.0.0"
+      action: sha256
+      inputs:
+        text: ${{ steps.name.outputs.slug }}
+
+  - id: check
+    name: Check the endpoint
+    module:
+      name: http-check
+      version: "1.0.0"
+      action: check_url
+      inputs:
+        url: https://example.com
+
+  - name: Report
+    run: |
+      # Script steps read every earlier module step's outputs from one JSON file.
+      jq '{service: .config.result.service, sha256: .hash.sha256, status: .check.status}' \
+        "$BENTRA_STEP_OUTPUTS"
+```
+
+## Try them in Bentra
+
+<Steps>
+<Step title="Register each module">
+**Modules → Register module**: your connection, the repository, `main`, and the working directory, for example `bentra/modules/http-check`.
+</Step>
+<Step title="Publish 1.0.0">
+On each module's page, click **Publish new version** and enter `1.0.0`.
+</Step>
+<Step title="Run the demo">
+Create a job workflow from the repository with the working directory `bentra/workflows/module-demo` and run it.
+</Step>
+</Steps>

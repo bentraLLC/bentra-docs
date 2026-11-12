@@ -14,11 +14,12 @@ The runner sets these environment variables. Each names a file or folder.
 | `BENTRA_INPUT_FILE` | JSON object with the step's inputs |
 | `BENTRA_OUTPUT_FILE` | Where the action writes a JSON object of outputs |
 | `BENTRA_CONNECTION_FILE` | JSON object with the connection's fields. Not set when the step has no connection |
-| `BENTRA_CONTEXT_FILE` | Run, workflow and step ids, and the module name, version and action |
+| `BENTRA_CONTEXT_FILE` | `{run_id, job_id, workflow_id, step: {id, name, index}, module: {name, version, action}}` |
+| `BENTRA_STEP_OUTPUTS` | JSON object of the outputs of earlier steps, keyed by step `id` |
 | `BENTRA_MODULE_DIR` | The module's package, to read files you shipped with it |
-| `BENTRA_TEMP_DIR` | Scratch space, deleted when the action ends |
+| `BENTRA_TEMP_DIR` | Scratch space, deleted when the action ends. `HOME` and `TMPDIR` point there too |
 
-The action starts in an empty scratch folder, not in the module's folder. Use `BENTRA_MODULE_DIR` to find your own files.
+The action starts in an empty scratch folder, not in the module's folder. Use `BENTRA_MODULE_DIR` to find your own files. A file the action writes can be at most 2 GiB.
 
 <Note>
 An action doesn't receive the workflow's variables, secrets or form answers. It gets only what the step passes as inputs and what the connection holds. Its environment contains `PATH`, locale, proxy and certificate settings, and the variables above.
@@ -104,7 +105,7 @@ runtime:
 dependencies:
   file: package.json
 ```
-Entrypoints are `.js`, `.mjs` or `.cjs` files. Commit `package-lock.json` beside `package.json`; packages are installed with `npm ci`.
+Write entrypoints as **CommonJS** (`.js` or `.cjs` with `require`). Commit `package-lock.json` beside `package.json`; packages are installed with `npm ci --omit=dev` and found through `NODE_PATH`, which `require` uses and ES module `import` ignores.
 
 ```javascript
 const fs = require("fs");
@@ -130,7 +131,13 @@ A runner can only run a module whose runtime it has. See [Modules on runners](/r
 
 ## Test an action locally
 
-The contract is plain files, so you can run an action on your own machine:
+The contract is plain files, so you can run an action on your own machine. The [example repository](https://github.com/bentraLLC/bentra-module-examples) has `scripts/run-action.sh`, which sets up the files and variables the way a runner does, installs the module's dependencies in a scratch folder and prints the outputs. Copy it into your repository:
+
+```bash
+scripts/run-action.sh bentra/modules/terraform-cloud create_workspace tests/create_workspace.json tests/connection.json
+```
+
+Or by hand:
 
 ```bash
 export BENTRA_INPUT_FILE=$(mktemp) BENTRA_OUTPUT_FILE=$(mktemp) BENTRA_CONNECTION_FILE=$(mktemp)
