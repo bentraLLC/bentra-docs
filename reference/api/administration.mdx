@@ -8,10 +8,10 @@ The organization's details, its members and invitations, workspaces and who is i
 |---|---|---|---|
 | `GET` | `organization/` | `read:org` | `get_organization` |
 | `PATCH` | `organization/` | `manage:org` | `update_organization` |
-| `DELETE` | `organization/` | `manage:org` | `delete_organization` |
+| `DELETE` | `organization/` | `delete:org` | `delete_organization` |
 | `GET` | `members/` | `read:org` | `list_members` |
 | `PATCH` | `members/{id}/` | `manage:members` | `change_member_role` |
-| `DELETE` | `members/{id}/` | `manage:members` | `remove_member` |
+| `DELETE` | `members/{id}/` | `remove:members` | `remove_member` |
 | `GET` | `invitations/` | `manage:members` | `list_invitations` |
 | `POST` | `invitations/` | `manage:members` | `invite_member` |
 | `DELETE` | `invitations/{id}/` | `manage:members` | `revoke_invitation` |
@@ -19,11 +19,11 @@ The organization's details, its members and invitations, workspaces and who is i
 | `GET` | `workspaces/{slug}/` | `read:org` | — |
 | `POST` | `workspaces/` | `manage:workspaces` | `create_workspace` |
 | `PATCH` | `workspaces/{slug}/` | `manage:workspaces` | `update_workspace` |
-| `DELETE` | `workspaces/{slug}/` | `manage:workspaces` | `delete_workspace` |
+| `DELETE` | `workspaces/{slug}/` | `delete:workspaces` | `delete_workspace` |
 | `GET` | `workspaces/{slug}/members/` | `read:org` | `list_workspace_members` |
 | `POST` | `workspaces/{slug}/members/` | `manage:members` | `add_workspace_member` |
 | `PATCH` | `workspaces/{slug}/members/{id}/` | `manage:members` | `change_workspace_member_role` |
-| `DELETE` | `workspaces/{slug}/members/{id}/` | `manage:members` | `remove_workspace_member` |
+| `DELETE` | `workspaces/{slug}/members/{id}/` | `remove:members` | `remove_workspace_member` |
 | `GET` | `groups/` | `read:org` | `list_groups` |
 | `GET` | `groups/{id}/` | `read:org` | `get_group` |
 | `POST` | `groups/` | `manage:members` | `create_group` |

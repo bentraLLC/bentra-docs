@@ -54,8 +54,15 @@ Personal tokens carry `*` (all scopes). Delegated tokens carry the named scopes,
 | `read:org` | View workspaces, members, groups, connectors, runner pools and branding. |
 | `manage:org` | Change organization details, request-portal branding and single sign-on. |
 | `manage:connectors` | Rename connectors, change their maintainers and which workspaces can use them, and test their connection. |
-| `manage:workspaces` | Create, rename and delete workspaces. |
-| `manage:members` | Invite and remove members, change roles, manage groups and workspace access. |
+| `manage:workspaces` | Create and rename workspaces. |
+| `manage:members` | Invite members, change roles, manage groups and workspace access. |
+| `delete:workflows` | Delete workflows. |
+| `delete:variables` | Delete variable collections and variables. |
+| `delete:workspaces` | Delete workspaces. |
+| `remove:members` | Remove members from the organization and from workspaces. |
+| `delete:org` | Delete the organization. |
+
+An AI agent connected through the MCP server gets the `delete:*` and `remove:members` scopes only if you tick **Also allow deleting** on the consent page.
 
 ## What stays in the UI
 

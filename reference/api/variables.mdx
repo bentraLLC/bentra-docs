@@ -12,15 +12,15 @@ Secret values are encrypted with a key unique to your organization and are **nev
 | `GET` | `variable-collections/{id}/` | `read:variables` | `get_variable_collection` |
 | `POST` | `variable-collections/` | `edit:variables` | `create_variable_collection` |
 | `PATCH` | `variable-collections/{id}/` | `edit:variables` | `update_variable_collection` |
-| `DELETE` | `variable-collections/{id}/` | `edit:variables` | `delete_variable_collection` |
+| `DELETE` | `variable-collections/{id}/` | `delete:variables` | `delete_variable_collection` |
 | `PATCH` | `variable-collections/{id}/sharing/` | `edit:variables` | `set_collection_sharing` |
 | `POST` | `variable-collections/{id}/variables/` | `edit:variables` | `add_collection_variable` |
 | `PATCH` | `variable-collections/{id}/variables/{variable_id}/` | `edit:variables` | `update_collection_variable` |
-| `DELETE` | `variable-collections/{id}/variables/{variable_id}/` | `edit:variables` | `delete_collection_variable` |
+| `DELETE` | `variable-collections/{id}/variables/{variable_id}/` | `delete:variables` | `delete_collection_variable` |
 | `GET` | `workflows/{id}/variables/` | `read:variables` | `list_workflow_variables` |
 | `POST` | `workflows/{id}/variables/` | `edit:variables` | `add_workflow_variable` |
 | `PATCH` | `workflows/{id}/variables/{variable_id}/` | `edit:variables` | `update_workflow_variable` |
-| `DELETE` | `workflows/{id}/variables/{variable_id}/` | `edit:variables` | `delete_workflow_variable` |
+| `DELETE` | `workflows/{id}/variables/{variable_id}/` | `delete:variables` | `delete_workflow_variable` |
 | `POST` | `workflows/{id}/variable-collections/` | `edit:variables` | `attach_collection` |
 | `DELETE` | `workflows/{id}/variable-collections/{collection_id}/` | `edit:variables` | `detach_collection` |
 
