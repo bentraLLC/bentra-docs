@@ -1744,8 +1744,11 @@ Conditions are a small, fixed expression language. They cannot run arbitrary cod
 
 - An empty value (`""`, `[]`, `{}`) is treated as `null`. For example, `region != null` means "the user picked a region".
 - A `checkboxes` field evaluates as the list of checked option values.
-- `includes` tests membership for lists and substring for strings. It is `false` for `null`.
-- `==` and `!=` compare values as strings, except that booleans compare directly.
+- A `checkboxes` field and a `dropdown` with `multiple: true` are lists. A list never equals a single value: `regions == 'us'` is false even when `us` is the only choice. Use `regions.includes('us')`.
+- `includes` tests membership for lists and substring for text. It is `false` for `null` and for a `tags` field.
+- `==` and `!=` compare by spelling: `is_contractor == true` and `is_contractor == 'true'` both match the option `value: true`.
+- A number in the condition compares as a number: `replicas == 3` matches an answer of `3` or `3.0`. Quote a value to compare it as text: `version == '1.30'` does not match `1.3`.
+- A field on its own (`is_contractor`, `!is_contractor`, `is_contractor && region != null`) is false when it is empty, or when its answer is `false` or `0`.
 
 <Warning>
 `<`, `>`, `<=`, and `>=` are **not** supported. A condition that uses them fails to parse, which means the field is always shown.
