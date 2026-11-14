@@ -42,7 +42,9 @@ The API equivalent of filling in the form.
 {"form_data": {"bucket_name": "logs", "region": "eu-west-1"}, "skip_approval": false}
 ```
 
-`form_data` is keyed by the form's field ids. `skip_approval` needs the `skip:workflow_approval` scope (personal tokens) and the `workflow.skip_approval` permission.
+`form_data` is keyed by the form's field ids. Send only the fields that have an answer: an optional field you leave out, or send as `""` or `null`, is not stored and its environment variable is not set in the run. Answers are stored in the field's type whichever way they are spelled (`true` or `"true"` for a boolean option, `5` or `"5"` for a number field), so a request made here is stored exactly like the same answers submitted from the form. See [Submitted values](/reference/form-syntax#submitted-values).
+
+`skip_approval` needs the `skip:workflow_approval` scope (personal tokens) and the `workflow.skip_approval` permission.
 
 **Response** `201`:
 
