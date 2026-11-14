@@ -44,7 +44,8 @@ const parseYaml = (src) => {
     if (s === "true") return true;
     if (s === "false") return false;
     if (s === "null" || s === "~" || s === "") return null;
-    if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s);
+    // A number only when written the plain way; 0123 and 1.30 stay the text that was typed.
+    if (/^-?\d+(\.\d+)?$/.test(s) && String(Number(s)) === s) return Number(s);
     return s;
   };
 

@@ -2262,19 +2262,24 @@ In the workflow:
 
 `0` and `false` are answers, not blanks, and are kept.
 
-### Option values and quoting
+### Values are kept as written
 
-An option's stored type is the YAML type of its `value`. Quote a value that must stay text:
+Bentra never reinterprets a value you write in `form.yml`. What you type is what is stored and what your steps receive.
+
+- `true` and `false` are booleans. Nothing else is: `yes`, `no`, `on`, `off` and `True` are text.
+- A number written the plain way is a number: `3`, `-1`, `2.5`.
+- Everything else is text exactly as typed, quoted or not: `1.30`, `0123`, `1e3`, `1_000`, `12:30`, `2026-12-31`.
 
 ```yaml
 options:
-  - {value: true, label: "Yes"}        # stored as the boolean true
-  - {value: 3, label: "Three"}         # stored as the number 3
-  - {value: "1.30", label: "1.30"}     # stored as the string "1.30"; unquoted it is the number 1.3
+  - {value: true, label: "Yes"}     # the boolean true
+  - {value: 3, label: "Three"}      # the number 3
+  - {value: 1.30, label: "1.30"}    # the text 1.30
+  - {value: no, label: "Norway"}    # the text no
 ```
 
-An API client can send either spelling of an option: `true` and `"true"` both store the boolean. A value that is not one of the field's options is refused.
+Put a value in quotes to make it text when it would otherwise be a boolean or a number: `"true"`, `"3"`.
 
-Unquoted dates such as `2026-12-31` are refused when the form is published; put them in quotes.
+An API client can send either spelling of an option: `true` and `"true"` both store the boolean. A value that is not one of the field's options is refused.
 
 See [Workflow syntax → Inputs and environment variables](/reference/workflow-syntax#inputs-and-environment-variables).
