@@ -59,7 +59,7 @@ The pipeline lists your `workflow.yml` steps plus the ones Bentra adds:
 
 For a repo-backed workflow, the steps appear a few seconds after the run starts, once the runner has read `workflow.yml`.
 
-A step is **Pending**, **Running**, **Success**, **Failed**, **Timeout** or **Skipped**. When a run fails, the steps it didn't reach are marked **Skipped**. A step with an empty `run` is also skipped.
+A step is **Pending**, **Running**, **Success**, **Failed**, **Timeout** or **Skipped**. A step is skipped when its [`if`](/reference/workflow-syntax#steps--if) condition is false: its **Details** tab shows the condition, the values it read and the result. When a run fails, the steps it didn't reach are also marked **Skipped**, as is a step with an empty `run`.
 
 ### Step tabs
 
@@ -69,7 +69,7 @@ Click a step to open it. Its header shows the status, the exit code, the duratio
 |---|---|
 | **Logs** | The step's output with line numbers. You can follow new lines as they arrive, wrap long lines and copy the log. |
 | **Checks** | The checks this step reported. |
-| **Details** | The **Command** (the step's script), its **Kind**, **Started** and **Completed** times, and **Tool versions**. |
+| **Details** | The **Command** (the step's script), its **Kind**, **Started** and **Completed** times, and **Tool versions**. A step with `if` also shows its **Condition**, **Values** and **Result**, and a step that returned values shows its **Outputs**. |
 
 ### Details and Inputs
 

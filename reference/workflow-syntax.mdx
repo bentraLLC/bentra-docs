@@ -99,7 +99,7 @@ tools:
 
 **Required.** The list of steps to execute. If `steps` is missing or is not a list, the run fails. Items that are not mappings are skipped with a warning. A run in which no step executes fails.
 
-Steps run one at a time, in order. By default the first failing step stops the run.
+Steps run one at a time, in order. By default the first failing step stops the run. A step with [`if`](#steps--if) runs only when its condition is true.
 
 ## `steps[*].name`
 
@@ -126,6 +126,139 @@ steps:
       set -x
       ./scripts/deploy.sh "$ENVIRONMENT"
 ```
+
+## `steps[*].id`
+
+**Optional.** A name other steps use to read this step's [outputs](#step-outputs) and result. Lowercase letters, digits and underscores, starting with a letter. Each `id` must be unique in the workflow.
+
+```yaml
+- id: lookup
+  name: Look up the bucket
+  run: ./lookup.sh
+```
+
+## `steps[*].if`
+
+**Optional.** A condition. The step runs when it is true and is skipped when it is false. It works on every kind of step: `run`, `module` and `github_workflow_dispatch`. Needs runner **0.19.0+**.
+
+```yaml
+steps:
+  - name: Notify security
+    if: inputs.environment == 'production' && inputs.instance_count > 3
+    run: ./notify-security.sh
+
+  - name: Only in two regions
+    if: contains(inputs.regions, 'us-east-1') || contains(inputs.regions, 'eu-west-1')
+    run: ./regional.sh
+```
+
+The syntax is the one GitHub Actions uses. You can write the expression on its own or inside `${{ }}`:
+
+```yaml
+if: inputs.environment == 'production'
+if: ${{ inputs.environment == 'production' }}
+```
+
+### What a condition can read
+
+| Reference | Value |
+|---|---|
+| `inputs.<field>` | A form answer, or a job's runtime variable. Typed: numbers are numbers, lists are lists |
+| `vars.<NAME>` | A workflow or collection [variable](/guides/variables-and-secrets). Text, unless the variable is marked **Treat as JSON** |
+| `steps.<id>.outputs.<name>` | An [output](#step-outputs) of an earlier step. Go deeper with `.key` or `[0]` |
+| `steps.<id>.outcome` | How an earlier step ended: `success`, `failure` or `skipped` |
+| `steps.<id>.conclusion` | The same, except that a failed step with `continue_on_error: true` reads `success` |
+
+A reference that has no value is `null`: a form field left empty, an output the step did not write, or anything from a step that was skipped. Test for it with `== null` or `!= null`.
+
+Secret variables and password fields cannot be used in a condition.
+
+### Operators and functions
+
+| | |
+|---|---|
+| Compare | `==`  `!=`  `<`  `<=`  `>`  `>=` |
+| Combine | `&&` (and)  `\|\|` (or)  `!` (not)  `( )` |
+| Values | `'text'` in single quotes (write `''` for a quote inside), numbers, `true`, `false`, `null` |
+| `contains(a, b)` | `a` is a list that has `b`, or text that includes `b` |
+| `startsWith(a, b)`, `endsWith(a, b)` | Text `a` starts or ends with `b` |
+
+### Differences from GitHub Actions
+
+Bentra never converts a value to make a comparison work, so a condition does what it says.
+
+| Condition | Bentra | GitHub Actions |
+|---|---|---|
+| `inputs.count == '3'` when count is the number 3 | false | true |
+| `inputs.environment == 'Production'` when it is `production` | false | true |
+| `if: inputs.name` | error: the result must be true or false. Write `inputs.name != null` | true when not empty |
+| `inputs.name > 3` when name is text | error: `<` and `>` compare numbers | converts |
+
+`success()`, `failure()`, `always()` and `cancelled()` are not available yet. After a failed step, later steps do not run unless the failed step has [`continue_on_error`](#steps--continue_on_error).
+
+### When a condition is wrong
+
+- Every `if` is checked when the run starts. A syntax error, a reference to a step that does not come earlier, or two steps with the same `id` fails **Set up job**, and no step runs.
+- A condition that cannot be decided during the run, such as `>` on text, fails its step.
+
+### What you see in the run
+
+A skipped step shows **Skipped** in the step list. Open it, then **Details**, to see the condition, the values it read and the result. A step that ran shows the same rows. Secret values are masked.
+
+## Step outputs
+
+A `run` step returns values by writing to the file named in `$BENTRA_OUTPUT_FILE`. Give the step an [`id`](#steps--id) so later steps can read them. Needs runner **0.19.0+**.
+
+Write one `name=value` per line:
+
+```yaml
+steps:
+  - id: lookup
+    name: Look up the bucket
+    run: |
+      if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+        echo "exists=true" >> "$BENTRA_OUTPUT_FILE"
+      else
+        echo "exists=false" >> "$BENTRA_OUTPUT_FILE"
+      fi
+
+  - name: Update the bucket
+    if: steps.lookup.outputs.exists == true
+    run: ./update.sh
+
+  - name: Create the bucket
+    if: steps.lookup.outputs.exists != true
+    run: ./create.sh
+```
+
+A value keeps its type when it reads as JSON: `true` is a boolean, `404` is a number, `[1, 2]` is a list. Anything else is text. To force text, quote it: `echo 'code="404"' >> "$BENTRA_OUTPUT_FILE"`.
+
+Or write one JSON object, which suits tools that print JSON:
+
+```yaml
+- id: infra
+  name: Read Terraform outputs
+  run: terraform -chdir=infra output -json > "$BENTRA_OUTPUT_FILE"
+
+- name: Only when a VPC was created
+  if: steps.infra.outputs.vpc_id.value != null
+  run: ./configure-network.sh
+```
+
+Where outputs can be read:
+
+- In [`if`](#steps--if): `steps.<id>.outputs.<name>`.
+- In a [module step's](#module-steps) inputs: `${{ steps.<id>.outputs.<name> }}`.
+- In any script: the JSON file at `$BENTRA_STEP_OUTPUTS` holds every earlier step's outputs, keyed by step `id`.
+
+```yaml
+- name: Use an earlier output in a script
+  run: |
+    EXISTS=$(jq -r '.lookup.exists' "$BENTRA_STEP_OUTPUTS")
+    echo "Bucket exists: $EXISTS"
+```
+
+Outputs appear on the step's **Details** tab in the run. Names use letters, digits, `_` and `-`. The file is limited to 1 MB. A file that is neither `name=value` lines nor a JSON object fails the step. Secret values are masked where outputs are shown, so don't use outputs to pass secrets: use [variables](/guides/variables-and-secrets).
 
 ## `steps[*].continue_on_error`
 
@@ -313,7 +446,7 @@ steps:
 | `steps[*].module.inputs` | if the action requires inputs | Values for the action's inputs |
 | `steps[*].timeout_minutes` | no | 1 to 1440 |
 
-Inside `module.inputs`, `${{ inputs.<field> }}`, `${{ vars.<NAME> }}` and `${{ steps.<id>.outputs.<name> }}` are filled in when the run happens. A script step reads earlier module outputs from the JSON file at `$BENTRA_STEP_OUTPUTS`.
+Inside `module.inputs`, `${{ inputs.<field> }}`, `${{ vars.<NAME> }}` and `${{ steps.<id>.outputs.<name> }}` are filled in when the run happens. A script step reads earlier steps' outputs from the JSON file at `$BENTRA_STEP_OUTPUTS`. See [Step outputs](#step-outputs).
 
 See [Use modules in workflows](/modules/use-in-workflows). Module steps need runner 0.14.1 or later.
 
@@ -438,6 +571,8 @@ Variables and secrets from the workflow's variable collections are injected as u
 | `BENTO_WORKFLOW_ID` | The workflow id |
 | `BENTRA_DATASETS` | The directory for [dataset](#writing-a-dataset) files. It is set last, so a secret can't override it. |
 | `BENTRA_INPUTS` | The directory holding the [input datasets](#inputs-datasets) |
+| `BENTRA_OUTPUT_FILE` | The file this step writes its [outputs](#step-outputs) to |
+| `BENTRA_STEP_OUTPUTS` | A JSON file with the outputs of earlier steps, keyed by step `id` |
 
 The runner's own credentials (`BENTRA_RUNNER_TOKEN`, and anything prefixed `OPENBAO_`, `BAO_`, or `VAULT_`) are removed from the step environment.
 
@@ -518,6 +653,37 @@ steps:
     run: |
       set -euo pipefail
       jq -r '.labels | to_entries[] | "\(.key)=\(.value)"' bento_inputs.json
+```
+
+### Create or update, depending on what exists
+
+One step looks, and its output decides which of the next two runs. The last step runs only for production.
+
+```yaml
+name: "Provision bucket"
+
+steps:
+  - id: lookup
+    name: Look up the bucket
+    run: |
+      set -euo pipefail
+      if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+        echo "exists=true" >> "$BENTRA_OUTPUT_FILE"
+      else
+        echo "exists=false" >> "$BENTRA_OUTPUT_FILE"
+      fi
+
+  - name: Update the bucket
+    if: steps.lookup.outputs.exists == true
+    run: ./scripts/update-bucket.sh "$BUCKET_NAME"
+
+  - name: Create the bucket
+    if: steps.lookup.outputs.exists != true
+    run: ./scripts/create-bucket.sh "$BUCKET_NAME"
+
+  - name: Turn on replication
+    if: inputs.environment == 'production'
+    run: ./scripts/replicate.sh "$BUCKET_NAME"
 ```
 
 ### Terraform plan and apply
