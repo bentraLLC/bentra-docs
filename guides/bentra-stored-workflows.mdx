@@ -49,6 +49,19 @@ The draft has size limits; see [About YAML syntax for workflows](/reference/work
 Keep secrets in [variables](/guides/variables-and-secrets), not in files. Anyone who can view the workflow can read its files.
 </Warning>
 
+### The Workflow tab
+
+The **Workflow** tab opens `workflow.yml` on its own, with a problems bar under the editor and an outline of the steps on the right.
+
+- The bar reads **No problems**, or lists each problem with its line. Click one to jump to it; the line is also underlined in the editor.
+- The **Steps** outline shows each step's name, kind, `id` and `if` condition as Bentra reads them. Click a step to jump to it.
+- **Save** stores the draft. You can save a file that has problems.
+- **Publish version** is available once the file has no problems.
+
+For a repo-backed workflow the tab shows the version that runs, read-only, with any problems Bentra found. Edit the file in the repository.
+
+The same check is available as [`POST workflows/{id}/files/validate/`](/reference/api/files#validate) and the `validate_workflow` MCP tool. See [What Bentra checks](/reference/workflow-syntax#what-bentra-checks).
+
 ### Publish a version
 
 <Steps>
@@ -56,7 +69,7 @@ Keep secrets in [variables](/guides/variables-and-secrets), not in files. Anyone
 Save every file you changed. Publishing snapshots the saved draft.
 </Step>
 <Step title="Click Publish version">
-On the **Files** tab, click **Publish version**. Add an optional **Label**, such as `add retry handling`, and confirm.
+On the **Files** or **Workflow** tab, click **Publish version**. On **Files** you can add an optional **Label**, such as `add region`.
 </Step>
 <Step title="It becomes active">
 The new version gets the next number and becomes the active version immediately. New requests and job runs use it; requests already submitted keep their version until the submitter updates their answers.
@@ -65,7 +78,7 @@ The new version gets the next number and becomes the active version immediately.
 
 Bentra checks the draft before publishing and refuses a version that couldn't run:
 
-- `workflow.yml` must be valid YAML and a mapping. Everything else in it is checked by the runner when a run starts.
+- `workflow.yml` must pass [every check](/reference/workflow-syntax#what-bentra-checks): its keys, step ids, `if` conditions and module steps. Publishing lists each problem with its line.
 - A request workflow's `form.yml` must pass form validation, including any dataset dropdowns (`options_from`) it uses. See [Job datasets](/guides/job-datasets).
 
 You can save a broken draft. You just can't publish it.
@@ -74,7 +87,7 @@ You can save a broken draft. You just can't publish it.
 
 ### Roll back to an earlier version
 
-Rolling back makes an earlier version the active one again. The draft isn't changed.
+Rolling back makes an earlier version the active one again. The draft isn't changed. A version whose `workflow.yml` doesn't pass today's checks can't be made active, and a paused workflow can't be set to **Active** while its active version has problems.
 
 Activating a version is done through the API or the MCP server: [`POST workflows/{id}/versions/{version_id}/activate/`](/reference/api/files#versions) or the `activate_version` tool. To roll back in the UI instead, open the old version from the version selector, copy its content into the draft, and publish it as a new version.
 
@@ -157,7 +170,7 @@ Runners older than the version Bentra requires are refused with **426 Upgrade Re
 
 ### Sync errors
 
-A sync fails if Bentra can't find the files. The version published before keeps running, and **Settings → Source** shows the error.
+A sync fails if Bentra can't find the files, or if `workflow.yml` or `form.yml` has problems. The version published before keeps running, and **Settings → Source** shows the first problem with its line.
 
 | Error | Fix |
 |---|---|

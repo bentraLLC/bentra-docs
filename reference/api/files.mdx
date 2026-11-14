@@ -55,6 +55,33 @@ Deletes a draft file. Required files return `400`.
 
 ---
 
+## Validate
+
+### `POST workflows/{id}/files/validate/`
+
+Checks a `workflow.yml` without saving anything. Send `{"content": "…"}` to check that text, or an empty body to check what is stored: the draft, or a repo-backed workflow's active version. Works for every workflow; needs `read:workflows`.
+
+```json
+{
+  "success": true,
+  "valid": false,
+  "errors": [
+    {"message": "Step 2: Unknown key 'runs'. Did you mean 'run'?", "line": 7}
+  ],
+  "warnings": [],
+  "steps": [
+    {"number": 1, "name": "Plan", "id": "plan", "kind": "run", "kind_label": "Script", "if": "", "continue_on_error": false, "line": 3},
+    {"number": 2, "name": "Apply", "id": "", "kind": "", "kind_label": "", "if": "steps.plan.outcome == 'success'", "continue_on_error": false, "line": 6}
+  ]
+}
+```
+
+See [What Bentra checks](/reference/workflow-syntax#what-bentra-checks).
+
+### `GET schemas/workflow/`
+
+The JSON Schema (draft 2020-12) for `workflow.yml`: the allowed keys and their types. Conditions, step ids and module steps are checked by the validate endpoint, not by the schema.
+
 ## Versions
 
 ### `GET workflows/{id}/versions/`
@@ -68,8 +95,14 @@ Deletes a draft file. Required files return `400`.
 
 ### `POST workflows/{id}/versions/`
 
-`{"label": "add region"}`. Snapshots the draft as the next version and makes it active. `400` if `workflow.yml` isn't valid YAML, or a request workflow's form doesn't validate.
+`{"label": "add region"}`. Snapshots the draft as the next version and makes it active. `400` when `workflow.yml` has problems or a request workflow's form doesn't validate: `error` is the first problem and `issues` lists them all.
+
+```json
+{"success": false, "error": "workflow.yml is invalid (line 7): Step 2: Unknown key 'runs'. Did you mean 'run'? (and 1 more)",
+ "issues": [{"file": "workflow.yml", "message": "Step 2: Unknown key 'runs'. Did you mean 'run'?", "line": 7},
+            {"file": "workflow.yml", "message": "Step 2: A step needs one of run, module or github_workflow_dispatch.", "line": 6}]}
+```
 
 ### `POST workflows/{id}/versions/{version_id}/activate/`
 
-Makes an existing version the one that runs: pin a known-good version or roll back. The draft isn't changed. Returns `{"success": true, "version": {…}}`.
+Makes an existing version the one that runs: pin a known-good version or roll back. The draft isn't changed. Returns `{"success": true, "version": {…}}`, or `400` with `issues` when that version's files don't pass today's checks.

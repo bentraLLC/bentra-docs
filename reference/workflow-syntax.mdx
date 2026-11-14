@@ -15,7 +15,7 @@ A workflow is a YAML file listing the steps a runner executes. Each step is a ba
 ## About YAML syntax for workflows
 
 - For a VCS workflow, the file lives in the workflow's [working directory](/guides/bentra-stored-workflows#working-directory-and-file-names) in the repository (empty means the repository root), named `workflow.yml`, `workflow.yaml`, `WORKFLOW.yml` or `WORKFLOW.yaml`. Keep only one of them: two in the same folder fail the sync. For a local workflow, it's `workflow.yml` at the top level of the file set.
-- The runner parses the file with `yaml.safe_load`. Before a version can be published or synced, Bentra checks that the file exists and is a YAML mapping, and checks its [module steps](/modules/use-in-workflows#what-bentra-checks-when-you-publish-the-workflow). Everything else, including `if` conditions, is validated by the runner when a run starts.
+- Bentra checks the whole file before a version can be published, synced or made active. A file with problems can't run. See [What Bentra checks](#what-bentra-checks).
 - Local workflow file sets are limited to 256 KB per file, 2 MB in total, 100 files, and a path depth of 10.
 - Bentra workflows are **not** GitHub Actions. There is no `on`, `jobs`, `runs-on`, `needs` or `uses`, and `${{ }}` works only in a step's [`if`](#steps--if) and in a [module step's](#module-steps) inputs and auth, not inside `run` scripts. Triggers, approvals, schedules, and runner selection are configured in the Bentra UI. See [Configured outside the YAML](#configured-outside-the-yaml). To run an existing GitHub Actions workflow, including reusable ones, use a [`github_workflow_dispatch` step](#github-actions-steps).
 
@@ -58,6 +58,25 @@ steps:
         echo "::bentra-check status=failed,name=Bucket exists::$BUCKET_NAME not found"
       fi
 ```
+
+---
+
+## What Bentra checks
+
+A version can be published, synced or made active only when `workflow.yml` passes these checks. Each problem is reported with its line.
+
+| Check | Example problem |
+|---|---|
+| The file is valid YAML with a `steps` list | `Not valid YAML: ...` |
+| Only known keys are used | `Step 2: Unknown key 'runs'. Did you mean 'run'?` |
+| Each step has exactly one of `run`, `module` or `github_workflow_dispatch` | `Step 3: A step needs one of run, module or github_workflow_dispatch.` |
+| Step `id`s are well formed and unique | `Step 4: id 'plan' is used by an earlier step.` |
+| Every `if` is a valid condition that reads earlier steps only | `Step 5: if: reads steps.plan, but no earlier step has id: plan.` |
+| [Module steps](/modules/use-in-workflows#what-bentra-checks-when-you-publish-the-workflow), GitHub Actions blocks and dataset declarations are well formed | `Step 6: repo must be owner/name.` |
+
+Keys Bentra refuses, with what to use instead: `retry`, `env`, `uses`, `with`, `needs`, and `timeout_minutes` on a script step. A condition that reads a form field the form doesn't have is a warning, not an error.
+
+The JSON schema for the allowed keys is at [`GET schemas/workflow/`](/reference/api/files#validate).
 
 ---
 
@@ -194,11 +213,69 @@ Bentra never converts a value to make a comparison work, so a condition does wha
 | `if: inputs.name` | error: the result must be true or false. Write `inputs.name != null` | true when not empty |
 | `inputs.name > 3` when name is text | error: `<` and `>` compare numbers | converts |
 
-`success()`, `failure()`, `always()` and `cancelled()` are not available yet. After a failed step, later steps do not run unless the failed step has [`continue_on_error`](#steps--continue_on_error).
+`cancelled()` is not available.
+
+### Step results
+
+Every step ends with one of three results. Read them with `steps.<id>.outcome` or `steps.<id>.conclusion`.
+
+| Result | Meaning |
+|---|---|
+| `success` | The step ran and passed |
+| `failure` | The step failed or timed out |
+| `skipped` | Its `if` was false, or the run ended before it |
+
+`outcome` is what really happened. `conclusion` is the same, except that a failed step with [`continue_on_error`](#steps--continue_on_error) reads `success`, because the run carried on.
+
+```yaml
+- name: Only after the plan passed
+  if: steps.plan.outcome == 'success'
+  run: ./apply.sh
+```
+
+### Run steps after a failure
+
+When a step fails, the steps after it are skipped and the run is reported as failed. A step still runs if its `if` asks about the failure. Needs runner **0.20.0+**.
+
+| Write | The step runs when |
+|---|---|
+| `steps.<id>.outcome == 'failure'` | that step failed |
+| `failure()` | any earlier step failed |
+| `always()` | whatever happened before: use it for cleanup |
+| `success()` | nothing has failed. This is what every step does by default; use it to combine, such as `success() && inputs.environment == 'production'` |
+
+```yaml
+steps:
+  - name: Take the deployment lock
+    run: ./lock.sh acquire
+
+  - id: apply
+    name: Apply
+    run: terraform apply -auto-approve
+
+  - name: Roll back
+    if: steps.apply.outcome == 'failure'
+    run: ./rollback.sh
+
+  - name: Tell the channel
+    if: failure()
+    run: ./notify.sh
+
+  - name: Release the lock
+    if: always()
+    run: ./lock.sh release
+```
+
+If **Apply** fails, **Roll back**, **Tell the channel** and **Release the lock** run, and the run is still failed. If it passes, only **Release the lock** runs of the three.
+
+- A condition that does not ask about a failure is skipped once something has failed. That includes `steps.<id>.outcome == 'success'`.
+- A failed step with `continue_on_error` does not count as a failure for `failure()`. Check it by name: `steps.lint.outcome == 'failure'`.
+- A step that fails while handling a failure does not stop the handlers after it.
+- A **timeout**, or a runner that stops, ends the run at once. No further step runs, not even `always()`.
 
 ### When a condition is wrong
 
-- Every `if` is checked when the run starts. A syntax error, a reference to a step that does not come earlier, or two steps with the same `id` fails **Set up job**, and no step runs.
+- Bentra checks every `if` before a version can run: its syntax, its functions, and that it only reads steps that come earlier. The problem is shown with its line on the [Workflow tab](/guides/bentra-stored-workflows#the-workflow-tab).
 - A condition that cannot be decided during the run, such as `>` on text, fails its step.
 
 ### What you see in the run
@@ -297,9 +374,9 @@ steps:
 ## `steps[*].retry`
 
 <Warning>
-**Not supported yet**
+**Not supported**
 
-`retry` (both top-level and per step) is accepted in the YAML and appears in some older examples, but the runner doesn't apply it. A failing step is not retried.
+`retry` (top-level or per step) is refused when a version is published. A failing step is not retried; retry inside the step's script instead.
 </Warning>
 
 ---
