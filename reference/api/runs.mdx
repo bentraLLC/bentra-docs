@@ -80,6 +80,20 @@ The run, why it failed, and each attempt (latest first) with its steps.
 }
 ```
 
+Each step also has `outputs` (what the step returned, see [Step outputs](/reference/workflow-syntax#step-outputs)) and `decision`. For a step with [`if`](/reference/workflow-syntax#steps--if), `decision` holds the `expression`, the `values` it read and the `result`, or an `error` when it could not be decided. It is `null` for a step without a condition.
+
+```json
+{
+  "index": 4, "name": "Create the bucket", "status": "skipped",
+  "outputs": {},
+  "decision": {
+    "expression": "steps.lookup.outputs.exists != true",
+    "values": {"steps.lookup.outputs.exists": true},
+    "result": false
+  }
+}
+```
+
 ## `GET runs/{id}/logs/`
 
 Log lines in order, up to 500 per call.

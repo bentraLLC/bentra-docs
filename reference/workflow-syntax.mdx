@@ -139,7 +139,7 @@ steps:
 
 ## `steps[*].if`
 
-**Optional.** A condition. The step runs when it is true and is skipped when it is false. It works on every kind of step: `run`, `module` and `github_workflow_dispatch`. Needs runner **0.19.0+**.
+**Optional.** A condition. The step runs when it is true and is skipped when it is false. It works on every kind of step: `run`, `module` and `github_workflow_dispatch`. Needs runner **0.19.1+**.
 
 ```yaml
 steps:
@@ -207,7 +207,7 @@ A skipped step shows **Skipped** in the step list. Open it, then **Details**, to
 
 ## Step outputs
 
-A `run` step returns values by writing to the file named in `$BENTRA_OUTPUT_FILE`. Give the step an [`id`](#steps--id) so later steps can read them. Needs runner **0.19.0+**.
+A `run` step returns values by writing to the file named in `$BENTRA_OUTPUT_FILE`. Give the step an [`id`](#steps--id) so later steps can read them. Needs runner **0.19.1+**.
 
 Write one `name=value` per line:
 
