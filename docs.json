@@ -96,7 +96,6 @@
               "modules/examples",
               "modules/build-with-an-agent",
               "modules/publishing",
-              "modules/connections",
               "modules/use-in-workflows",
               "runners/modules"
             ]

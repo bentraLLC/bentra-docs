@@ -13,7 +13,7 @@ The runner sets these environment variables. Each names a file or folder.
 |---|---|
 | `BENTRA_INPUT_FILE` | JSON object with the step's inputs |
 | `BENTRA_OUTPUT_FILE` | Where the action writes a JSON object of outputs |
-| `BENTRA_CONNECTION_FILE` | JSON object with the connection's fields. Not set when the step has no connection |
+| `BENTRA_AUTH_FILE` | JSON object with the step's `module.auth`: `type` plus that method's fields. Not set when the step passes no auth |
 | `BENTRA_CONTEXT_FILE` | `{run_id, job_id, workflow_id, step: {id, name, index}, module: {name, version, action}}` |
 | `BENTRA_STEP_OUTPUTS` | JSON object of the outputs of earlier steps, keyed by step `id` |
 | `BENTRA_MODULE_DIR` | The module's package, to read files you shipped with it |
@@ -22,7 +22,7 @@ The runner sets these environment variables. Each names a file or folder.
 The action starts in an empty scratch folder, not in the module's folder. Use `BENTRA_MODULE_DIR` to find your own files. A file the action writes can be at most 2 GiB.
 
 <Note>
-An action doesn't receive the workflow's variables, secrets or form answers. It gets only what the step passes as inputs and what the connection holds. Its environment contains `PATH`, locale, proxy and certificate settings, and the variables above.
+An action doesn't receive the workflow's variables, secrets or form answers. It gets only what the step passes as `inputs` and `auth`. Its environment contains `PATH`, locale, proxy and certificate settings, and the variables above.
 </Note>
 
 ## Outputs
@@ -59,11 +59,24 @@ The message appears in the run's log.
 
 ## Logging
 
-Anything the action prints to stdout or stderr becomes log lines on the run page. Connection secrets and secret outputs are replaced with `***`. Still, don't print credentials.
+Anything the action prints to stdout or stderr becomes log lines on the run page. Secret auth fields and secret outputs are replaced with `***`. Still, don't print credentials.
 
 ## Credentials
 
-Read credentials only from `BENTRA_CONNECTION_FILE`. The file is readable by the runner's user alone and is deleted when the action exits. Never write credentials into the module's repository.
+Declare the methods the module accepts under [`auth`](/reference/module-syntax#auth) in `module.yaml`. Read credentials only from `BENTRA_AUTH_FILE`: check `type` to see which method the step chose, then read that method's fields. The file is readable by the runner's user alone and is deleted when the action exits. Never write credentials into the module's repository.
+
+```python
+import json, os
+
+auth = {}
+if os.environ.get("BENTRA_AUTH_FILE"):
+    with open(os.environ["BENTRA_AUTH_FILE"]) as f:
+        auth = json.load(f)
+
+headers = {}
+if auth.get("type") == "token":
+    headers["Authorization"] = f"Bearer {auth['token']}"
+```
 
 ## Timeouts
 
@@ -134,14 +147,14 @@ A runner can only run a module whose runtime it has. See [Modules on runners](/r
 The contract is plain files, so you can run an action on your own machine. The [example repository](https://github.com/bentraLLC/bentra-module-examples) has `scripts/run-action.sh`, which sets up the files and variables the way a runner does, installs the module's dependencies in a scratch folder and prints the outputs. Copy it into your repository:
 
 ```bash
-scripts/run-action.sh path/to/module my_action path/to/module/tests/my_action.json path/to/module/tests/connection.json
+scripts/run-action.sh path/to/module my_action path/to/module/tests/my_action.json path/to/auth.json
 ```
 
 Or by hand:
 
 ```bash
-export BENTRA_INPUT_FILE=$(mktemp) BENTRA_OUTPUT_FILE=$(mktemp) BENTRA_CONNECTION_FILE=$(mktemp)
+export BENTRA_INPUT_FILE=$(mktemp) BENTRA_OUTPUT_FILE=$(mktemp) BENTRA_AUTH_FILE=$(mktemp)
 echo '{"url": "https://example.com"}' > "$BENTRA_INPUT_FILE"
-echo '{"token": "…"}' > "$BENTRA_CONNECTION_FILE"
+echo '{"type": "token", "token": "…"}' > "$BENTRA_AUTH_FILE"
 python actions/check_url.py && cat "$BENTRA_OUTPUT_FILE"
 ```

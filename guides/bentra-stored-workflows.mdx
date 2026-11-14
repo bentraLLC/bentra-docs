@@ -153,7 +153,7 @@ Here one workflow has the working directory `inventory` and another has `release
 
 Steps start in the working directory, and the run has the whole repository, so a step in `inventory/` can run `../tools/common.sh`. `bento_inputs.json` and `bento.env` are written to the working directory, and the dependency install reads `requirements.txt` or `package.json` from it.
 
-This needs runner **0.14.1** or later. Older runners are refused with **426 Upgrade Required**; see [Install a runner](/runners/install#versions).
+Runners older than the version Bentra requires are refused with **426 Upgrade Required**; see [Install a runner](/runners/install#versions).
 
 ### Sync errors
 

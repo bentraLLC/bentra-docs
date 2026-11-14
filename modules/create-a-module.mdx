@@ -48,17 +48,11 @@ runtime:
   version: ">=3.11"
 dependencies:
   file: requirements.txt
-connection:
-  required: false            # steps may omit the connection for public URLs
-  fields:
-    token:
-      type: string
-      secret: true
-      title: Bearer token
-      description: 'Sent as "Authorization: Bearer <token>" when set.'
-    timeout_seconds:
-      type: number
-      default: 30
+auth:
+  required: false            # steps may omit auth for public URLs
+  methods:
+    - type: token
+      description: 'Sent as "Authorization: Bearer <token>".'
 defaults:
   timeout_seconds: 120
 actions:
@@ -70,6 +64,7 @@ actions:
       properties:
         url: {type: string, description: "The URL to request."}
         expected_status: {type: integer, default: 200}
+        timeout_seconds: {type: number, default: 30}
       required: [url]
       additionalProperties: false
     outputs:
@@ -116,21 +111,21 @@ import requests
 with open(os.environ["BENTRA_INPUT_FILE"]) as f:
     inputs = json.load(f)
 
-# The connection is optional (required: false), so its file may not exist.
-connection = {}
-if os.environ.get("BENTRA_CONNECTION_FILE"):
-    with open(os.environ["BENTRA_CONNECTION_FILE"]) as f:
-        connection = json.load(f)
+# Auth is optional (required: false), so its file may not exist.
+auth = {}
+if os.environ.get("BENTRA_AUTH_FILE"):
+    with open(os.environ["BENTRA_AUTH_FILE"]) as f:
+        auth = json.load(f)
 
 headers = {}
-if connection.get("token"):
-    headers["Authorization"] = f"Bearer {connection['token']}"
+if auth.get("type") == "token":
+    headers["Authorization"] = f"Bearer {auth['token']}"
 
 expected = inputs.get("expected_status", 200)
 started = time.monotonic()
 try:
     response = requests.get(inputs["url"], headers=headers,
-                            timeout=connection.get("timeout_seconds", 30))
+                            timeout=inputs.get("timeout_seconds", 30))
 except requests.RequestException as exc:
     with open(os.environ["BENTRA_OUTPUT_FILE"], "w") as f:
         json.dump({"error": {"code": "request_failed", "message": str(exc)}}, f)
@@ -154,11 +149,11 @@ This is a shortened `check_url`. The full module, with a second action and a sha
 <Step title="Open the wizard">
 Go to **Modules** and click **Register module**.
 </Step>
-<Step title="Choose the connection">
-Pick the VCS connection Bentra reads the repository through. Click **Next**.
+<Step title="Choose the connector">
+Pick the [connector](/reference/connectors) Bentra reads the repository through. Click **Next**.
 </Step>
 <Step title="Choose the source">
-Pick the repository: the list shows the 100 most recently updated, and search finds any repository the connection can see. Choose **Branch** or **Tag**, then pick one from the list (the default branch is preselected). Then type the **working directory**: the folder that holds `module.yaml`, for example `path/to/module`. Leave it empty if the module is the whole repository. Click **Review**.
+Pick the repository: the list shows the 100 most recently updated, and search finds any repository the connector can see. Choose **Branch** or **Tag**, then pick one from the list (the default branch is preselected). Then type the **working directory**: the folder that holds `module.yaml`, for example `path/to/module`. Leave it empty if the module is the whole repository. Click **Review**.
 </Step>
 <Step title="Review and register">
 Bentra reads that folder and shows the module (name, description, category, runtime, commit), each action with its inputs and outputs, and the README. If something is wrong it lists each problem with its file, line and a suggested fix: fix it in the repository and review again. When the module is valid, click **Register module**.
@@ -173,7 +168,7 @@ The module is now in the registry, and Bentra releases the `version` in its `mod
 
 ## After you change the code
 
-Bentra reads the source again on a push (when the connection has a webhook), on a regular check, or when you click **Check for changes**. If `version` changed, it releases it; if only files changed, it warns that the version wasn't bumped. The **Source** tab shows:
+Bentra reads the source again on a push (when the connector has a webhook), on a regular check, or when you click **Check for changes**. If `version` changed, it releases it; if only files changed, it warns that the version wasn't bumped. The **Source** tab shows:
 
 | | Meaning |
 |---|---|
@@ -185,7 +180,7 @@ Checking for changes releases a version only when `version` in `module.yaml` is 
 
 ## Change where a module is read from
 
-On the **Source** tab, maintainers can change the connection, repository, branch or tag, and working directory. The `metadata.name` at the new location must still be the module's name. Versions already released keep the source they were built from.
+On the **Source** tab, maintainers can change the connector, repository, branch or tag, and working directory. The `metadata.name` at the new location must still be the module's name. Versions already released keep the source they were built from.
 
 ## Who can do what
 

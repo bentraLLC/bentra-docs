@@ -1,9 +1,9 @@
 ---
 title: "Use modules in workflows"
-description: "Call a module action from a workflow step, pass inputs, choose a connection and read outputs."
+description: "Call a module action from a workflow step, pass inputs and credentials, and read outputs."
 ---
 
-A workflow step either runs a script (`run`) or calls a module action (`module`).
+A workflow step runs a script (`run`), calls a module action (`module`) or triggers a [GitHub Actions workflow](/reference/workflow-syntax#github-actions-steps).
 
 ```yaml
 name: "Check and record a service"
@@ -20,9 +20,11 @@ steps:
   - name: Check its endpoint
     module:
       name: http-check
-      version: "1.0.0"
+      version: "2.0.0"
       action: check_url
-      connection: production
+      auth:
+        type: token
+        token: ${{ vars.MONITORING_TOKEN }}
       inputs:
         url: https://${{ steps.service.outputs.slug }}.example.com/health
 ```
@@ -38,10 +40,11 @@ Open **Modules** and choose a module. The **Actions** tab lists each action with
 | `module.name` | yes | The module's name in the registry |
 | `module.version` | yes | An exact released version, in quotes. No ranges and no `latest`. **Add module step** fills in the module's active version |
 | `module.action` | yes | The action to run |
-| `module.connection` | if the module needs one | The name of a connection available in the workflow's workspace |
+| `module.auth` | if the module requires auth | `type` (one of the module's methods) and that method's fields. See [Authentication](#authentication) |
 | `module.inputs` | if the action requires inputs | Values for the action's inputs |
 | `id` | to read outputs later | A name for the step: lowercase letters, digits and underscores |
-| `timeout_minutes` | no | Stop the action after this long (1 to 1440) |
+| `if` | no | A [condition](/reference/workflow-syntax#steps--if). The step runs only when it is true |
+| `timeout_minutes` | no | Stop the action after this long (1 to 1440). Never longer than the runner's own step timeout, 5 minutes by default |
 | `continue_on_error` | no | Keep going if the step fails; the run still ends failed |
 
 ## Inputs and expressions
@@ -52,7 +55,7 @@ Input values can be written out or filled in when the run happens:
 |---|---|
 | `${{ inputs.<field> }}` | A form answer, or a variable given when a job is triggered |
 | `${{ vars.<NAME> }}` | A workflow or collection variable |
-| `${{ steps.<id>.outputs.<name> }}` | An output of an earlier module step with that `id` |
+| `${{ steps.<id>.outputs.<name> }}` | An output of an earlier step with that `id`: a module step or a [`run` step](/reference/workflow-syntax#step-outputs) |
 
 An input that is exactly one expression keeps its type, so a number stays a number. Inside a longer string the value becomes text:
 
@@ -62,11 +65,39 @@ inputs:
   name: "${{ inputs.team }}-${{ inputs.environment }}"
 ```
 
-Expressions work only inside `module.inputs`.
+`${{ }}` works inside `module.inputs` and `module.auth`. A step's [`if`](/reference/workflow-syntax#steps--if) is a separate expression.
+
+## Authentication
+
+A module never stores credentials. Its **Authentication** tab lists the methods it accepts, and the step passes one of them in `module.auth`:
+
+```yaml
+    module:
+      name: http-check
+      version: "2.0.0"
+      action: check_url
+      auth:
+        type: token
+        token: ${{ vars.MONITORING_TOKEN }}
+```
+
+| Method `type` | Fields |
+|---|---|
+| `token` | `token` (secret) |
+| `basic` | `username`, `password` (secret) |
+| `api_key` | `key` (secret) |
+| `oauth2_client_credentials` | `client_id`, `client_secret` (secret), and optionally `token_url` and `scope` |
+| a custom method's name | The fields the module declares |
+
+- A secret field must be exactly one `${{ vars.<NAME> }}` or `${{ inputs.<field> }}`: a secret [variable](/guides/variables-and-secrets), or a form field such as a password the requester fills in. Never write the value in `workflow.yml`.
+- Other fields can be written out or use `inputs.` and `vars.` expressions. Step outputs can't be used in `auth`.
+- The runner masks the secret fields in the run's logs and outputs.
+- To rotate a credential, change the variable. Nothing needs republishing.
+- When the module's auth is optional, leave `auth` out to call it without credentials.
 
 ## Outputs in script steps
 
-A `run` step can read what earlier module steps returned from the JSON file at `$BENTRA_STEP_OUTPUTS`, keyed by step `id`:
+A `run` step can read what earlier steps returned from the JSON file at `$BENTRA_STEP_OUTPUTS`, keyed by step `id`:
 
 ```yaml
   - name: Report
@@ -82,7 +113,9 @@ Publishing a workflow version (or syncing a repository workflow) fails, naming t
 - the action doesn't exist in that version;
 - a required input is missing, or a written-out value has the wrong type;
 - an expression isn't one of the three forms, or refers to a step that doesn't come earlier;
-- the connection doesn't exist, belongs to another module, or isn't available in the workflow's workspace.
+- the module requires auth and the step passes none, or the module takes no auth and the step passes some;
+- `auth.type` isn't one of the module's methods, or a field is missing or unknown;
+- a secret auth field isn't a single `vars.` or `inputs.` expression.
 
 A deprecated version is allowed, with a warning.
 

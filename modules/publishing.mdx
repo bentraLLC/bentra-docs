@@ -29,7 +29,7 @@ Bentra reads `module.yaml` from the branch or tag the module follows (its **Sour
 |---|---|
 | You register the module | The version in `module.yaml` is released straight away |
 | You click **Check for changes** | On the module's page, or `refresh_module` from an agent |
-| You push to the branch or tag | When the connection has a [webhook](/reference/connectors), Bentra checks within seconds |
+| You push to the branch or tag | When the connector has a [webhook](/reference/connectors), Bentra checks within seconds |
 | On a schedule | Bentra checks every module's branch or tag regularly, so a push is picked up even without a webhook |
 
 The release is built from the exact commit where Bentra read the new version, so a later push can't slip into it. The module's **Versions** tab shows each release with what triggered it.
@@ -100,8 +100,8 @@ Revoke a version when it leaked a credential or does harm. For an ordinary bug, 
 
 **Archive** (on the **Source** tab) hides a module from the registry and stops new releases. Workflows that already use its versions keep running.
 
-A module can only be deleted when no workflow version uses any of its versions and it has no connections.
+A module can only be deleted when no workflow version uses any of its versions.
 
 ## If the repository becomes unreachable
 
-Released versions are stored in Bentra and keep working. The module shows **Source unreachable**, and nothing new is released until the connection or repository is fixed.
+Released versions are stored in Bentra and keep working. The module shows **Source unreachable**, and nothing new is released until the connector or repository is fixed.

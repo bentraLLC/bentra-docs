@@ -10,14 +10,14 @@ Connect the [Bentra MCP server](/ai/mcp-server) to Claude, Cursor or another age
 > Create a job in the Platform workspace that runs `terraform plan` for acme/infra every night at 2am UTC and fails if the plan has changes.
 </Tip>
 
-A workflow is a YAML file listing the steps a runner executes. Each step is a bash script, or a [GitHub Actions workflow](#github-actions-steps) that the runner triggers and waits for. Steps run in order, in one workspace that holds the workflow's files.
+A workflow is a YAML file listing the steps a runner executes. Each step is a bash script, an action of a [module](#module-steps), or a [GitHub Actions workflow](#github-actions-steps) that the runner triggers and waits for. Steps run in order, in one workspace that holds the workflow's files.
 
 ## About YAML syntax for workflows
 
 - For a VCS workflow, the file lives in the workflow's [working directory](/guides/bentra-stored-workflows#working-directory-and-file-names) in the repository (empty means the repository root), named `workflow.yml`, `workflow.yaml`, `WORKFLOW.yml` or `WORKFLOW.yaml`. Keep only one of them: two in the same folder fail the sync. For a local workflow, it's `workflow.yml` at the top level of the file set.
-- The runner parses the file with `yaml.safe_load`. Bentra itself only checks that the file exists and is a YAML mapping before a version can be cut. Everything else is validated by the runner when a run starts.
+- The runner parses the file with `yaml.safe_load`. Before a version can be published or synced, Bentra checks that the file exists and is a YAML mapping, and checks its [module steps](/modules/use-in-workflows#what-bentra-checks-when-you-publish-the-workflow). Everything else, including `if` conditions, is validated by the runner when a run starts.
 - Local workflow file sets are limited to 256 KB per file, 2 MB in total, 100 files, and a path depth of 10.
-- Bentra workflows are **not** GitHub Actions. There is no `on`, `jobs`, `runs-on`, `needs`, `uses`, or `${{ }}` expression syntax. Triggers, approvals, schedules, and runner selection are configured in the Bentra UI. See [Configured outside the YAML](#configured-outside-the-yaml). To run an existing GitHub Actions workflow, including reusable ones, use a [`github_workflow_dispatch` step](#github-actions-steps).
+- Bentra workflows are **not** GitHub Actions. There is no `on`, `jobs`, `runs-on`, `needs` or `uses`, and `${{ }}` works only in a step's [`if`](#steps--if) and in a [module step's](#module-steps) inputs and auth, not inside `run` scripts. Triggers, approvals, schedules, and runner selection are configured in the Bentra UI. See [Configured outside the YAML](#configured-outside-the-yaml). To run an existing GitHub Actions workflow, including reusable ones, use a [`github_workflow_dispatch` step](#github-actions-steps).
 
 ### Example: a complete workflow
 
@@ -107,7 +107,7 @@ Steps run one at a time, in order. By default the first failing step stops the r
 
 ## `steps[*].run`
 
-**Required in practice.** The bash script to execute. A step has either `run` or [`github_workflow_dispatch`](#github-actions-steps), not both. It runs as:
+**Required in practice.** The bash script to execute. A step has exactly one of `run`, [`module`](#module-steps) or [`github_workflow_dispatch`](#github-actions-steps). It runs as:
 
 ```text
 bash --noprofile --norc -eo pipefail -c "<run>"
@@ -309,7 +309,7 @@ steps:
 A `github_workflow_dispatch` step triggers a GitHub Actions workflow, waits for its run, and passes only when the run concludes `success`. GitHub runs the work, on GitHub-hosted or your own runners. The GitHub workflow can call [reusable workflows](https://docs.github.com/en/actions/sharing-automations/reusing-workflows) and use GitHub secrets, environments and OIDC as usual.
 
 <Info>
-Needs runner **0.11.1+**. With an older runner, the run fails before any step executes, so it never reports success without dispatching. The workflow's source must be a GitHub repository: the step uses the workflow's own GitHub connector. The connector needs **Actions: Read and write** (see [Connectors](/reference/connectors#github-app-recommended)).
+The workflow's source must be a GitHub repository: the step uses the workflow's own GitHub connector. The connector needs **Actions: Read and write** (see [Connectors](/reference/connectors#github-app-recommended)).
 </Info>
 
 ```yaml
@@ -429,9 +429,11 @@ steps:
     timeout_minutes: 10
     module:
       name: http-check
-      version: "1.0.0"
+      version: "2.0.0"
       action: check_url
-      connection: production
+      auth:
+        type: token
+        token: ${{ vars.MONITORING_TOKEN }}
       inputs:
         url: ${{ inputs.endpoint_url }}
 ```
@@ -442,20 +444,20 @@ steps:
 | `steps[*].module.name` | yes | The module's name in the registry |
 | `steps[*].module.version` | yes | An exact published version, in quotes |
 | `steps[*].module.action` | yes | The action to run |
-| `steps[*].module.connection` | if the module needs one | A connection available in the workflow's workspace |
+| `steps[*].module.auth` | if the module requires auth | `type` (one of the module's auth methods) and that method's fields. A secret field must be exactly one `${{ vars.<NAME> }}` or `${{ inputs.<field> }}` |
 | `steps[*].module.inputs` | if the action requires inputs | Values for the action's inputs |
-| `steps[*].timeout_minutes` | no | 1 to 1440 |
+| `steps[*].timeout_minutes` | no | 1 to 1440. Never longer than the runner's [step timeout](#timeouts-and-implicit-setup) |
 
-Inside `module.inputs`, `${{ inputs.<field> }}`, `${{ vars.<NAME> }}` and `${{ steps.<id>.outputs.<name> }}` are filled in when the run happens. A script step reads earlier steps' outputs from the JSON file at `$BENTRA_STEP_OUTPUTS`. See [Step outputs](#step-outputs).
+Inside `module.inputs`, `${{ inputs.<field> }}`, `${{ vars.<NAME> }}` and `${{ steps.<id>.outputs.<name> }}` are filled in when the run happens. `module.auth` takes `inputs.` and `vars.` only. A script step reads earlier steps' outputs from the JSON file at `$BENTRA_STEP_OUTPUTS`. See [Step outputs](#step-outputs).
 
-See [Use modules in workflows](/modules/use-in-workflows). Module steps need runner 0.14.1 or later.
+`name`, `if` and `continue_on_error` work as they do for `run` steps. See [Use modules in workflows](/modules/use-in-workflows).
 
 ## `outputs`
 
 **Optional.** Declares data the run publishes.
 
 <Info>
-Datasets need runner **0.7.0+**. Only **job**-type workflows can declare outputs; request workflows are rejected.
+Only **job**-type workflows can declare outputs; request workflows are rejected.
 </Info>
 
 ### `outputs.datasets.<name>`
@@ -615,7 +617,7 @@ echo "::bentra-check status=warning,name=Cost,monthly=412::Above the 400 USD bud
 
 ## Timeouts and implicit setup
 
-- **Step timeout:** 300 s by default. This is set by the runner's `STEP_TIMEOUT` environment variable, not in the YAML. [GitHub Actions steps](#github-actions-steps) use `timeout_minutes` instead.
+- **Step timeout:** 300 s by default. This is set by the runner's `STEP_TIMEOUT` environment variable, not in the YAML. [GitHub Actions steps](#github-actions-steps) use `timeout_minutes` instead, and a [module step](#module-steps) can set a shorter limit with `timeout_minutes`.
 - **Run timeout:** 1800 s by default, set by the runner's `EXECUTION_TIMEOUT`.
 - **Dependency install:** before your steps, the runner adds an "Install Python dependencies" step (`pip install -r requirements.txt`) if `requirements.txt` exists in the working directory, and an "Install Node.js dependencies" step (`npm install --production`) if `package.json` exists there. If either fails, the run stops.
 

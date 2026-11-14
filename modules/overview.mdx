@@ -14,7 +14,7 @@ Modules live in your organization's private registry. Nothing is shared outside 
 | **Module** | A folder in one of your repositories with a `module.yaml` and the code for its actions |
 | **Action** | One operation the module offers, with declared inputs and outputs |
 | **Version** | A release of the module, such as `1.2.0`, set by `version` in its `module.yaml`. It never changes |
-| **Connection** | Credentials and settings a module runs with, such as "production" |
+| **Auth** | The ways a module accepts credentials, declared under `auth` in its `module.yaml`. The step that calls the module passes the values |
 | **Registry** | The **Modules** page: every module your organization has registered |
 
 ## How a module gets to a workflow
@@ -29,8 +29,8 @@ In **Modules → Register module**, point Bentra at the repository, branch or ta
 <Step title="Release new versions">
 Bump `version` in `module.yaml` and push. Bentra releases it from the commit where it saw the new version. See [Versions and releases](/modules/publishing).
 </Step>
-<Step title="Add a connection">
-If the module needs credentials, create a connection and share it with the workspaces that will use it. See [Connections](/modules/connections).
+<Step title="Store its credentials">
+If the module declares `auth`, save the credential as a secret [variable](/guides/variables-and-secrets) on the workflow or in a variable collection. The step passes it in `module.auth`. See [Authentication](/modules/use-in-workflows#authentication).
 </Step>
 <Step title="Call it">
 Add a `module` step to a workflow, naming the module, the exact version and the action. See [Use modules in workflows](/modules/use-in-workflows).
@@ -43,7 +43,7 @@ Add a `module` step to a workflow, naming the module, the exact version and the 
 - **A release happens when the version changes.** Changing files without bumping `version` releases nothing, and Bentra warns you.
 - **A version never changes.** To fix or add anything, release another version.
 - **Workflows pin exact versions.** A workflow keeps running the version it names until someone edits the workflow.
-- **Modules hold no credentials.** Connections do, and their secrets are encrypted and never shown again.
+- **Modules hold no credentials.** The workflow step passes them from variables or form answers, and the runner masks the secret fields in logs.
 
 <Warning>
 Module actions run on your runner as the runner's user, like the bash steps in a workflow. Bentra verifies that the package is the one that was released, but it does not sandbox the code, and anyone who can push to the module's branch can release it. See [Modules on runners](/runners/modules).

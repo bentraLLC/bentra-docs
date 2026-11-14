@@ -3,7 +3,7 @@ title: "Modules on runners"
 description: "What a runner needs to run module actions: runtimes, the package cache, dependencies and the security boundary."
 ---
 
-Module actions run on your runners, like every other workflow step. Module steps need runner **0.14.1** or later.
+Module actions run on your runners, like every other workflow step.
 
 ## Runtimes
 
@@ -60,10 +60,10 @@ Module code is code your organization wrote and released, and it runs with the r
 What Bentra does:
 
 - runs exactly the package that was released, verified by checksum;
-- gives an action only its inputs and the one connection its step names;
+- gives an action only its inputs and the auth its step passes;
 - passes credentials in a file only the runner's user can read, and deletes it when the action ends;
 - starts the action with a minimal environment, without the runner's token or the workflow's variables;
-- masks connection secrets in logs;
+- masks the auth fields the module marks secret in logs;
 - stops an action and everything it started when it times out.
 
 What it doesn't do:

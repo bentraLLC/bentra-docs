@@ -7,8 +7,8 @@ Every module below is complete and runs as shown. They live in the [bentra-modul
 
 | Module | Runtime | Shows |
 |---|---|---|
-| [`http-check`](#http-check-python) | Python | pinned dependencies, an optional connection with a secret, two actions sharing a helper, structured errors |
-| [`json-tools`](#json-tools-bash) | Bash | no dependencies or connection, object inputs and outputs |
+| [`http-check`](#http-check-python) | Python | pinned dependencies, optional `token` auth, two actions sharing a helper, structured errors |
+| [`json-tools`](#json-tools-bash) | Bash | no dependencies or auth, object inputs and outputs |
 | [`text-tools`](#text-tools-node-js) | Node.js | `package.json` with a lockfile, CommonJS |
 | [`sha-tool`](#sha-tool-go-binary) | Go | a prebuilt binary per platform |
 
@@ -35,7 +35,7 @@ scripts/run-action.sh bentra/modules/json-tools merge bentra/modules/json-tools/
 
 ## http-check (Python)
 
-Checks that URLs answer with the expected status. The connection is optional (`required: false`), so the action handles `BENTRA_CONNECTION_FILE` being unset. Both actions share a small helper, `actions/_bentra.py`, that reads and writes the contract files: copy it into your own Python modules.
+Checks that URLs answer with the expected status. Auth is optional (`auth.required: false`), so the action handles `BENTRA_AUTH_FILE` being unset. Both actions share a small helper, `actions/_bentra.py`, that reads and writes the contract files: copy it into your own Python modules.
 
 ```text
 bentra/modules/http-check/
@@ -54,7 +54,7 @@ bentra/modules/http-check/
 ```yaml module.yaml
 apiVersion: bentra/v1
 kind: Module
-version: 1.0.0             # bump to release a new version (strict semver)
+version: 2.0.0             # bump to release a new version (strict semver)
 metadata:
   name: http-check
   display_name: HTTP check
@@ -66,17 +66,11 @@ runtime:
   version: ">=3.11"
 dependencies:
   file: requirements.txt
-connection:
-  required: false            # steps may omit the connection for public URLs
-  fields:
-    token:
-      type: string
-      secret: true
-      title: Bearer token
-      description: 'Sent as "Authorization: Bearer <token>" when set.'
-    timeout_seconds:
-      type: number
-      default: 30
+auth:
+  required: false            # steps may omit auth for public URLs
+  methods:
+    - type: token
+      description: 'Sent as "Authorization: Bearer <token>".'
 defaults:
   timeout_seconds: 120
 actions:
@@ -88,6 +82,7 @@ actions:
       properties:
         url: {type: string, description: "The URL to request."}
         expected_status: {type: integer, default: 200}
+        timeout_seconds: {type: number, default: 30}
       required: [url]
       additionalProperties: false
     outputs:
@@ -105,6 +100,7 @@ actions:
       properties:
         urls: {type: array, items: {type: string}, minItems: 1}
         expected_status: {type: integer, default: 200}
+        timeout_seconds: {type: number, default: 30}
       required: [urls]
       additionalProperties: false
     outputs:
@@ -123,12 +119,12 @@ import requests
 import _bentra
 
 
-def session() -> tuple[requests.Session, float]:
-    conn = _bentra.connection()
+def session(params: dict) -> tuple[requests.Session, float]:
+    auth = _bentra.auth()
     s = requests.Session()
-    if conn.get("token"):
-        s.headers["Authorization"] = f"Bearer {conn['token']}"
-    return s, float(conn.get("timeout_seconds") or 30)
+    if auth.get("type") == "token":
+        s.headers["Authorization"] = f"Bearer {auth['token']}"
+    return s, float(params.get("timeout_seconds") or 30)
 
 
 def check(s: requests.Session, url: str, timeout: float) -> tuple[int, int]:
@@ -144,7 +140,7 @@ def check(s: requests.Session, url: str, timeout: float) -> tuple[int, int]:
 def main() -> None:
     params = _bentra.inputs()
     expected = params.get("expected_status", 200)
-    s, timeout = session()
+    s, timeout = session(params)
     status, elapsed_ms = check(s, params["url"], timeout)
     ok = status == expected
     print(f"{params['url']} answered {status} in {elapsed_ms} ms (expected {expected})")
@@ -165,7 +161,7 @@ from check_url import check, session
 def main() -> None:
     params = _bentra.inputs()
     expected = params.get("expected_status", 200)
-    s, timeout = session()
+    s, timeout = session(params)
     failed = []
     for url in params["urls"]:
         status, elapsed_ms = check(s, url, timeout)
@@ -181,7 +177,7 @@ if __name__ == "__main__":
     main()
 ```
 ```python actions/_bentra.py
-"""Helpers for the Bentra action contract: read inputs, connection and context, write outputs."""
+"""Helpers for the Bentra action contract: read inputs, auth and context, write outputs."""
 import json
 import os
 import sys
@@ -199,9 +195,9 @@ def inputs() -> dict:
     return _load("BENTRA_INPUT_FILE")
 
 
-def connection() -> dict:
-    """The step's connection fields; {} when the step names no connection."""
-    return _load("BENTRA_CONNECTION_FILE")
+def auth() -> dict:
+    """The step's auth, {"type": ..., <fields>}; {} when the step passes none."""
+    return _load("BENTRA_AUTH_FILE")
 
 
 def context() -> dict:
@@ -227,7 +223,7 @@ requests==2.32.5
 
 ## json-tools (Bash)
 
-Merges JSON objects and picks fields out of them with `jq`, which every runner has. No `dependencies` and no `connection` block.
+Merges JSON objects and picks fields out of them with `jq`, which every runner has. No `dependencies` and no `auth` block.
 
 ```text
 bentra/modules/json-tools/
@@ -251,7 +247,7 @@ metadata:
   category: other
   icon: braces
 runtime:
-  language: bash               # no connection block: this module needs no credentials
+  language: bash               # no auth block: this module needs no credentials
 actions:
   - name: merge
     description: Deep-merge two JSON objects; values in overlay win.
@@ -543,7 +539,7 @@ steps:
     name: Check the endpoint
     module:
       name: http-check
-      version: "1.0.0"
+      version: "2.0.0"
       action: check_url
       inputs:
         url: https://example.com
@@ -559,13 +555,13 @@ steps:
 
 <Steps>
 <Step title="Register each module">
-**Modules → Register module**: your connection, the repository, `main`, and the working directory, for example `bentra/modules/http-check`.
+**Modules → Register module**: your connector, the repository, `main`, and the working directory, for example `bentra/modules/http-check`.
 </Step>
-<Step title="Watch 1.0.0 release">
-Registering releases the `version: 1.0.0` each `module.yaml` declares. The module's **Versions** tab shows it within seconds.
+<Step title="Watch the first release">
+Registering releases the `version` each `module.yaml` declares. The module's **Versions** tab shows it within seconds.
 </Step>
-<Step title="Release 1.0.1">
-Change something in a module, set `version: 1.0.1` in its `module.yaml` and push. Bentra releases it (click **Check for changes** if the connection has no webhook).
+<Step title="Release a new version">
+Change something in a module, raise `version` in its `module.yaml` (for example `1.0.0` to `1.0.1`) and push. Bentra releases it (click **Check for changes** if the connector has no webhook).
 </Step>
 <Step title="Run the demo">
 Create a job workflow from the repository with the working directory `bentra/workflows/module-demo` and run it.

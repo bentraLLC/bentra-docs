@@ -2,7 +2,7 @@
 title: "Modules"
 ---
 
-[Modules](/modules/overview) are reusable packages of actions your organization releases for its workflows. These endpoints cover the registry, releases and versions, and the connections modules run with.
+[Modules](/modules/overview) are reusable packages of actions your organization releases for its workflows. These endpoints cover the registry, releases and versions.
 
 **Versions come from `version` in the module's `module.yaml`.** Registering a module, refreshing it (`POST modules/{id}/refresh/`), a push to its branch or tag and Bentra's regular check all read the source, and each one releases the version `module.yaml` declares if Bentra hasn't released it yet. No endpoint takes a version to release, and a released version can't be changed. See [Versions and releases](/modules/publishing).
 
@@ -33,17 +33,9 @@ title: "Modules"
 | `POST` | `modules/{id}/versions/{version}/deprecate/` | `publish:modules` | `set_module_version_status` |
 | `POST` | `modules/{id}/versions/{version}/undeprecate/` | `publish:modules` | `set_module_version_status` |
 | `POST` | `modules/{id}/versions/{version}/revoke/` | `publish:modules` | `set_module_version_status` |
-| `GET` | `module-connections/?module=&workspace=` | `read:modules` | `list_module_connections` |
-| `GET` | `module-connections/{id}/` | `read:modules` | `get_module_connection` |
-| `GET` | `module-connections/{id}/validate/?version=` | `read:modules` | `validate_module_connection` |
-| `POST` | `module-connections/` | `manage:module_connections` | `create_module_connection` |
-| `PATCH` | `module-connections/{id}/` | `manage:module_connections` | `update_module_connection` |
-| `DELETE` | `module-connections/{id}/` | `manage:module_connections` | `delete_module_connection` |
-| `POST` | `module-connections/{id}/maintainers/` | `manage:module_connections` | |
-| `DELETE` | `module-connections/{id}/maintainers/{maintainer_id}/` | `manage:module_connections` | |
 | `GET` | `schemas/module/` | `read:modules` | resource `bentra://schemas/module` |
 
-**Permissions:** every member can read the registry (`org.view_modules`) and register modules (`org.create_modules`). A module's maintainers, and owners and admins (`org.manage_modules`), can change its source, validate it, deprecate or revoke versions, choose the active version, archive and delete it. Releases come from the repository: anyone who can push to the module's branch or tag can release it. Connections follow the rules for [variable collections](/reference/api/variables): maintainers manage them and workspaces they're shared with can use them.
+**Permissions:** every member can read the registry (`org.view_modules`) and register modules (`org.create_modules`). A module's maintainers, and owners and admins (`org.manage_modules`), can change its source, validate it, deprecate or revoke versions, choose the active version, archive and delete it. Releases come from the repository: anyone who can push to the module's branch or tag can release it.
 
 ---
 
@@ -59,6 +51,15 @@ title: "Modules"
   "status": "active",
   "active_version": {"version": "1.2.0", "status": "published", "sha256": "…", "published_at": "…"},
   "active_version_pinned": false,
+  "auth": {
+    "required": false,
+    "methods": [
+      {
+        "id": "token", "type": "token", "title": "Token", "description": "Sent as a bearer token.",
+        "fields": [{"name": "token", "type": "string", "secret": true, "required": true, "title": "Token", "description": ""}]
+      }
+    ]
+  },
   "source": {
     "connector_id": "…",
     "repository": "acme/automation",
@@ -78,6 +79,8 @@ title: "Modules"
 ```
 
 `name` comes from the module's `module.yaml` and never changes. `active_version` is the version the registry shows and new workflow steps use: the newest release unless a maintainer pinned one (`active_version_pinned`); `null` until the first release finishes. `source.version` is what `module.yaml` declared at the last check and `source.version_released` whether Bentra has released it. `source.validation_state` is `valid`, `invalid`, `unreachable` or `unknown`.
+
+`auth` is what a workflow step passes in [`module.auth`](/modules/use-in-workflows#authentication): whether it is `required`, and each accepted method with its `id` (what the step writes as `type`) and fields. It comes from the active version's `module.yaml`. Bentra stores no credentials for a module.
 
 Reading a module never contacts the repository. `source` shows what the last refresh saw.
 
@@ -160,30 +163,3 @@ POST modules/{id}/follow-newest/               # follow the newest release again
 ```
 
 Both return the module. Workflows keep the exact versions they pin.
-
-## Connections
-
-```json
-{
-  "id": "…",
-  "name": "production",
-  "module": {"id": "…", "name": "http-check"},
-  "config": {"timeout_seconds": 30},
-  "secrets": [{"field": "token", "is_set": true}],
-  "complete": true,
-  "missing": [],
-  "visibility": "selected_workspaces",
-  "shared_with": ["platform"]
-}
-```
-
-| Field | Notes |
-|---|---|
-| `module_id` | The module the connection is for. Required on create. |
-| `name` | What workflow steps reference. Lowercase letters, digits and hyphens. Can't be changed. |
-| `config` | Values for the module's non-secret fields. `null` clears one. |
-| `secrets` | Values for secret fields. Write-only: never returned. A field left out keeps its stored value; `null` clears it. |
-| `workspaces` | Slugs of the workspaces whose workflows can use it (the full list). |
-| `visibility` | `selected_workspaces` or `all_workspaces` (owners and admins). |
-
-Changing or deleting a connection returns `409` with `blocking_workflows` when a workflow that uses it would lose it.

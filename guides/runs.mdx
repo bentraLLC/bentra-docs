@@ -53,7 +53,9 @@ The pipeline lists your `workflow.yml` steps plus the ones Bentra adds:
 |---|---|---|
 | **Set up job** | Setup | Prepares the workspace: fetches the files, reads the workflow, installs pinned tools and fetches variables and secrets. Starts as soon as a runner picks up the run. |
 | **Install Python dependencies**, **Install Node.js dependencies** | Dependency | Only when `requirements.txt` or `package.json` exists. |
+| **Prepare modules** | Dependency | Only when a step calls a [module](/modules/overview): checks, downloads and verifies each module package and installs its dependencies. |
 | Your steps | Workflow | In the order of `workflow.yml`. |
+| Your [module steps](/modules/use-in-workflows) | Module action | Runs one action of a module. Its **Details** tab shows the module, version and action, and what the action returned. |
 | Your [GitHub Actions steps](/reference/workflow-syntax#github-actions-steps) | GitHub workflow | Triggers a GitHub Actions workflow and waits for it. Its **GitHub run** check links to the run on GitHub. |
 | **Publish datasets** | Publish datasets | Only for jobs that declare datasets. See [Job datasets](/guides/job-datasets). |
 

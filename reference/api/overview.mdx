@@ -41,9 +41,8 @@ Personal tokens carry `*` (all scopes). Delegated tokens carry the named scopes,
 | `manage:workflow_access` | Change approvers, workflow roles and form visibility. |
 | `read:variables` / `edit:variables` | View or change variable collections and workflow variables. |
 | `read:runs` / `manage:runs` | View runs; re-run or cancel them. |
-| `read:modules` / `manage:modules` | View the module registry and connections (never secret values); register, change and refresh modules. |
-| `publish:modules` | Publish module versions, deprecate or revoke them. |
-| `manage:module_connections` | Create and change module connections and their sharing. |
+| `read:modules` / `manage:modules` | View the module registry: modules, their source and actions. Register, change and refresh modules. |
+| `publish:modules` | Validate a module, choose its active version, deprecate or revoke versions. |
 | `trigger:workflow_runs` | Trigger job runs. |
 | `read:requests` | View requests. |
 | `submit:workflow_requests` | Submit, update and cancel your own requests. |
@@ -98,6 +97,6 @@ Anything that takes or mints a secret stays in the UI: adding VCS connectors or 
 - [Variables](/reference/api/variables): variable collections and workflow variables
 - [Requests](/reference/api/requests): submit, follow, comment, update, approve
 - [Runs](/reference/api/runs): trigger jobs, follow runs, logs, re-run, cancel
-- [Modules](/reference/api/modules): registry, publishing versions, connections
+- [Modules](/reference/api/modules): registry, releases and versions
 - [Job datasets](/reference/api/datasets): versions, promote, freeze, data scope and read grants
 - [Single sign-on](/reference/api/sso): status, allowed domains, member provisioning, setup links
