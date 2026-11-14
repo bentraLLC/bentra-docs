@@ -337,6 +337,19 @@ Where outputs can be read:
 
 Outputs appear on the step's **Details** tab in the run. Names use letters, digits, `_` and `-`. The file is limited to 1 MB. A file that is neither `name=value` lines nor a JSON object fails the step. Secret values are masked where outputs are shown, so don't use outputs to pass secrets: use [variables](/guides/variables-and-secrets).
 
+## `steps[*].approval`
+
+**Optional.** Stops the run before this step until someone approves it. `true`, or a mapping with a `message` shown to the approvers. Needs runner **0.21.0+**.
+
+```yaml
+- name: Apply
+  approval:
+    message: "Apply ${{ steps.plan.outputs.changes }} changes to production?"
+  run: terraform apply -auto-approve
+```
+
+The run shows **Needs approval** and uses no runner while it waits. After approval a runner continues from this step with a fresh copy of the workflow's files: step outputs carry across, files do not. A run nobody approves within 14 days is cancelled. See [Approval steps](/guides/approval-steps).
+
 ## `steps[*].continue_on_error`
 
 **Optional.** Boolean, default `false`. When `true`, later steps still run if this step fails. The run as a whole is still reported as failed.

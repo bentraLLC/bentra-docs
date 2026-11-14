@@ -28,10 +28,11 @@ Each row shows the run, its status, who or what triggered it, when it started an
 |---|---|
 | **Queued** | Waiting for a runner in the pool to pick it up. |
 | **Running** | A runner is executing it. |
+| **Needs approval** | The run stopped at an [approval step](/guides/approval-steps) and is waiting for someone to approve. No runner is in use. |
 | **Success** | Every step succeeded. |
 | **Failed** | A step failed, a check failed, or setup failed. |
 | **Timeout** | A step or the whole run took too long. |
-| **Cancelled** | Cancelled before a runner picked it up. |
+| **Cancelled** | Cancelled before a runner picked it up, while it waited for approval, or because nobody approved it within 14 days. |
 
 A run that stays **Queued** usually means no runner in the pool is connected. The run page says **Waiting for a runner** until one picks it up. Check the pool in **Settings → Runner Pools**.
 
@@ -61,7 +62,7 @@ The pipeline lists your `workflow.yml` steps plus the ones Bentra adds:
 
 For a repo-backed workflow, the steps appear a few seconds after the run starts, once the runner has read `workflow.yml`.
 
-A step is **Pending**, **Running**, **Success**, **Failed**, **Timeout** or **Skipped**. A step is skipped when its [`if`](/reference/workflow-syntax#steps--if) condition is false: its **Details** tab shows the condition, the values it read and the result. When a run fails, the steps it didn't reach are also marked **Skipped**, as is a step with an empty `run`.
+A step is **Pending**, **Running**, **Success**, **Failed**, **Timeout**, **Skipped** or **Waiting for approval**. A step is skipped when its [`if`](/reference/workflow-syntax#steps--if) condition is false: its **Details** tab shows the condition, the values it read and the result. When a run fails, the steps it didn't reach are also marked **Skipped**, as is a step with an empty `run`.
 
 ### Step tabs
 
@@ -114,7 +115,7 @@ When a run has several attempts, an attempt menu in the header lets you switch b
 
 ## Cancel a run
 
-Click **Cancel** on a **Queued** run to stop it before a runner picks it up. You can also cancel from the row's action in the Runs list. A run that has started can't be cancelled.
+Click **Cancel** on a **Queued** run to stop it before a runner picks it up, or on a run that **Needs approval** to end it without a decision. You can also cancel from the row's action in the Runs list. A run that is **Running** can't be cancelled.
 
 ## Who can do what
 

@@ -45,7 +45,7 @@ Starts a job now.
 
 ## `GET runs/` and `GET workflows/{id}/runs/`
 
-Runs you can view, newest first. Paginated.
+Runs you can view, newest first. Paginated. Add `?status=` to filter: `queued`, `running`, `needs_approval`, `success`, `failed` (includes timeouts) or `cancelled`.
 
 ```json
 {"count": 1, "next": null, "previous": null,
@@ -125,4 +125,26 @@ Queues a finished run again as a new attempt, with the same inputs.
 
 ## `POST runs/{id}/cancel/`
 
-Cancels a run no runner has picked up yet. `409` unless it's `queued`.
+Cancels a run no runner holds. `409` unless it's `queued` or `needs_approval`.
+
+## Approve or reject
+
+A run with status `needs_approval` stopped at an [approval step](/guides/approval-steps). `GET runs/{id}/` returns the question in `approval`:
+
+```json
+"approval": {"id": "…", "status": "pending", "step_index": 3, "step_name": "Apply",
+             "message": "Apply 3 changes to production?", "requested_at": "…", "expires_at": "…",
+             "decided_by": null, "decided_at": null, "note": ""}
+```
+
+`status` is `pending`, `approved`, `rejected`, `expired` or `cancelled`.
+
+### `POST runs/{id}/approve/`
+
+`{"note": "optional"}`. The run is queued and a runner continues from the step. Returns `{"success": true, "run": {…}}`.
+
+### `POST runs/{id}/reject/`
+
+`{"note": "why"}`. `note` is required. The run ends as `failed`.
+
+**Scope:** `manage:runs`. **Who:** the workflow's editors and admins, and a request workflow's form approvers. `403` otherwise; `409` when the run is not waiting for approval; `400` when a rejection has no note.

@@ -81,6 +81,7 @@
               "guides/workflow-status-and-schedules",
               "guides/bentra-stored-workflows",
               "guides/runs",
+              "guides/approval-steps",
               "guides/job-datasets",
               "guides/variables-and-secrets",
               "reference/connectors"

@@ -1,0 +1,98 @@
+---
+title: "Approval steps"
+description: "Pause a run at a step until someone approves it."
+---
+
+An approval step stops a run before a step and waits for a person to approve. Use it before the part of a workflow that changes something important, such as applying a plan to production.
+
+```yaml
+steps:
+  - id: plan
+    name: Plan
+    run: |
+      terraform plan -out=tfplan
+      CHANGES=$(terraform show -json tfplan | jq '.resource_changes | length')
+      echo "changes=$CHANGES" >> "$BENTRA_OUTPUT_FILE"
+
+  - name: Apply
+    approval:
+      message: "Apply ${{ steps.plan.outputs.changes }} changes to production?"
+    run: |
+      terraform plan -out=tfplan     # a fresh workspace: plan again
+      terraform apply tfplan
+```
+
+Approval steps need runner **0.21.0** or later.
+
+## What happens
+
+<Steps>
+<Step title="The run stops">
+When the run reaches the step, it stops before running it. The runner is released for other work, and the run no longer counts as a run in progress.
+</Step>
+<Step title="The run shows Needs approval">
+The run page and the Runs list show **Needs approval** in orange, with the message. The people who can approve get an email.
+</Step>
+<Step title="Someone decides">
+**Approve**: the run is queued again and a runner continues from that step. **Reject**: the run ends as **Failed**. If nobody decides within **14 days**, Bentra cancels the run.
+</Step>
+</Steps>
+
+A step whose [`if`](/reference/workflow-syntax#steps--if) is false is skipped and asks for nothing. A workflow can have more than one approval step; the run stops at each in turn.
+
+## What carries across the pause
+
+The runner that continues is not the one that stopped, and it starts with a fresh copy of the workflow's files.
+
+| Carries across | Does not carry across |
+|---|---|
+| [Step outputs](/reference/workflow-syntax#step-outputs) | Files written by earlier steps, such as a saved plan |
+| Each step's result (`steps.<id>.outcome`) | Installed tools or packages outside the workflow's dependency files |
+| Form answers and runtime variables | Environment variables set in an earlier step |
+| Variables and secrets (read again when the run continues) | |
+
+Pass what later steps need through outputs, or recreate it, as the example does by planning again after approval. Keep state that must survive in a remote backend.
+
+<Warning>
+Outputs are stored with secret values masked, and each step's outputs are limited to 256 KB. Don't pass secrets through outputs: read them from [variables](/guides/variables-and-secrets) again in the later step.
+</Warning>
+
+Setup and dependency installation run again when the run continues, so it appears as a new **attempt** on the run page. The steps done before the pause are listed in the new attempt with their results; their logs stay with the earlier attempt.
+
+## Who can approve
+
+- The workflow's **Editors** and **Admins**, workspace **Owners**, and organization **Owners** and **Admins**.
+- For a request workflow, also the form's [approvers](/guides/requests-and-approvals).
+
+The person who started the run can approve it. One approval is enough. Rejecting needs a note, which is shown on the run and in the run's error.
+
+## Approve or reject
+
+Open the run. The banner at the top shows the step, the message and when the run will be cancelled.
+
+- Click **Approve** to let it continue. You can add a note.
+- Enter a note and click **Reject** to stop it.
+- **Cancel** ends the run without recording a decision.
+
+To see every run that is waiting, open **Runs** and click the **Needs approval** card.
+
+With the API: [`POST runs/{id}/approve/`](/reference/api/runs#approve-or-reject) and `POST runs/{id}/reject/`. With the MCP server: `approve_run` and `reject_run`.
+
+## Write the message
+
+`approval: true` asks with no message. `approval.message` is text of up to 1,000 characters. It can include values from the run:
+
+| Write | Value |
+|---|---|
+| `${{ steps.<id>.outputs.<name> }}` | An output of an earlier step |
+| `${{ inputs.<field> }}` | A form answer or runtime variable |
+| `${{ vars.<NAME> }}` | A variable |
+
+A value that doesn't exist fails the run at that step, before anyone is asked.
+
+## Limits
+
+- **Rejecting ends the run there.** No further step runs, including steps with `failure()` or `always()`, because no runner holds the run.
+- **After a failure, approvals are not asked.** If an earlier step failed, a step with `approval` is skipped unless its `if` handles the failure, in which case it runs without asking.
+- **A waiting run blocks the next scheduled run** of the same job, as a running one does.
+- **Re-running** a finished run starts from the first step and stops at the approval step again.
