@@ -1181,7 +1181,7 @@ Number. The maximum value for `input_type: number`.
 
 ### `body[*].validations.step`
 
-Number. The allowed increment for `input_type: number`.
+Number. The allowed increment for `input_type: number`. Without `step`, any number is accepted, decimals included.
 
 ### `body[*].validations.min_date`
 
@@ -1247,14 +1247,13 @@ body:
 | `required` | Yes | Yes |
 | `min_length`, `max_length`, `pattern` | Yes | Yes |
 | `min`, `max` (number inputs) | Yes | Yes |
-| `step` | Yes | No |
-| `min_date`, `max_date` | Yes | No |
-| `min_selections`, `max_selections` on `checkboxes` / `tags` | Yes | Yes |
-| `min_selections`, `max_selections` on a multi-select `dropdown` | Yes | No |
+| `step` | Yes | Yes. Counted from `min`, or from 0 without one. |
+| `min_date`, `max_date` | Yes | Yes |
+| `min_selections`, `max_selections` on `checkboxes`, `tags` and a multi-select `dropdown` | Yes | Yes |
 | `key_pattern`, `value_pattern` | Yes | Yes. Keys must also be non-empty. |
 | Value is one of `options` | Yes | Yes |
 
-API submissions bypass the browser, so only the checks marked in the Server column apply to them.
+Every check runs on the server, so an API submission is held to the same rules as the form.
 
 ---
 
@@ -1596,7 +1595,7 @@ The schema also accepts a `values` key next to `params`, but it is ignored. Put 
 
 Boolean. Default `false`.
 
-- **`true`:** the field is read-only and is overwritten every time it is recalculated.
+- **`true`:** the field is read-only and is overwritten every time it is recalculated. The stored value is calculated by Bentra from the other answers when the request is submitted, so an API client does not send it, and a value sent for it is ignored. For `today` and `today+N`, a date within one day of the server's is kept, to allow for the submitter's timezone.
 - **`false`:** the auto-populated value is only a suggestion. It fills the field when the field is empty, or when the current value was itself auto-filled. It never overwrites a value the user typed.
 
 The first field below is a suggestion the user can overwrite. The second is computed and always matches the inputs:
