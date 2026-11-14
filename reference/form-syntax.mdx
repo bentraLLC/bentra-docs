@@ -886,6 +886,8 @@ The choices for `dropdown`, `checkboxes`, and `radio` fields. Each option is an 
 | `label` | No | string | The text displayed. Defaults to `value`. |
 | `required` | No | boolean | `checkboxes` only: this box must be checked |
 
+A `radio` or `dropdown` answer keeps its option's type: `value: true` is submitted as a boolean and `value: 3` as a number, so a workflow condition can test `inputs.is_contractor == true`. Answers from text fields (`input` of type text, email, password or date, and `textarea`) are always text, whatever is typed; use `input_type: number` when you need a number.
+
 <Tabs sync={false}>
 <Tab title="YAML">
 
