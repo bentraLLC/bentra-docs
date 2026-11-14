@@ -278,7 +278,8 @@ const conditionValue = (field, value) => {
 const isoDate = (offsetDays) => {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
 const dateKeyword = (s) => {
@@ -352,8 +353,24 @@ const evaluateCondition = (expr, lookup) => {
     if (tok === "false") return false;
     return lookup(tok);
   };
-  const truthy = (v) => v !== null && v !== false;
-  const equal = (a, b) => (a === null || b === null ? a === b : String(a) === String(b));
+  // The same rules as Bentra's form.js and server (bento forms/condition_vectors.json).
+  const structure = (v) => v !== null && typeof v === "object";
+  const num = (v) =>
+    typeof v === "number" ? v : typeof v === "string" && /^-?\d+(\.\d+)?$/.test(v) ? parseFloat(v) : null;
+  const truthy = (v) => {
+    if (typeof v === "boolean") return v;
+    if (v === null || v === undefined || v === "" || v === 0 || v === "false" || v === "0") return false;
+    return !(Array.isArray(v) && v.length === 0);
+  };
+  const equal = (a, b) => {
+    if (a === null || b === null) return a === b;
+    if (structure(a) || structure(b)) return false;
+    if (typeof a === "number" || typeof b === "number") {
+      const x = num(a), y = num(b);
+      if (x !== null && y !== null) return x === y;
+    }
+    return String(a) === String(b);
+  };
   const primary = () => {
     const tok = take();
     if (tok === undefined) throw new Error("unexpected end");
@@ -369,8 +386,9 @@ const evaluateCondition = (expr, lookup) => {
       take("(");
       const arg = literal(take());
       take(")");
-      if (v === null) return false;
+      if (v === null || structure(arg)) return false;
       if (Array.isArray(v)) return v.some((x) => String(x) === String(arg));
+      if (structure(v)) return false;
       return String(v).includes(String(arg));
     }
     return v;
