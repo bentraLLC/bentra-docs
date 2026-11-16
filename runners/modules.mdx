@@ -53,7 +53,17 @@ Pin dependencies so every build installs the same thing.
 
 An environment is identified by a fingerprint of the module's package (so its `module.yaml`, dependency file, lockfile and setup script), the runtime, the platform, the runner version and the runner's cache epoch.
 
-On Kubernetes (Helm) and Docker runners, each job starts clean, so the environment is built on every run. With uv this usually takes seconds. Reuse of an environment across runs arrives in the next runner release.
+A Helm runner (runner 0.24.0 or later) keeps environments between runs. The first run that uses a module version builds its environment, and later runs on that runner reuse it: **Prepare modules** says `using its cached environment`. The build happens before the run's own steps start, and its output is in the **Prepare modules** log.
+
+The cache is one that steps can't write. Each runner pod has a small `cache` container, the only one that can write it; the container that runs your steps can only read it. An environment goes in only when the runner built it before any step of the run had started, so one workflow can't change what another runs.
+
+The cache is an optimisation, never a requirement. A run builds its environments itself, which usually takes seconds with uv, when:
+
+- the runner pod is new, or the cache was cleared;
+- the runner is a KEDA one-job pod, a Docker runner or a VM runner (these build on every run);
+- the cache is turned off with `cache.enabled: false`.
+
+By default the cache lives as long as the pod. To keep it across pod restarts and share it between the pods of one Helm release, give it a `ReadWriteMany` volume claim with `cache.existingClaim`.
 
 A module with [`dependencies.env`](/reference/module-syntax#dependencies) gets an environment for each calling workflow. One without is the same for every workflow on the runner.
 
@@ -61,7 +71,14 @@ A module with [`dependencies.env`](/reference/module-syntax#dependencies) gets a
 
 A released version never changes, so to change a module's dependencies or setup script, bump `version` in `module.yaml`. The new version gets a new environment.
 
-Setting `BENTRA_CACHE_EPOCH` on the runner to any new value makes every environment rebuild. It matters once environments are reused across runs.
+To make a runner pool build every environment again, change `cache.epoch` in the Helm values (it sets `BENTRA_CACHE_EPOCH`) and upgrade the release:
+
+```bash
+helm upgrade bentra-runner oci://ghcr.io/bentrallc/charts/bentra-runner \
+  --version <version> --reuse-values --set cache.epoch=2
+```
+
+Upgrading the runner version does the same. An environment that is damaged or incomplete is never used: the run builds it again.
 
 ### Private package indexes and credentials
 
@@ -75,7 +92,11 @@ The build has its own home and temp directories, deleted when it ends. If a secr
 |---|---|---|
 | `BENTRA_MODULE_CACHE` | `/workspace/modules` | Where a job's packages and environments are written |
 | `BENTRA_MODULE_PREPARE_TIMEOUT` | `900` | Seconds allowed for building one module's environment |
-| `BENTRA_CACHE_EPOCH` | empty | Change it to make every environment rebuild |
+| `BENTRA_CACHE_EPOCH` | empty | Change it to make every environment rebuild. Helm: `cache.epoch` |
+| `cache.sealedSize` (Helm) | `10Gi` | Size of the environment cache's volume |
+| `cache.sealedBytes` (Helm) | 8 GiB | The oldest environments are dropped past this. An environment a run is using is never dropped |
+| `cache.existingClaim` (Helm) | empty | A `ReadWriteMany` volume claim for the cache, kept across restarts and shared by the release's pods |
+| `cache.enabled` (Helm) | `true` | `false` turns the cache off: every run builds its environments |
 | `STEP_TIMEOUT` | `300` | Longest any step, including a module action, may run |
 
 ## Security
