@@ -47,17 +47,17 @@ The runner that continues is not the one that stopped, and it starts with a fres
 | Carries across | Does not carry across |
 |---|---|
 | [Step outputs](/reference/workflow-syntax#step-outputs) | Files written by earlier steps, such as a saved plan |
-| Each step's result (`steps.<id>.outcome`) | Installed tools or packages outside the workflow's dependency files |
+| Each step's result (`steps.<id>.outcome`) | Tools and packages installed by earlier steps, such as a `.venv` |
 | Form answers and runtime variables | Environment variables set in an earlier step |
 | Variables and secrets (read again when the run continues) | |
 
-Pass what later steps need through outputs, or recreate it, as the example does by planning again after approval. Keep state that must survive in a remote backend.
+Pass what later steps need through outputs, or recreate it, as the example does by planning again after approval. Steps before the approval aren't rerun, so [install packages and tools](/reference/workflow-syntax#installing-dependencies-and-tools) again in a step after it. Keep state that must survive in a remote backend.
 
 <Warning>
 Outputs are stored with secret values masked, and each step's outputs are limited to 256 KB. Don't pass secrets through outputs: read them from [variables](/guides/variables-and-secrets) again in the later step.
 </Warning>
 
-Setup and dependency installation run again when the run continues, so it appears as a new **attempt** on the run page. The steps done before the pause are listed in the new attempt with their results; their logs stay with the earlier attempt.
+Setup runs again when the run continues: the files, pinned tools, variables and secrets, and module environments. Nothing is installed for the workflow itself. The continued run appears as a new **attempt** on the run page. The steps done before the pause are listed in the new attempt with their results; their logs stay with the earlier attempt.
 
 ## Who can approve
 

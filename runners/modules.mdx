@@ -1,24 +1,24 @@
 ---
 title: "Modules on runners"
-description: "What a runner needs to run module actions: runtimes, the package cache, dependencies and the security boundary."
+description: "What a runner needs to run module actions: runtimes, module environments and the security boundary."
 ---
 
 Module actions run on your runners, like every other workflow step.
 
 ## Runtimes
 
-A module declares the language it needs. The runner must have it installed.
+A module declares the language it needs.
 
 | Module language | Runner needs |
 |---|---|
-| `python` | A Python matching the module's version (`"3.12"` means any 3.12; `">=3.11"` means that or newer) |
+| `python` | uv. When the runner has no Python matching the module's version (`"3.12"` means any 3.12; `">=3.11"` means that or newer), it installs one with uv |
 | `node` | A matching Node.js, and `npm` when the module has dependencies |
 | `bash` | Bash |
 | `binary` | Nothing: the module ships a program for the runner's platform, such as `linux-amd64` |
 
-The Bentra runner image includes Python 3.12, Node.js 22 and Bash. For other versions, build your own image from it.
+The Bentra runner image includes Python 3.12, 3.13 and 3.14, uv, Node.js 22 and Bash. A Python module can ask for any version uv can install. For another Node.js version, build a [custom runner image](/runners/custom-images).
 
-Each runner reports its platform and runtimes to Bentra. If a run needs a runtime the runner doesn't have, it fails in the **Prepare modules** step, before any of your steps run, with a message such as:
+Each runner reports its platform and runtimes to Bentra. If a run needs a Node.js or Bash the runner doesn't have, it fails in the **Prepare modules** step, before any of your steps run, with a message such as:
 
 ```text
 Module text-tools 1.0.0 needs node >=20. This runner has python 3.12.7, bash 5.2.21.
@@ -33,24 +33,49 @@ A run with module steps starts with a **Prepare modules** step. For each module 
 1. asks Bentra whether the version may still run (a revoked version stops here);
 2. downloads the package, or reuses its cached copy;
 3. checks the package's size and SHA-256 checksum against what Bentra recorded;
-4. installs the module's dependencies if they aren't installed yet.
+4. builds the module's environment: installs its dependencies, then runs its `setup` script.
 
-The runner never reads your Git repository to run a module.
+If a build fails, the step fails with the installer's output and nothing is kept.
 
-## Cache and dependencies
+The runner never reads your Git repository to run a module. Releasing a module installs nothing: the environment is built on a runner, the first time a job uses that version.
 
-Packages are cached by checksum in `BENTRA_MODULE_CACHE` (default `/workspace/modules`). A cached package is checked again every time it's used.
+## Environments
 
-Dependencies are installed once per module version into that version's own folder: a virtual environment for Python, `node_modules` for Node. They are never installed into the runner's own Python.
+Each module version gets its own environment, apart from the runner's own Python and from other modules:
 
-Runners that start fresh for every job have an empty cache, so each run downloads and installs again. Mount a volume at the cache path to keep it.
+- **Python:** a virtual environment created with uv, with the Python the module asks for. The requirements file is installed with `uv pip install -r`.
+- **Node.js:** `node_modules`, installed with `npm ci --omit=dev`.
+- **Any language:** the module's [`setup`](/reference/module-syntax#setup) script runs last. What it installs into the environment is on the action's `PATH`.
 
-Dependencies are downloaded from your package index when first installed. Pin them so every runner installs the same thing.
+Pin dependencies so every build installs the same thing.
+
+### When an environment is built
+
+An environment is identified by a fingerprint of the module's package (so its `module.yaml`, dependency file, lockfile and setup script), the runtime, the platform, the runner version and the runner's cache epoch.
+
+On Kubernetes (Helm) and Docker runners, each job starts clean, so the environment is built on every run. With uv this usually takes seconds. Reuse of an environment across runs arrives in the next runner release.
+
+A module with [`dependencies.env`](/reference/module-syntax#dependencies) gets an environment for each calling workflow. One without is the same for every workflow on the runner.
+
+### Rebuilding
+
+A released version never changes, so to change a module's dependencies or setup script, bump `version` in `module.yaml`. The new version gets a new environment.
+
+Setting `BENTRA_CACHE_EPOCH` on the runner to any new value makes every environment rebuild. It matters once environments are reused across runs.
+
+### Private package indexes and credentials
+
+The build doesn't receive the workflow's variables. A module names the ones its install needs in [`dependencies.env`](/reference/module-syntax#dependencies), such as `UV_INDEX_URL` or a token, and the runner passes those from the calling workflow's variables and secrets. A name the workflow doesn't define is left unset, and the build log says `not set on this workflow: NAME`.
+
+The build has its own home and temp directories, deleted when it ends. If a secret passed to the build is found written inside the environment's files, the build fails with `a credential passed to the build was written into the environment` and the environment is discarded. Pass credentials to installers through environment variables, not config files inside the environment.
+
+### Settings
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `BENTRA_MODULE_CACHE` | `/workspace/modules` | Where packages and their dependencies are kept |
-| `BENTRA_MODULE_PREPARE_TIMEOUT` | `900` | Seconds allowed for installing one module's dependencies |
+| `BENTRA_MODULE_CACHE` | `/workspace/modules` | Where a job's packages and environments are written |
+| `BENTRA_MODULE_PREPARE_TIMEOUT` | `900` | Seconds allowed for building one module's environment |
+| `BENTRA_CACHE_EPOCH` | empty | Change it to make every environment rebuild |
 | `STEP_TIMEOUT` | `300` | Longest any step, including a module action, may run |
 
 ## Security
@@ -61,6 +86,7 @@ What Bentra does:
 
 - runs exactly the package that was released, verified by checksum;
 - gives an action only its inputs and the auth its step passes;
+- gives a module's dependency install and setup script only the variables the module names in `dependencies.env`;
 - passes credentials in a file only the runner's user can read, and deletes it when the action ends;
 - starts the action with a minimal environment, without the runner's token or the workflow's variables;
 - masks the auth fields the module marks secret in logs;
@@ -70,6 +96,7 @@ What it doesn't do:
 
 - An action runs as the same operating-system user as the runner. It can read files that user can read and use any network access and cloud identity the runner has.
 - An action isn't isolated from other steps of the same run.
+- A module's setup script and its packages' install scripts run on the runner too, when the environment is built.
 
 So treat **who can release a module** as who can run code on your runners. A module is released by bumping `version` in its `module.yaml` on the branch or tag Bentra follows, so:
 

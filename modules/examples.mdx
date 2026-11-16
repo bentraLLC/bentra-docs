@@ -35,7 +35,7 @@ scripts/run-action.sh bentra/modules/json-tools merge bentra/modules/json-tools/
 
 ## http-check (Python)
 
-Checks that URLs answer with the expected status. Auth is optional (`auth.required: false`), so the action handles `BENTRA_AUTH_FILE` being unset. Both actions share a small helper, `actions/_bentra.py`, that reads and writes the contract files: copy it into your own Python modules.
+Checks that URLs answer with the expected status. Auth is optional (`auth.required: false`), so the action handles `BENTRA_AUTH_FILE` being unset. Both actions share a small helper, `actions/_bentra.py`, that reads and writes the contract files: copy it into your own Python modules. The runner installs `requirements.txt` with uv into the version's own virtual environment, with a Python that matches `runtime.version`.
 
 ```text
 bentra/modules/http-check/

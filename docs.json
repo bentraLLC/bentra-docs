@@ -59,7 +59,8 @@
                 "group": "Your first runner",
                 "pages": [
                   "runners/install",
-                  "runners/network"
+                  "runners/network",
+                  "runners/custom-images"
                 ]
               },
               "get-started/connect-repository",

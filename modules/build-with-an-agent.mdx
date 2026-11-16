@@ -42,7 +42,10 @@ private registry, and is released as immutable versions that workflows pin exact
    workflow step calling the module passes the values in `module.auth` (secrets from
    `${{ vars.NAME }}` or `${{ inputs.field }}`), and the action reads them from
    `$BENTRA_AUTH_FILE` at run time.
-7. **Pin dependencies exactly** (`requests==2.32.5`, a committed `package-lock.json`).
+7. **Pin dependencies exactly** (`requests==2.32.5`, a committed `package-lock.json`). Nothing
+   is installed at release: the runner builds the module's environment the first time a job
+   uses the version. Credentials for a private package index reach the build only through
+   `dependencies.env`; never write them into files.
 8. **A released version never changes.** Removing an action, renaming an input or adding a
    required input is a breaking change: bump the major version.
 
@@ -85,7 +88,11 @@ runtime:
   language: python                  # python | node | bash | binary
   version: ">=3.11"                 # required for python and node
 dependencies:
-  file: requirements.txt            # optional
+  file: requirements.txt            # optional; python and node only
+  env: [UV_INDEX_URL]               # optional: workflow variables and secrets the install
+                                    # and setup receive (CAPITALS, digits, _; at most 20)
+setup: |                            # optional: bash, run once when the runner builds this
+  uv pip install example-cli==1.2.3 # version's environment, after the dependency install
 auth:                               # optional; omit when no credentials are needed
   required: false                   # false: steps may call it without auth
   methods:                          # the calling step picks one with auth.type
@@ -147,10 +154,16 @@ variables:
 
 | `language` | How the runner starts the entrypoint | Dependencies |
 |---|---|---|
-| `python` | `python <entrypoint>` in a virtualenv per module version (runner image: Python 3.12) | `dependencies.file: requirements.txt`, pinned |
+| `python` | `python <entrypoint>` in the module version's own virtual environment. The runner installs the requested Python with uv when it has no matching one | `dependencies.file: requirements.txt`, pinned; installed with `uv pip install -r` |
 | `node` | `node <entrypoint>` (Node 22). **CommonJS only**: `.js`/`.cjs` with `require`; `import` can't see the installed packages | `dependencies.file: package.json` + committed `package-lock.json`; installed with `npm ci --omit=dev` |
-| `bash` | `bash <entrypoint>`. Start with `set -euo pipefail`; use `jq` (installed) for JSON | none |
-| `binary` | `bin/<os>-<arch>/<entrypoint>`, e.g. `bin/linux-amd64/sha-tool`. List each in `runtime.platforms` and commit the binaries | none (static binaries) |
+| `bash` | `bash <entrypoint>`. Start with `set -euo pipefail`; use `jq` (installed) for JSON | no `dependencies.file` |
+| `binary` | `bin/<os>-<arch>/<entrypoint>`, e.g. `bin/linux-amd64/sha-tool`. List each in `runtime.platforms` and commit the binaries | no `dependencies.file` (static binaries) |
+
+Every language can have a `setup` script and `dependencies.env`. `setup` runs with
+`bash -eo pipefail` in the module's directory with the environment active (`python` and `uv` on
+`PATH`, `$BENTRA_ENV_DIR`, `$BENTRA_MODULE_DIR`); what it installs into the virtual
+environment's `bin` or `$BENTRA_ENV_DIR/bin` is on the action's `PATH`. The build receives only
+the variables named in `dependencies.env`; actions never receive them.
 
 ## Minimal action (Python)
 
@@ -197,6 +210,9 @@ keeps its JSON type.
 - [ ] `module.yaml` validates against the schema; `metadata.name` matches the folder name.
 - [ ] Every `entrypoint` exists inside the working directory; binaries for every platform.
 - [ ] Dependencies are pinned (`requirements.txt` with `==`, committed `package-lock.json`).
+- [ ] Tools the actions call are installed by `setup`, with pinned versions.
+- [ ] `dependencies.env` lists every variable the install or `setup` needs, and no credential
+      is written into a file.
 - [ ] Each action reads only its env files, writes one JSON object matching `outputs`, and
       exits non-zero on failure.
 - [ ] Optional auth is handled when `BENTRA_AUTH_FILE` is unset.

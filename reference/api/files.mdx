@@ -21,14 +21,14 @@ Reads need `workflow.view`; writes need `workflow.edit`.
 
 ## Files
 
-Every workflow has `workflow.yml` (the steps); request workflows also have `form.yml` ([form syntax](/reference/form-syntax)). Both are at the top level, are required and can't be deleted. Python dependencies go in `requirements.txt`, and a `README.md` is optional.
+Every workflow has `workflow.yml` (the steps); request workflows also have `form.yml` ([form syntax](/reference/form-syntax)). Both are at the top level, are required and can't be deleted. Other files are optional, such as a `README.md` or a `requirements.txt` that a step installs.
 
 ### `GET workflows/{id}/files/`
 
 ```json
 {"success": true, "read_only": false,
  "files": [{"path": "workflow.yml", "is_required": true},
-           {"path": "requirements.txt", "is_required": false}]}
+           {"path": "README.md", "is_required": false}]}
 ```
 
 `?version=<version_id>` lists a version's files instead (`read_only: true`).

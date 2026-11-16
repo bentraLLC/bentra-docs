@@ -79,11 +79,11 @@ Bentra warns, without stopping, about unpinned requirements and files that look 
 
 Click **Validate** on the module's page (or `validate_module`) to run every check on the current source without releasing anything.
 
-Your code is never run during these checks.
+Your code is never run during these checks, and nothing is installed. A runner installs the dependencies and runs the [setup script](/modules/building-actions#setup-script) the first time a job uses the version.
 
 ## Released versions don't change
 
-Once released, a version's code, manifest and package checksum are fixed. Bentra won't release `1.2.0` twice. Each version records the repository, commit, release notes, what triggered it and when.
+Once released, a version's code, manifest and package checksum are fixed. Bentra won't release `1.2.0` twice. To change a module's dependencies or setup script, bump `version`: the new version gets a new environment on the runner. Each version records the repository, commit, release notes, what triggered it and when.
 
 ## Deprecate or revoke a version
 

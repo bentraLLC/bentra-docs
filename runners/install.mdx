@@ -60,6 +60,12 @@ The pool page has the full commands: a network, the orchestrator container and t
 
 The pool page lists the connected runners with their version and status, refreshed every 15 seconds. A runner older than the latest release shows **Outdated**.
 
+## What's in the runner image
+
+The image (`ghcr.io/bentrallc/runner`) has Python 3.12, 3.13 and 3.14, uv, Node.js 22 with npm, `git`, `curl`, `jq` and `kubectl`. Terraform and OpenTofu versions are chosen in the workflow with [`tools`](/reference/workflow-syntax#tools).
+
+Steps install anything else they need without root: see [Installing dependencies and tools](/reference/workflow-syntax#installing-dependencies-and-tools). For system packages or CA certificates, build a [custom runner image](/runners/custom-images).
+
 ## Plan limits
 
 Your plan sets how many runners can be connected at once, across all your pools together, and how many runner pools you can create. See [Plans and limits](/plans).

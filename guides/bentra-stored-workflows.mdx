@@ -29,11 +29,12 @@ flowchart LR
 
 A new Bentra-stored workflow starts with starter files and a published v1, so it can run straight away:
 
-- `workflow.yml`: one step that prints a greeting.
-- `requirements.txt`: empty. Python packages listed here are installed before your steps run.
+- `workflow.yml`: one step that prints a greeting, and a commented example that installs Python packages with uv.
 - `form.yml` (request workflows only): one text input.
 
 The files sit at the top level of the file set. `workflow.yml` and `form.yml` are required and can't be deleted. A `README.md` is optional.
+
+The runner installs nothing for a workflow. To use Python or Node.js packages, add a `requirements.txt` or `package.json` and a step that installs it: see [Installing dependencies and tools](/reference/workflow-syntax#installing-dependencies-and-tools). The **Workflow** tab warns when one of these files is there and no `run` step mentions it.
 
 ### Edit files
 
@@ -164,7 +165,7 @@ tools/
 
 Here one workflow has the working directory `inventory` and another has `release`.
 
-Steps start in the working directory, and the run has the whole repository, so a step in `inventory/` can run `../tools/common.sh`. `bento_inputs.json` and `bento.env` are written to the working directory, and the dependency install reads `requirements.txt` or `package.json` from it.
+Steps start in the working directory, and the run has the whole repository, so a step in `inventory/` can run `../tools/common.sh`. `bento_inputs.json` and `bento.env` are written to the working directory. A `requirements.txt` or `package.json` there is not installed by the runner: a step [installs it](/reference/workflow-syntax#installing-dependencies-and-tools).
 
 Runners older than the version Bentra requires are refused with **426 Upgrade Required**; see [Install a runner](/runners/install#versions).
 
@@ -219,7 +220,7 @@ A sync of an unchanged commit publishes nothing, and a failed sync leaves the cu
 
 To roll back, activate an older version with the API or MCP (`activate_version`). Automatic syncs then stop, so the next push doesn't undo the rollback. Activating the newest version turns them back on.
 
-A snapshot holds the whole repository, not only the working directory: up to 2,000 files, 10 MB per file and 50 MB in total (20 MB as a compressed archive). Steps that download more at run time still need the network, for example Terraform registry modules, `pip install` and GitHub Actions steps.
+A snapshot holds the whole repository, not only the working directory: up to 2,000 files, 10 MB per file and 50 MB in total (20 MB as a compressed archive). Steps that download more at run time still need the network, for example Terraform registry modules, `uv pip install` and GitHub Actions steps.
 
 You can also change the branch or tag through the API with `PATCH workflows/{id}/` (`source.branch` or `source.tag`). See the [Workflows API](/reference/api/workflows).
 

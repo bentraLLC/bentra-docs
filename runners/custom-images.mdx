@@ -1,0 +1,65 @@
+---
+title: "Custom runner images"
+description: "Build your own image from the Bentra runner image when a workflow needs system packages, CA certificates or tools that need root."
+---
+
+Most workflows and modules don't need a custom image. The Bentra runner image has Python 3.12, 3.13 and 3.14, uv, Node.js 22 with npm, `git`, `curl`, `jq` and `kubectl`, and steps can [install more without root](/reference/workflow-syntax#installing-dependencies-and-tools).
+
+## When you need one
+
+Steps run as a non-root user on a read-only image. Build your own image when something has to be part of the system:
+
+- packages installed with `apt-get`, or anything else that needs root;
+- CA certificates, for example for a proxy or a private package index;
+- another Node.js version for [modules](/runners/modules#runtimes);
+- a large tool you don't want every run to download.
+
+## Build the image
+
+Start from the runner image, switch to `root` to install, then switch back:
+
+```dockerfile
+FROM ghcr.io/bentrallc/runner:<version>
+
+USER root
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends example-package \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY example-ca.crt /usr/local/share/ca-certificates/example-ca.crt
+RUN update-ca-certificates
+
+USER appuser
+```
+
+Keep what the runner relies on:
+
+- the two users, uid 1000 (`appuser`) and uid 1001;
+- the `/app` folder;
+- the entrypoint.
+
+End the Dockerfile with `USER appuser`.
+
+## Use it
+
+Push the image to a registry your cluster can pull from, then set `image.repository` and `image.tag` in the Helm values:
+
+```yaml
+image:
+  repository: registry.example.com/platform/bentra-runner
+  tag: "<your-tag>"
+```
+
+```bash
+helm upgrade bentra-runner oci://ghcr.io/bentrallc/charts/bentra-runner \
+  --version <version> --reuse-values \
+  --set image.repository=registry.example.com/platform/bentra-runner \
+  --set image.tag=<your-tag>
+```
+
+For a private registry, list its pull secret under `imagePullSecrets` in the values.
+
+## Upgrades
+
+Your image contains one runner version. When you [upgrade the runner](/runners/install#versions), change the `FROM` line to the new version, rebuild, and set the new tag together with the chart version.

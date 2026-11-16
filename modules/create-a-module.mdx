@@ -98,6 +98,8 @@ actions:
 requests==2.32.5
 ```
 
+The runner installs these with uv into the module version's own virtual environment, the first time a job uses the version. For a tool that isn't in the requirements file, or packages from a private index, see [Setup script](/modules/building-actions#setup-script) and [Private packages](/modules/building-actions#private-packages).
+
 `bentra/modules/http-check/actions/check_url.py`:
 
 ```python

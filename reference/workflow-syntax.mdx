@@ -705,11 +705,146 @@ echo "::bentra-check status=warning,name=Cost,monthly=412::Above the 400 USD bud
 
 ---
 
+## Installing dependencies and tools
+
+The runner doesn't install anything for a workflow. A `requirements.txt` or `package.json` in the working directory is a file like any other: a `run` step installs it. Runners before 0.23.0 installed both before the first step. They no longer do.
+
+When a workflow has one of these files and no `run` step mentions it, **Set up job** prints a line such as:
+
+```text
+requirements.txt is not installed automatically. Add a step that installs it, for example: run: uv venv && uv pip install -r requirements.txt
+```
+
+For a Bentra-stored workflow, the **Workflow** tab shows a similar warning while you edit.
+
+### What the runner image has
+
+| Tool | Notes |
+|---|---|
+| Python 3.12, 3.13 and 3.14 | All on `PATH`, as `python3.12`, `python3.13` and `python3.14` |
+| uv | Creates virtual environments, installs packages and tools, downloads other Python versions |
+| Node.js 22 | With `npm` |
+| `git`, `curl`, `jq`, `kubectl` | |
+| Terraform and OpenTofu | Pick a version with [`tools`](#tools) |
+
+Anything else is installed by a step, as the recipes below show.
+
+### What to know before you install
+
+- **Steps aren't root, and the image is read-only.** Install into the workspace or the home directory. `apt-get`, and anything else that needs root, doesn't work: use a [custom runner image](/runners/custom-images).
+- **`PATH` starts with `$HOME/.local/bin` and `$HOME/.npm-global/bin`.** A tool installed with `uv tool install` or `npm install -g` is found by every later step.
+- **Each step is its own shell.** Activating a virtual environment in one step doesn't carry to the next. Call `.venv/bin/python`, or run `source .venv/bin/activate` in each step that needs it. Files do carry: the `.venv` folder is still there.
+- **Nothing is kept between runs.** Each run starts with an empty home directory and workspace, so every run installs again.
+- **After an [approval step](#steps--approval), install again.** The run continues in a new workspace and earlier steps aren't rerun, so `.venv`, `node_modules` and installed tools are gone. Put the install in a step after the approval.
+- **An install counts toward the step's timeout**, 300 s by default. For a large install, ask whoever operates the runner to raise `STEP_TIMEOUT` (`config.stepTimeout` in the Helm chart).
+
+### Python packages
+
+```yaml
+steps:
+  - name: Install packages
+    run: |
+      uv venv --python 3.13
+      uv pip install -r requirements.txt
+
+  - name: Run
+    run: .venv/bin/python main.py
+```
+
+`uv venv` creates `.venv` in the working directory, and `uv pip install` installs into it when run from the same directory. The virtual environment has no `pip` of its own, so always install with `uv pip install`.
+
+### A specific Python version
+
+`uv venv --python 3.12`, `3.13` or `3.14` uses the image's interpreter, with no download. Ask for any other version and uv downloads it:
+
+```yaml
+- name: Install packages
+  run: |
+    uv venv --python 3.11
+    uv pip install -r requirements.txt
+```
+
+`uv python install 3.11` downloads a version without creating a virtual environment.
+
+### Azure CLI
+
+```yaml
+steps:
+  - name: Install the Azure CLI
+    run: uv tool install azure-cli
+
+  - name: Use it
+    run: az version
+```
+
+`uv tool install` puts the command in `~/.local/bin`, which is on `PATH`.
+
+### AWS CLI
+
+```yaml
+steps:
+  - name: Install the AWS CLI
+    run: uv tool install awscli
+
+  - name: Use it
+    run: aws --version
+```
+
+This is AWS CLI version 1, from PyPI. For version 2, download its installer, unzip it and install with a user prefix:
+
+```yaml
+- name: Install the AWS CLI v2
+  run: |
+    curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o awscliv2.zip
+    unzip -q awscliv2.zip
+    ./aws/install -i ~/.local/aws-cli -b ~/.local/bin
+```
+
+Other installers work the same way when they accept a prefix under the home directory.
+
+### Node.js packages
+
+```yaml
+steps:
+  - name: Install packages
+    run: npm ci
+
+  - name: Install a command-line tool
+    run: npm install -g example-cli
+
+  - name: Run
+    run: |
+      example-cli --version
+      node index.js
+```
+
+`npm ci` installs `package.json` and its lockfile into `node_modules` in the working directory. `npm install -g` installs into `$HOME/.npm-global`, whose `bin` folder is on `PATH`.
+
+### A private package index
+
+Variables and secrets are environment variables in every step, and secrets are masked in the logs. So a private index needs only a variable. Add a secret such as `PACKAGE_TOKEN` to the workflow or a [variable collection](/guides/variables-and-secrets), then use it:
+
+```yaml
+- name: Install packages
+  run: |
+    export UV_INDEX_URL="https://token:${PACKAGE_TOKEN}@packages.example.com/simple/"
+    uv venv --python 3.13
+    uv pip install -r requirements.txt
+```
+
+Or define a variable named `UV_INDEX_URL` (for uv) or `NPM_CONFIG_REGISTRY` (for npm) on the workflow or a collection: the installers read them without any `export`.
+
+<Note>
+Form answers can't set these. A form field whose name would become a variable starting with `UV_`, `PIP_` or `NPM_CONFIG_` is refused as an environment variable. Use variables.
+</Note>
+
+---
+
 ## Timeouts and implicit setup
 
 - **Step timeout:** 300 s by default. This is set by the runner's `STEP_TIMEOUT` environment variable, not in the YAML. [GitHub Actions steps](#github-actions-steps) use `timeout_minutes` instead, and a [module step](#module-steps) can set a shorter limit with `timeout_minutes`.
 - **Run timeout:** 1800 s by default, set by the runner's `EXECUTION_TIMEOUT`.
-- **Dependency install:** before your steps, the runner adds an "Install Python dependencies" step (`pip install -r requirements.txt`) if `requirements.txt` exists in the working directory, and an "Install Node.js dependencies" step (`npm install --production`) if `package.json` exists there. If either fails, the run stops.
+- **Dependencies:** the runner installs none. A `requirements.txt` or `package.json` in the working directory is installed by one of your steps. See [Installing dependencies and tools](#installing-dependencies-and-tools).
 
 ---
 

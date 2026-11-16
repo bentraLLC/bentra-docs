@@ -95,14 +95,14 @@ runtime:
 dependencies:
   file: requirements.txt
 ```
-Entrypoints are `.py` files. Packages in the requirements file are installed into a virtual environment that belongs to this module version. Pin them (`requests==2.33.0`) so every install is the same.
+Entrypoints are `.py` files. The runner creates a virtual environment for this module version with uv and installs the requirements file into it with `uv pip install -r`. Pin the packages (`requests==2.33.0`) so every install is the same. If the runner has no Python matching `version`, it installs one with uv, so any version uv can install works.
 </Tab>
 <Tab title="Bash">
 ```yaml
 runtime:
   language: bash
 ```
-Entrypoints are run with `bash`. Bash modules can't declare dependencies: use tools the runner already has, or ship what you need in the folder.
+Entrypoints are run with `bash`. Bash modules can't declare a dependency file: use tools the runner already has, ship what you need in the folder, or install it with a [setup script](#setup-script).
 
 ```bash
 name=$(jq -r .name "$BENTRA_INPUT_FILE")
@@ -140,7 +140,39 @@ Build your program for each platform and commit the executables as `bin/<platfor
 </Tab>
 </Tabs>
 
-A runner can only run a module whose runtime it has. See [Modules on runners](/runners/modules).
+For Node.js and Bash, a runner can only run a module whose runtime it has. See [Modules on runners](/runners/modules).
+
+## Setup script
+
+`setup` in `module.yaml` is a bash script the runner runs once when it builds the module version's environment, after the dependency install. It doesn't run on every call. Use it to install a tool your actions call:
+
+```yaml
+runtime:
+  language: python
+  version: "3.13"
+dependencies:
+  file: requirements.txt
+setup: |
+  uv pip install example-cli==1.2.3
+```
+
+The script runs in the module's folder with the environment active, so `uv pip install` installs into the module's virtual environment. Anything it puts in the virtual environment's `bin` or in `$BENTRA_ENV_DIR/bin` is on the action's `PATH`. Bash and compiled modules can have a setup script too. See [`setup`](/reference/module-syntax#setup).
+
+Nothing is installed when you release. The environment is built on a runner, in the **Prepare modules** step, the first time a job uses the version. To change the dependencies or the script, bump `version`.
+
+## Private packages
+
+The dependency install and the setup script don't receive the workflow's variables. List the ones they need in `dependencies.env`:
+
+```yaml
+dependencies:
+  file: requirements.txt
+  env: [UV_INDEX_URL, PACKAGE_TOKEN]
+```
+
+The runner passes those names from the calling workflow's variables and secrets, so each workflow that uses the module defines them, for example a variable `UV_INDEX_URL` pointing at `https://packages.example.com/simple/`. Actions never receive them.
+
+Pass credentials to installers through these environment variables only. Don't write them into a config file inside the environment: the build fails if it finds a passed secret there.
 
 ## Test an action locally
 

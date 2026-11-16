@@ -1,6 +1,6 @@
 ---
 title: "module.yaml syntax"
-description: "Every field of a module's manifest: metadata, runtime, dependencies, auth and actions."
+description: "Every field of a module's manifest: metadata, runtime, dependencies, setup, auth and actions."
 ---
 
 Each module has a `module.yaml` (or `module.yml`, not both) at the top of its working directory. Bentra validates it whenever it reads the source and again when it builds a release. Keys are snake_case; unknown keys are rejected, except ones starting with `x-`. The same schema, with descriptions and an example, is served at `GET /orgs/{org}/api/v1/schemas/module/` and as the MCP resource `bentra://schemas/module`.
@@ -64,7 +64,8 @@ Unknown fields are errors, so a typo is caught. For your own notes, use keys sta
 | `metadata` | yes | See below |
 | `runtime` | yes | See below |
 | `actions` | yes | One or more actions |
-| `dependencies` | no | Packages to install |
+| `dependencies` | no | Packages to install, and the variables the install receives |
+| `setup` | no | A bash script run once when a runner builds this version's environment |
 | `auth` | no | How a calling step authenticates |
 | `defaults` | no | `timeout_seconds` for actions that don't set one |
 
@@ -91,13 +92,50 @@ The registry shows these exactly as written; they can't be edited in Bentra. Cha
 | `version` | for `python` and `node` | `"3.12"` (any 3.12.x) or `">=3.11"` (that version or newer) |
 | `platforms` | for `binary` | Platforms you ship a program for: `linux-amd64`, `linux-arm64`, `darwin-amd64`, `darwin-arm64`, `windows-amd64`, `windows-arm64` |
 
+For `python`, the runner installs the requested version with uv when it has no matching one, so any version uv can install works. For `node` and `bash`, the runner must already have the runtime: the Bentra runner image has Node.js 22.
+
 ## dependencies
 
 | Field | Value |
 |---|---|
-| `file` | Python: a requirements file. Node: `package.json`, with `package-lock.json` beside it |
+| `file` | Python: a requirements file, installed with `uv pip install -r` into this version's own virtual environment. Node: `package.json`, with `package-lock.json` beside it, installed with `npm ci --omit=dev` |
+| `env` | Names of the calling workflow's variables and secrets that the dependency install and the [`setup`](#setup) script receive as environment variables. Up to 20 names, each made of capital letters, digits and underscores |
 
-Only `python` and `node` modules can declare dependencies.
+Only `python` and `node` modules can set `file`. Any module can set `env`, with or without `file`.
+
+```yaml
+dependencies:
+  file: requirements.txt
+  env: [UV_INDEX_URL, PACKAGE_TOKEN]
+```
+
+- The build receives only the names listed in `env`. Nothing else from the run reaches it, and actions never receive these variables.
+- A name that isn't set on the calling workflow is not set for the build. The build log says `not set on this workflow: NAME`.
+- Pass credentials to installers through these environment variables only. If a secret passed this way is found written inside the environment's files, the build fails and the environment is discarded.
+- A module with `env` gets its own environment for each calling workflow. See [Modules on runners](/runners/modules#environments).
+
+## setup
+
+A bash script the runner runs once when it builds this version's environment, after the dependency install. It does not run on every call. Use it for what a dependency file can't express, such as a command-line tool the actions call.
+
+```yaml
+runtime:
+  language: python
+  version: "3.13"
+dependencies:
+  file: requirements.txt
+  env: [UV_INDEX_URL, PACKAGE_TOKEN]
+setup: |
+  uv pip install example-cli==1.2.3
+```
+
+- Runs with `bash -eo pipefail`, in the module's folder: the first failing command fails the build.
+- The environment is active: the virtual environment's `python`, and `uv`, are on `PATH`. `$BENTRA_ENV_DIR` is the environment's folder and `$BENTRA_MODULE_DIR` is the module's package.
+- Whatever it installs into the virtual environment's `bin` or into `$BENTRA_ENV_DIR/bin` is on the action's `PATH`.
+- It receives the variables named in `dependencies.env`, and nothing else from the run.
+- Every language can have one, including `bash` and `binary`.
+
+Nothing is installed when a version is released. The runner builds the environment in the **Prepare modules** step the first time a job uses the version. To change the dependencies or the script, bump `version`: a released version never changes.
 
 ## auth
 
