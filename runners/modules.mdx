@@ -53,7 +53,7 @@ Pin dependencies so every build installs the same thing.
 
 An environment is identified by a fingerprint of the module's package (so its `module.yaml`, dependency file, lockfile and setup script), the runtime, the platform, the runner version and the runner's cache epoch.
 
-A Helm runner (runner 0.24.0 or later) keeps environments between runs. The first run that uses a module version builds its environment, and later runs on that runner reuse it: **Prepare modules** says `using its cached environment`. The build happens before the run's own steps start, and its output is in the **Prepare modules** log.
+A Helm runner keeps environments between runs. The first run that uses a module version builds its environment, and later runs on that runner reuse it: **Prepare modules** says `using its cached environment`. The build happens before the run's own steps start, and its output is in the **Prepare modules** log.
 
 The cache is one that steps can't write. Each runner pod has a small `cache` container, the only one that can write it; the container that runs your steps can only read it. An environment goes in only when the runner built it before any step of the run had started, so one workflow can't change what another runs.
 

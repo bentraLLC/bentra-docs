@@ -707,7 +707,7 @@ echo "::bentra-check status=warning,name=Cost,monthly=412::Above the 400 USD bud
 
 ## Installing dependencies and tools
 
-The runner doesn't install anything for a workflow. A `requirements.txt` or `package.json` in the working directory is a file like any other: a `run` step installs it. Runners before 0.23.0 installed both before the first step. They no longer do.
+The runner doesn't install anything for a workflow. A `requirements.txt` or `package.json` in the working directory is a file like any other: a `run` step installs it. Earlier runners installed both before the first step. They no longer do.
 
 When a workflow has one of these files and no `run` step mentions it, **Set up job** prints a line such as:
 
